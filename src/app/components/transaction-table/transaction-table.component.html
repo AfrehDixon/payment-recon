@@ -1,0 +1,423 @@
+<!-- transaction-table.component.html -->
+<div class="min-h-screen bg-white">
+  <div class="max-w-8xl mx-auto">
+    <div
+      class="mb-6 bg-white rounded-lg p-4 border border-gray-200 flex justify-between"
+    >
+      <div class="flex">
+        <img
+          src="https://lh3.googleusercontent.com/p/AF1QipNT_pIPoqbzX9YuQ5FC8PuopsEOb7jCOQdPXQd2=s680-w680-h510"
+          alt="Logo"
+          class="h-14 w-auto border mr-3"
+        />
+
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Payment Dashboard</h1>
+          <p class="mt-1 text-sm text-gray-600">
+            Monitor and analyze your transaction data
+          </p>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="date-picker">
+          <input
+            type="date"
+            [value]="dateRange?.start"
+            (change)="loadTransactions()"
+          />
+          <span>to</span>
+          <input
+            type="date"
+            [value]="dateRange?.end"
+            (change)="loadTransactions()"
+          />
+        </div>
+        <button class="btn-export">Export Data</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg overflow-hidden border border-gray-200">
+      <!-- Summary Cards with enhanced styling -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+        <div
+          class="bg-white p-6 rounded-lg border border-gray-100 transform hover:scale-105 transition-transform duration-200"
+        >
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-500">
+              Total Transactions
+            </h3>
+            <span
+              class="flex h-8 w-8 rounded-full bg-blue-100 items-center justify-center"
+            >
+              <svg
+                class="h-5 w-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </span>
+          </div>
+          <p class="mt-3 text-3xl font-bold text-gray-900">
+            GHS{{ totals.amount | number : "1.2-2" }}
+          </p>
+          <div class="mt-1 text-sm text-gray-600">Total processed amount</div>
+        </div>
+
+        <div
+          class="bg-white p-6 rounded-lg border border-gray-100 transform hover:scale-105 transition-transform duration-200"
+        >
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-500">Bank Fees</h3>
+            <span
+              class="flex h-8 w-8 rounded-full bg-red-100 items-center justify-center"
+            >
+              <svg
+                class="h-5 w-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"
+                />
+              </svg>
+            </span>
+          </div>
+          <p class="mt-3 text-3xl font-bold text-red-600">
+            GHS{{ totals.bankFee | number : "1.2-2" }}
+          </p>
+          <div class="mt-1 text-sm text-gray-600">Total fees charged</div>
+        </div>
+
+        <div
+          class="bg-white p-6 rounded-lg border border-gray-100 transform hover:scale-105 transition-transform duration-200"
+        >
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-500">Net Profit</h3>
+            <span
+              class="flex h-8 w-8 rounded-full bg-green-100 items-center justify-center"
+            >
+              <svg
+                class="h-5 w-5 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+            </span>
+          </div>
+          <p class="mt-3 text-3xl font-bold text-green-600">
+            GHS{{ totals.profit | number : "1.2-2" }}
+          </p>
+          <div class="mt-1 text-sm text-gray-600">Total net earnings</div>
+        </div>
+      </div>
+
+      <!-- Enhanced Filters Section -->
+      <div class="p-6 border-t border-gray-200">
+        <!-- Replace the Material Form section with this -->
+
+        <!-- Charts Section -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 border-t border-gray-200"
+        >
+          <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Transaction Volume Trend
+            </h3>
+            <canvas #transactionChart class="h-80"></canvas>
+          </div>
+          <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Profit Analysis
+            </h3>
+            <canvas #profitChart class="h-80"></canvas>
+          </div>
+        </div>
+
+        <div class="p-6 border-t border-gray-200">
+          <div
+            class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-white rounded-lg"
+          >
+            <!-- Transaction ID Input -->
+            <div class="relative">
+              <input
+                type="text"
+                [(ngModel)]="filters.id"
+                (ngModelChange)="applyFilters()"
+                placeholder="Search by Transaction ID"
+                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-all duration-150 hover:bg-gray-50"
+              />
+              <span class="absolute right-3 top-2.5 text-gray-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+
+            <!-- Transaction Number Input -->
+            <div class="relative">
+              <input
+                type="text"
+                [(ngModel)]="filters.transactionNumber"
+                (ngModelChange)="applyFilters()"
+                placeholder="Search by number"
+                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-all duration-150 hover:bg-gray-50"
+              />
+              <span class="absolute right-3 top-2.5 text-gray-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+
+            <!-- Status Select -->
+            <div class="relative">
+              <select
+                [(ngModel)]="filters.status"
+                (ngModelChange)="applyFilters()"
+                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block appearance-none transition-all duration-150 hover:bg-gray-50"
+              >
+                <option value="">All Statuses</option>
+                <option *ngFor="let status of statusOptions" [value]="status">
+                  {{ status | titlecase }}
+                </option>
+              </select>
+              <span
+                class="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+
+            <!-- Reset Button -->
+            <button
+              (click)="resetFilters()"
+              class="relative px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Number
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Date
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Transaction ID
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Name
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Payment Method
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Amount
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Bank Fee
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Profit
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                *ngFor="let transaction of transactions"
+                class="hover:bg-gray-50"
+              >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  1
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ transaction.date | date : "dd MMM yyyy" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ transaction.id }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ transaction.transactionNumber }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ transaction.paymentMethod }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium"
+                >
+                  GHS{{ transaction.amount | number : "1.2-2" }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600"
+                >
+                  GHS{{ transaction.bankFee | number : "1.2-2" }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600"
+                >
+                  GHS{{ transaction.profit | number : "1.2-2" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    [class]="
+                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' +
+                      getStatusColor(transaction.status)
+                    "
+                  >
+                    {{ transaction.status }}
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    class="text-indigo-600 hover:text-indigo-900"
+                    (click)="openTransactionModal(transaction)"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="24px"
+                      height="24px"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M12 5c-7 0-9.99 7-9.99 7S5 19 12 19s9.99-7 9.99-7S19 5 12 5zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                      />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <!-- Footer with totals -->
+            <tfoot class="bg-gray-50">
+              <tr>
+                <td
+                  colspan="4"
+                  class="px-6 py-4 text-sm font-medium text-gray-900"
+                >
+                  Totals
+                </td>
+                <td class="px-6 py-4 text-sm text-right font-medium">
+                  GHS{{ totals.amount | number : "1.2-2" }}
+                </td>
+                <td
+                  class="px-6 py-4 text-sm text-right font-medium text-red-600"
+                >
+                  GHS{{ totals.bankFee | number : "1.2-2" }}
+                </td>
+                <td
+                  class="px-6 py-4 text-sm text-right font-medium text-green-600"
+                >
+                  GHS{{ totals.profit | number : "1.2-2" }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-transaction-modal
+  *ngIf="showModal"
+  [transaction]="selectedTransaction"
+  (click)="closeTransactionModal()"
+>
+</app-transaction-modal>
