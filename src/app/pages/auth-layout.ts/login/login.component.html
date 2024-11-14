@@ -1,22 +1,169 @@
-<div  class="container">
-<div class="login-container">
-  <h2>Login</h2>
-  <form (ngSubmit)="login()">
-    <div class="form-group">
-      <label for="username">Username</label>
-      <div class="input-container">
-        <i class="fas fa-user"></i>
-        <input type="text" id="username" [(ngModel)]="username" name="username" required>
+<div class="min-h-screen w-full bg-cover bg-no-repeat bg-center flex justify-center items-center" 
+     style="background-image: url('../../../../assets/images/money-transfer-Pixabay-975x650.jpg')">
+  
+  <div class="container mx-auto px-4">
+    <div class="flex justify-center items-center">
+      <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
+        
+        <!-- Logo and Title Section -->
+        <div class="flex flex-col items-center mb-8">
+          <div class="mb-4">
+            <div class="flex justify-center">
+              <!-- <img src="../../../../assets/images/lazypay-login.png" 
+                   alt="LazyPay Logo" 
+                   class="w-24 h-auto"/> -->
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">
+            Dashboard Login
+          </h2>
+        </div>
+
+        <!-- Form Section -->
+        <form class="space-y-6" [formGroup]="formGroup">
+          <!-- Email Input -->
+          <div class="space-y-2">
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <div class="relative">
+              <input 
+                id="email"
+                type="email" 
+                formControlName="email"
+                placeholder="Enter your email"
+                class="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                       placeholder:text-gray-400 text-gray-900
+                       transition-all duration-200"
+              />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="space-y-2">
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div class="relative">
+              <input 
+                id="password"
+                type="password" 
+                formControlName="password"
+                placeholder="Enter your password"
+                class="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                       placeholder:text-gray-400 text-gray-900
+                       transition-all duration-200"
+              />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- OTP Section -->
+          <ng-container *ngIf="triggerOtp">
+            <div class="space-y-2">
+              <p class="text-sm text-gray-600 text-center font-medium">
+                Enter the OTP sent to your email and confirm to login
+              </p>
+              <div class="relative">
+                <label for="otp" class="block text-sm font-medium text-gray-700">
+                  OTP Code
+                </label>
+                <input 
+                  id="otp"
+                  type="text" 
+                  formControlName="otp"
+                  placeholder="Enter OTP code"
+                  class="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                         placeholder:text-gray-400 text-gray-900
+                         transition-all duration-200"
+                />
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Button Section -->
+          <div class="space-y-4">
+            <ng-container [ngSwitch]="buttonOperation">
+              <button *ngSwitchCase="'Send Otp'"
+                      [disabled]="loading"
+                      (click)="login()"
+                      class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg
+                             hover:bg-blue-700 focus:outline-none focus:ring-2 
+                             focus:ring-blue-500 focus:ring-offset-2 
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-all duration-200 font-medium text-sm">
+                <ng-container [ngSwitch]="loading">
+                  <div *ngSwitchCase="true" 
+                       class="flex justify-center">
+                    <div class="w-6 h-6 border-3 border-t-white border-white border-opacity-20 rounded-full animate-spin"></div>
+                  </div>
+                  <span *ngSwitchCase="false">Send OTP</span>
+                </ng-container>
+              </button>
+              
+              <button *ngSwitchCase="'Log In'"
+                      [disabled]="loading"
+                      (click)="confirmOtp()"
+                      class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg
+                             hover:bg-blue-700 focus:outline-none focus:ring-2 
+                             focus:ring-blue-500 focus:ring-offset-2 
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-all duration-200 font-medium text-sm">
+                <ng-container [ngSwitch]="loading">
+                  <div *ngSwitchCase="true" 
+                       class="flex justify-center">
+                    <div class="w-6 h-6 border-3 border-t-white border-white border-opacity-20 rounded-full animate-spin"></div>
+                  </div>
+                  <span *ngSwitchCase="false">Log In</span>
+                </ng-container>
+              </button>
+            </ng-container>
+          </div>
+
+          <!-- Sign Up Links -->
+          <!-- <div class="space-y-4">
+            <div class="text-center text-sm text-gray-600">
+              Don't have an account? 
+              <a routerLink="#/auth/register" 
+                 class="text-blue-600 hover:text-blue-700 font-medium">
+                Click here
+              </a>
+              to create account.
+            </div>
+
+            <div class="flex justify-center">
+              <a routerLink="#/auth/register" 
+                 class="inline-flex items-center justify-center px-4 py-2 
+                        border border-blue-600 rounded-lg text-blue-600 
+                        hover:bg-blue-50 hover:text-blue-700
+                        transition-all duration-200 text-sm font-medium">
+                Sign Up
+              </a>
+            </div>
+          </div> -->
+
+          <!-- Footer -->
+          <div class="pt-6 mt-8 border-t border-gray-200">
+            <p class="text-center text-gray-500 text-sm">
+              © <a href="/" target="_blank" 
+                   class="text-blue-600 hover:text-blue-700">LazyLogic</a>
+              2023 All Rights Reserved
+            </p>
+          </div>
+        </form>
       </div>
     </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <div class="input-container">
-        <i class="fas fa-lock"></i>
-        <input type="password" id="password" [(ngModel)]="password" name="password" required>
-      </div>
-    </div>
-    <button type="submit" class="btn">Login</button>
-  </form>
-</div>
+  </div>
 </div>

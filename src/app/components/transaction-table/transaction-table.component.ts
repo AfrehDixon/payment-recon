@@ -40,6 +40,13 @@ export class TransactionTableComponent {
   dateRange: { start: Date; end: Date; } | undefined;
     selectedTransaction: any = null;
   showModal = false;
+  filter = {
+    endDate: '2024-11-13',
+    roleId: '63de11f56e0e069e7b633465',
+    startDate: '2024-11-12',
+    status: 'PAID',
+    transaction_type: 'DEBIT'
+  };
 
   
   
@@ -95,12 +102,12 @@ export class TransactionTableComponent {
   // Charts
   charts: { [key: string]: Chart } = {};
   
-  constructor(private dialog: MatDialog) {
-    this.dateRange = {
-      start: new Date(new Date().setDate(new Date().getDate() - 30)),
-      end: new Date()
-    };
-  }
+  // constructor(private dialog: MatDialog) {
+  //   this.dateRange = {
+  //     start: new Date(new Date().setDate(new Date().getDate() - 30)),
+  //     end: new Date()
+  //   };
+  // }
   
  
   ngAfterViewInit() {
@@ -234,6 +241,30 @@ export class TransactionTableComponent {
     this.updateCharts();
   }
 
+  constructor(private transactionService: ReconciliationService) { }
+
+  
+
+ getTransaction() {
+  const payload = {
+      endDate: this.filter.endDate,
+      roleId: this.filter.roleId,
+      startDate: this.filter.startDate,
+      status: this.filters.status,
+      transaction_type: this.filter.transaction_type
+    };
+    this.transactionService.getTransactionss().subscribe(
+      (data: Transaction[]) => {
+        this.transactions = data;
+        console.log('Transactions:', this.transactions);
+      },
+      (error: any) => {
+        console.error('Error fetching transactions:', error);
+      }
+    );
+ }
+  
+
 
 
 
@@ -279,4 +310,7 @@ export class TransactionTableComponent {
     };
     return colors[status] || '';
   }
+
+
+  
 }

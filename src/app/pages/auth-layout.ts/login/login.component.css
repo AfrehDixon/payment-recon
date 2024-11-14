@@ -1,69 +1,22 @@
-.container {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(to right, #ff7e5f, #feb47b);
-  font-family: Arial, sans-serif;
-  max-width: 100%;
+:host {
+  @apply block min-h-screen;
 }
 
-.login-container {
-  width: 100%;
-  max-width: 400px;
-  padding: 20px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+/* Custom input autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #1f2937 !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
-h2 {
-  margin-bottom: 20px;
+/* Custom form field animations */
+.form-field-animate {
+  @apply transition-all duration-200 ease-in-out;
 }
 
-.form-group {
-  margin-bottom: 15px;
-  text-align: left;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.input-container {
-  position: relative;
-}
-
-.input-container i {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  transform: translateY(-50%);
-  color: #aaa;
-}
-
-input {
-  width: 100%;
-  padding: 15px ;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.btn {
-  width: 100%;
-  padding: 15px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background-color: #0056b3;
+/* Custom focus ring color */
+.ring-focus {
+  @apply ring-2 ring-blue-500 ring-offset-2;
 }
