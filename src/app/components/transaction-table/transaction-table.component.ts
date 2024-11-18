@@ -245,24 +245,24 @@ export class TransactionTableComponent {
 
   
 
- getTransaction() {
-  const payload = {
-      endDate: this.filter.endDate,
-      roleId: this.filter.roleId,
-      startDate: this.filter.startDate,
-      status: this.filters.status,
-      transaction_type: this.filter.transaction_type
-    };
-    this.transactionService.getTransactionss().subscribe(
-      (data: Transaction[]) => {
-        this.transactions = data;
-        console.log('Transactions:', this.transactions);
-      },
-      (error: any) => {
-        console.error('Error fetching transactions:', error);
-      }
-    );
- }
+//  getTransaction() {
+//   const payload = {
+//       endDate: this.filter.endDate,
+//       roleId: this.filter.roleId,
+//       startDate: this.filter.startDate,
+//       status: this.filters.status,
+//       transaction_type: this.filter.transaction_type
+//     };
+//     this.transactionService.getTransactionss().subscribe(
+//       (data: Transaction[]) => {
+//         this.transactions = data;
+//         console.log('Transactions:', this.transactions);
+//       },
+//       (error: any) => {
+//         console.error('Error fetching transactions:', error);
+//       }
+//     );
+//  }
   
 
 

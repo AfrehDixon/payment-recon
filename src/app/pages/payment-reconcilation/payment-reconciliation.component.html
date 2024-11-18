@@ -7,9 +7,9 @@
         <span>to</span>
         <input type="date" [value]="dateRange.end" (change)="loadTransactions()">
       </div>
-      <button class="btn-export">Export Data</button>
     </div>
   </header> -->
+  <button class="btn" (click)="getReport()">Generate Report</button>
 
   <div class="summary-cards" *ngIf="summary">
     <div class="card">

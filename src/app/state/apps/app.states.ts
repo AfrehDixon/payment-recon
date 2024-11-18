@@ -36,18 +36,20 @@ export class AuthState {
     return state.error;
   }
 
-  constructor(private service: AdminService, router: Router) {}
+  constructor(private service: AdminService, private router: Router) {}
 
   @Action(AutoLogin)
   async autoLogin({ dispatch }: StateContext<StateModel>) {
     try {
-      const session = sessionStorage.getItem('PLOGIN');
+      const session = localStorage.getItem('PLOGIN');
       if (typeof session !== 'string') {
         throw Error('LOGIN NOT FOUND');
       }
       const logins = JSON.parse(session);
       dispatch(new AdminLogin(logins));
-    } catch (err) {}
+    } catch (err) {
+      console.error('AutoLogin error:', err);
+    }
   }
 
   @Action(AdminLogin)
@@ -55,7 +57,8 @@ export class AuthState {
     { patchState, dispatch }: StateContext<StateModel>,
     { payload }: AdminLogin
   ) {
-    sessionStorage.setItem('PLOGIN', JSON.stringify(payload));
+    console.log('Storing token in local storage:', payload.token); // Debug log
+    localStorage.setItem('PLOGIN', JSON.stringify(payload));
     patchState({
       user: payload.user,
       token: payload.token,
@@ -65,8 +68,7 @@ export class AuthState {
 
   @Action(Logout)
   logout({ patchState, dispatch }: StateContext<StateModel>) {
-    sessionStorage.removeItem('PLOGIN');
+    localStorage.removeItem('PLOGIN');
     window.location.reload();
   }
-
 }
