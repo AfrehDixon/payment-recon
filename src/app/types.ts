@@ -1,29 +1,81 @@
-// types.ts
 export interface Transaction {
-  id: string;
-  transactionNumber: string;
-  date: Date;
+  _id: string;
+  actualAmount: number;
   amount: number;
-  status: 'success' | 'bounced' | 'cancelled' | 'dropped';
-  paymentMethod: string;
-  bankFee: number;
-  profit: number;
+  date: string;
+  balanceAfterCredit: number;
+  balanceBeforCredit: number;
+  callbackUrl: string;
+  channel: string;
+  charge_type: string;
+  charges: number;
+  createdAt: string;
+  currency: string;
+  customerId: {
+    _id: string;
+    autosettle: boolean;
+    debitCardOperator: string;
+    debitOperator: string;
+    creditOperator: string;
+  };
+  customerType: string;
+  debitOperator: string;
+  description: string;
+  externalTransactionId: string;
+  payment_account_issuer: string;
+  payment_account_name: string;
+  payment_account_number: string;
+  payment_account_type: string;
+  processAttempts: number;
+  profitEarned: number;
+  reason: string;
+  recipient_account_issuer_name: string;
+  recipient_account_name: string;
+  recipient_account_number: string;
+  recipient_account_type: string;
+  status: string;
+  transactionRef: string;
+  transaction_type: string;
 }
-
-// // Add this new interface for the transaction history modal
-// export interface TransactionHistory {
-// successRate: string|number;
-// totalAmount: string|number;
-// transactionCount: any;
-//   timestamp: Date;
-//   action: string;
-//   description: string;
-//   performedBy: string;
-// }
 
 export interface TransactionSummary {
   totalAmount: number;
   transactionCount: number;
   successRate: number;
   failureRate: number;
+}
+
+export interface TransactionTotals {
+  amount: number;
+  charges: number;
+  profit: number;
+}
+
+export interface ApiTransaction {
+  [x: string]: any;
+  _id: string;
+  actualAmount: number;
+  amount: number;
+  charges: number;
+  createdAt: string;
+  currency: string;
+  payment_account_issuer: string;
+  payment_account_name: string;
+  payment_account_number: string;
+  payment_account_type: string;
+  profitEarned: number;
+  status: string;
+  transactionRef: string;
+  externalTransactionId: string;
+  transaction_type: string;
+  customerType: string;
+  description: string;
+  recipient_account_issuer_name: string;
+  recipient_account_name: string;
+  recipient_account_number: string;
+  recipient_account_type: string;
+}
+
+export interface SetAllMerchants{
+  
 }

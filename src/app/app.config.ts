@@ -7,6 +7,7 @@ import { NgxsLoggerPluginModule } from '@ngxs/logger-plugin';
 import { NgxsReduxDevtoolsPluginModule } from '@ngxs/devtools-plugin';
 import { AuthState } from './state/apps/app.states';
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +19,7 @@ export const appConfig: ApplicationConfig = {
       NgxsModule.forRoot([AuthState]),
       NgxsLoggerPluginModule.forRoot(),
       NgxsReduxDevtoolsPluginModule.forRoot()
-    )
+    ),
+    provideAnimations()
   ]
 };
