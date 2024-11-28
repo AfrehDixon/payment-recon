@@ -1,0 +1,74 @@
+<!-- topbar.component.html -->
+<!-- <div>dfdf</div> -->
+
+<div class="layout-wrapper" [class.collapsed]="isCollapsed">
+    <!-- <div>fdfdfd</div> -->
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <!-- Logo Section -->
+    <div class="sidebar-header">
+      <a class="logo-wrapper">
+       
+        <!-- <img *ngIf="logo" [src]="logo" alt="Logo" class="logo" /> -->
+      </a>
+      <button class="collapse-btn" (click)="toggleSidebar()" style="background-color: red;">
+        <!-- <i class="bi" [class.bi-chevron-left]="!isCollapsed" [class.bi-chevron-right]="isCollapsed" style="color: white; background-color: red;"></i> -->
+       <i class="ri-arrow-drop-right-line icon" ></i>
+        <!-- <div>sdsds</div> -->
+      </button>
+      
+    </div>
+
+   
+
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li *ngFor="let menuItem of menuItems" 
+            class="nav-item"
+            [class.active]="router.isActive(menuItem.path, true)"
+            [ngClass]="menuItem.class">
+          <a class="nav-link" [routerLink]="[menuItem.path]" [title]="isCollapsed ? menuItem.title : ''">
+            <i [class]="getMenuIcon(menuItem.path)"></i>
+            <span class="nav-text" *ngIf="!isCollapsed">{{ menuItem.title }}</span>
+            <span class="nav-indicator" *ngIf="router.isActive(menuItem.path, true)"></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Bottom Actions -->
+    <div class="sidebar-footer">
+        
+      <!-- <button class="refresh-btn" (click)="loadBalance()" title="Refresh Balance">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span *ngIf="!isCollapsed">Refresh Balance</span>
+      </button> -->
+      <button class="logout-btn" (click)="logout()" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+        <span *ngIf="!isCollapsed">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <button class="mobile-toggle" (click)="toggleSidebar()">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="mobile-logo">
+        <img *ngIf="logo" [src]="logo" alt="Logo" />
+      </div>
+      <div class="mobile-user">
+        <i class="bi bi-person-circle"></i>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-wrapper">
+      <ng-content></ng-content>
+    </div>
+  </main>
+</div>

@@ -5,13 +5,16 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { Transaction } from '../../types';
+// import { Transaction } from '../../types';
 import { ChartConfiguration } from 'chart.js';
 import { ReconciliationService } from '../../service/reconciliation.service';
 import { TransactionTableComponent } from "../../components/transaction-table/transaction-table.component";
 import { Store } from '@ngxs/store';
 import { AuthState } from '../../state/apps/app.states';
 import { EnumPaymentTransactionStatus, EnumTransactionTypes } from '../../models/transaction.modal';
+import { ApiTransaction } from '../../types';
+import { ApiTransaction as Transaction } from '../../types';
+
 
 @Component({
   selector: 'app-payment-reconciliation',
@@ -27,20 +30,32 @@ import { EnumPaymentTransactionStatus, EnumTransactionTypes } from '../../models
   ]
 })
 export class PaymentReconciliationComponent implements OnInit {
-  transactions: Transaction[] = [];
+  transactions!: ApiTransaction[];
+  filteredTransactions: ApiTransaction[] = [];
+  // transactions: Transaction[];
   userId: string;
-  formGroup: FormGroup;
-  dateRange: { start: Date; end: Date };
+  formGroup!: FormGroup;
+  dateRange!: { start: Date; end: Date; };
   transactionChartData: ChartConfiguration<'line'>['data'] = {
     labels: [],
     datasets: []
   };
   summary: any;
-
-  
+  filters = {
+    id: '',
+    transactionNumber: '',
+    status: '',
+    transactionType: EnumTransactionTypes.DEBIT // Initialize with CREDIT
+  };
 
   constructor(private store: Store, private reconciliationService: ReconciliationService) {
     this.userId = this.store.selectSnapshot(AuthState.user)._id;
+    this.setupFormGroup();
+    this.setupDateRange();
+  }
+
+
+   private setupFormGroup() {
     this.formGroup = new FormGroup({
       startDate: new FormControl(
         new Date(new Date().valueOf() - 1000 * 60 * 60 * 24).toLocaleDateString('en-CA')
@@ -48,8 +63,23 @@ export class PaymentReconciliationComponent implements OnInit {
       endDate: new FormControl(new Date().toLocaleDateString('en-CA')),
       roleId: new FormControl(this.userId, Validators.required),
       status: new FormControl(EnumPaymentTransactionStatus.PAID, Validators.required),
-      transaction_type: new FormControl(EnumTransactionTypes.DEBIT, Validators.required),
+      transaction_type: new FormControl(this.filters.transactionType, Validators.required),
     });
+   }
+  
+  // private setupFormGroup() {
+  //   this.formGroup = new FormGroup({
+  //     startDate: new FormControl(
+  //       new Date(new Date().valueOf() - 1000 * 60 * 60 * 24).toLocaleDateString('en-CA')
+  //     ),
+  //     endDate: new FormControl(new Date().toLocaleDateString('en-CA')),
+  //     roleId: new FormControl(this.userId, Validators.required),
+  //     status: new FormControl(EnumPaymentTransactionStatus.PAID, Validators.required),
+  //     transaction_type: new FormControl(EnumTransactionTypes.CREDIT, Validators.required),
+  //   });
+  // }
+
+  private setupDateRange() {
     this.dateRange = {
       start: new Date(new Date().setDate(new Date().getDate() - 30)),
       end: new Date()
@@ -57,10 +87,11 @@ export class PaymentReconciliationComponent implements OnInit {
   }
 
   ngOnInit() {
-    // this.getReport();
+    this.getReport();
   }
-  
 
+
+  
   getReport() {
     const payload = {
       startDate: this.formGroup.get('startDate')?.value,
@@ -71,19 +102,19 @@ export class PaymentReconciliationComponent implements OnInit {
     };
 
     this.reconciliationService.getTransactions(payload).subscribe({
-      next: (transactions: Transaction[]) => {
+      next: (transactions) => {
         this.transactions = transactions;
         this.updateCharts();
+        // this.applyFilter()
+        
       },
-      error: (error) => {
-        console.error('Error loading transactions', error);
-      }
+      error: (error) => console.error('Error loading transactions', error)
     });
   }
 
   private updateCharts() {
     const dailyTotals = this.transactions.reduce((acc, curr) => {
-      const date = new Date(curr.date).toISOString().split('T')[0];
+      const date = curr['date'].toISOString().split('T')[0];
       acc[date] = (acc[date] || 0) + curr.amount;
       return acc;
     }, {} as { [key: string]: number });
@@ -98,4 +129,25 @@ export class PaymentReconciliationComponent implements OnInit {
       }]
     };
   }
+
+
+  //  applyFilter(): void {
+  //   this.filteredTransactions = this.transactions.filter((transaction) => {
+  //     const matchesId = transaction.transactionRef
+  //       .toLowerCase()
+  //       .includes(this.filters.id.toLowerCase());
+  //     const matchesNumber = transaction._id
+  //       .toLowerCase()
+  //       .includes(this.filters.transactionNumber.toLowerCase());
+  //     const matchesStatus =
+  //       !this.filters.status || transaction.status === this.filters.status;
+  //     const matchesTransactionType =
+  //       !this.filters.transactionType || transaction.transaction_type === this.filters.transactionType;
+  //     return matchesId && matchesNumber && matchesStatus && matchesTransactionType;
+  //   });
+  //   // this.calculateTotals();
+  //   this.updateCharts();
+  // }
+
+  
 }

@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, retry } from 'rxjs/operators';
-import { Transaction, TransactionSummary } from '../types';
+import { Transaction ,  TransactionSummary  ,ApiTransaction} from '../types';
 import API from '../constants/api.constant';
+
 
 // Define interfaces for request payloads
 interface TransactionFilter {
@@ -22,62 +23,34 @@ export class ReconciliationService {
   
   constructor(private http: HttpClient) {}
 
-  roleReports(filter: TransactionFilter): Observable<Transaction[]> {
-    return this.http.post<Transaction[]>(this.apiUrl, filter)
-      .pipe(
-        retry(1), // Retry failed requests once
-        map(response => this.transformTransactions(response)),
-        catchError(this.handleError)
-      );
+  getTransactions(filter: TransactionFilter): Observable<ApiTransaction[]> {
+    return this.http.post<any>(this.apiUrl, filter).pipe(
+      map(response => this.transformTransactions(response))
+    );
   }
 
-  getTransactions(filter: TransactionFilter): Observable<Transaction[]> {
-    return this.http.post<Transaction[]>(this.apiUrl, filter)
-      .pipe(
-        retry(1),
-        map(response => this.transformTransactions(response)),
-        catchError(this.handleError)
-      );
-  }
-
-  getTransactionSummary(transactions: Transaction[]): TransactionSummary {
-    try {
-      const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-      const successful = transactions.filter(t => t.status === 'success').length;
-      const count = transactions.length || 1; // Prevent division by zero
-      
-      return {
-        totalAmount: total,
-        transactionCount: count,
-        successRate: (successful / count) * 100,
-        failureRate: ((count - successful) / count) * 100
-      };
-    } catch (error) {
-      console.error('Error calculating transaction summary:', error);
-      return {
-        totalAmount: 0,
-        transactionCount: 0,
-        successRate: 0,
-        failureRate: 0
-      };
+  private transformTransactions(response: any): ApiTransaction[] {
+    if (!response?.data?.transactions) {
+      return [];
     }
-  }
 
-  // Helper method to transform API response
-  private transformTransactions(response: any): Transaction[] {
-    if (!response) return [];
-
-    const transactions = Array.isArray(response) ? response : response.data || [];
-    
-    return transactions.map((transaction: { id: any; transactionNumber: any; date: string | number | Date; amount: any; bankFee: any; profit: any; status: any; paymentMethod: any; }) => ({
-      id: transaction.id || '',
-      transactionNumber: transaction.transactionNumber || '',
-      date: new Date(transaction.date),
-      amount: Number(transaction.amount) || 0,
-      bankFee: Number(transaction.bankFee) || 0,
-      profit: Number(transaction.profit) || 0,
-      status: transaction.status || 'pending',
-      paymentMethod: transaction.paymentMethod || 'Unknown'
+    return response.data.transactions.map((transaction: any) => ({
+      _id: transaction._id,
+      actualAmount: Number(transaction.actualAmount),
+      amount: Number(transaction.amount),
+      charges: Number(transaction.charges),
+      createdAt: transaction.createdAt,
+      currency: transaction.currency,
+      payment_account_issuer: transaction.payment_account_issuer,
+      payment_account_name: transaction.payment_account_name,
+      payment_account_number: transaction.payment_account_number,
+      payment_account_type: transaction.payment_account_type,
+      profitEarned: Number(transaction.profitEarned),
+      status: transaction.status,
+      transactionRef: transaction.transactionRef,
+      externalTransactionId: transaction.externalTransactionId,
+      transaction_type: transaction.transaction_type,
+      customerType: transaction.customerType
     }));
   }
 
@@ -112,67 +85,5 @@ export class ReconciliationService {
     return throwError(() => new Error(errorMessage));
   }
 
-  private mockTransactions: Transaction[] = [
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'success',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'success',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'success',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'cancelled',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'cancelled',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: '1817773697',
-      transactionNumber: 'Afreh Dixon',
-      date: new Date('2023-09-21'),
-      amount: 1000.00,
-      bankFee: 20.00,
-      profit: 980.00,
-      status: 'cancelled',
-      paymentMethod: 'Credit Card'
-    },
-    // Add more mock transactions here
-  ];
+ 
 }
