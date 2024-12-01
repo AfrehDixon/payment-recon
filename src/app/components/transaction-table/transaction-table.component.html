@@ -350,12 +350,12 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr
-                *ngFor="let transaction of transactions; let i = index"
-                class="hover:bg-gray-50"
+              *ngFor="let transaction of displayedTransactions; let i = index"
+              class="hover:bg-gray-50"
               >
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {{ i + 1 }}
-                </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ (currentPage - 1) * itemsPerPage + i + 1 }}
+              </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm">
                     {{ transaction.createdAt | date : "dd MMM yyyy" }}
@@ -484,16 +484,16 @@
         (change)="onItemsPerPageChange()"
         class="border rounded px-2 py-1 text-sm"
       >
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+        <option [ngValue]="100">100</option>
       </select>
     </div>
     <div class="flex items-center gap-2">
       <span class="text-sm text-gray-700">
         {{ (currentPage - 1) * itemsPerPage + 1 }} - 
-        <!-- {{ Math.min(currentPage * itemsPerPage, totalItems) }}  -->
+        {{ Math.min(currentPage * itemsPerPage, totalItems) }}
         of {{ totalItems }}
       </span>
       <div class="flex gap-1">

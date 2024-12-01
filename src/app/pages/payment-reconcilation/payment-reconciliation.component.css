@@ -1,6 +1,7 @@
 .dashboard-container {
   padding: 24px;
   background-color: white;
+  margin-left: 200px;
 
   .dashboard-header {
     display: flex;

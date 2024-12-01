@@ -1,83 +1,588 @@
-<!-- merchant.component.html -->
-<div class="p-6 max-w-6xl mx-auto">
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Merchant Card -->
-    <div class="bg-white rounded-lg shadow-lg p-6" *ngFor="let merchant of merchants">
-      <!-- Merchant Header -->
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800">{{merchant.name}}</h2>
-          <p class="text-gray-600">ID: {{merchant.id}}</p>
-        </div>
-        <span [class]="'px-3 py-1 rounded-full text-sm ' + 
-          (merchant.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')">
-          {{merchant.status}}
-        </span>
-      </div>
+<!-- merchants.component.html -->
+<div class="merchant-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <h1 class="page-title">Merchant Management</h1>
+    <p class="page-subtitle">
+      View and manage merchant accounts, process top-ups, and monitor activities
+    </p>
+  </div>
 
-      <!-- Balance & Actions -->
-      <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-gray-600">Current Balance</p>
-            <p class="text-3xl font-bold text-gray-900">${{merchant.balance | number:'1.2-2'}}</p>
-          </div>
-          <button
-            (click)="openTopUpModal(merchant.id)"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-            Top Up
-          </button>
+  <!-- Search and Filter Section -->
+  <div class="search-section">
+    <div class="search-container">
+      <input
+        type="text"
+        placeholder="Search merchants..."
+        (input)="onSearch($event)"
+        class="search-input"
+      />
+      <i class="fas fa-search search-icon"></i>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-container" *ngIf="!isLoading">
+    <table class="merchant-table">
+      <thead>
+        <tr>
+          <th>Merchant Name</th>
+          <th>Contact Info</th>
+          <th>Status</th>
+          <th>Type</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let merchant of paginatedMerchants">
+          <td>
+            <div class="merchant-name">
+              {{ merchant.merchant_tradeName || "N/A" }}
+            </div>
+            <div class="merchant-business">
+              {{ merchant.lineOfBusiness || "N/A" }}
+            </div>
+          </td>
+          <td>
+            <div class="contact-info">
+              <div>{{ merchant.email || "N/A" }}</div>
+              <div>{{ merchant.phone || "N/A" }}</div>
+            </div>
+          </td>
+          <td>
+            <span
+              [class]="
+                merchant.active
+                  ? 'status-badge active'
+                  : 'status-badge inactive'
+              "
+            >
+              {{ merchant.active ? "Active" : "Inactive" }}
+            </span>
+          </td>
+          <td>{{ merchant.type || "N/A" }}</td>
+          <td class="actions">
+            <div class="action-icons">
+              <!-- View Details -->
+              <button
+                class="icon-btn"
+                (click)="openDetailsModal(merchant)"
+                title="View Details"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+
+              <!-- Top Up -->
+              <button
+                class="icon-btn"
+                (click)="openTopUpModal(merchant._id)"
+                title="Top Up Account"
+              >
+                <i class="fas fa-plus-circle"></i>
+              </button>
+
+              <!-- Check Balance -->
+              <button
+                class="icon-btn"
+                (click)="checkBalance(merchant._id)"
+                title="Check Balance"
+              >
+                <i class="fas fa-wallet"></i>
+              </button>
+
+              <!-- Update Transaction -->
+              <button
+                class="icon-btn"
+                (click)="openStatusModal(merchant._id)"
+                title="Update Transaction Status"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button 
+              class="icon-btn"
+              (click)="openApproveModal(merchant)"
+              title="Approve Merchant"
+            >
+              <i class="fas fa-check-circle"></i>
+            </button>
+            <button 
+  class="icon-btn"
+  (click)="openChargesModal(merchant)"
+  title="Configure Charges"
+>
+  <i class="fas fa-cog"></i>
+</button>
+              <button
+                class="icon-btn"
+                [routerLink]="['/merchants/transactions', merchant._id]"
+                title="View Transactions"
+              >
+                <i class="fas fa-list"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+    <div class="pagination-controls">
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+      >
+        Previous
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Merchant Details</h2>
+      <div class="merchant-details">
+        <div class="detail-group">
+          <h4>Trade Name</h4>
+          <p>{{ selectedMerchant?.merchant_tradeName || "N/A" }}</p>
+        </div>
+        <div class="detail-group">
+          <h4>Line of Business</h4>
+          <p>{{ selectedMerchant?.lineOfBusiness || "N/A" }}</p>
+        </div>
+        <div class="detail-group">
+          <h4>Contact Information</h4>
+          <p>Email: {{ selectedMerchant?.email || "N/A" }}</p>
+          <p>Phone: {{ selectedMerchant?.phone || "N/A" }}</p>
+        </div>
+        <div class="detail-group">
+          <h4>Address</h4>
+          <p>{{ selectedMerchant?.address || "N/A" }}</p>
+        </div>
+        <div class="detail-group">
+          <h4>Account Details</h4>
+          <p>Type: {{ selectedMerchant?.type || "N/A" }}</p>
+          <p>Account Type: {{ selectedMerchant?.accountType || "N/A" }}</p>
+          <p>Auto Settle: {{ selectedMerchant?.autosettle ? "Yes" : "No" }}</p>
         </div>
       </div>
-
-      <!-- Contact Information -->
-      <div class="space-y-3">
-        <p class="text-gray-600">Email: <span class="text-gray-900">{{merchant.email}}</span></p>
-        <p class="text-gray-600">Phone: <span class="text-gray-900">{{merchant.phone}}</span></p>
+      <div class="modal-actions">
+        <button class="modal-btn" (click)="closeDetailsModal()">Close</button>
       </div>
     </div>
   </div>
-  <button  (click)="getAllMerchants()">Get Merchants</button>
 
-  <!-- Top-up Modal -->
-  <div *ngIf="showTopUpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg w-full max-w-md p-6">
-      <h3 class="text-xl font-bold mb-6">Top Up Account</h3>
+  <div class="modal" *ngIf="showApproveModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Approve Merchant</h2>
       
-      <form [formGroup]="topUpForm" (ngSubmit)="submitTopUp()" class="space-y-6">
-        <!-- Amount -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-          <div class="relative">
-            <span class="absolute left-3 top-2.5 text-gray-500">$</span>
-            <input
-              type="number"
-              formControlName="amount"
-              class="pl-8 w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
-              placeholder="0.00"
-            />
-          </div>
-          <div *ngIf="topUpForm.get('amount')?.touched && topUpForm.get('amount')?.invalid" 
-               class="mt-1 text-sm text-red-600">
-            <span *ngIf="topUpForm.get('amount')?.errors?.['required']">Amount is required</span>
-            <span *ngIf="topUpForm.get('amount')?.errors?.['min']">Minimum amount is $1</span>
-            <span *ngIf="topUpForm.get('amount')?.errors?.['max']">Maximum amount is $10,000</span>
+      <div class="merchant-details">
+        <div class="detail-item">
+          <label>Trade Name:</label>
+          <span>{{ selectedMerchantForApproval?.merchant_tradeName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Email:</label>
+          <span>{{ selectedMerchantForApproval?.email }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Phone:</label>
+          <span>{{ selectedMerchantForApproval?.phone }}</span>
+        </div>
+      </div>
+  
+      <div class="warning-message info">
+        Are you sure you want to approve this merchant? This will grant them access to the platform.
+      </div>
+  
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="error">
+        {{ error }}
+      </div>
+  
+      <div class="modal-actions">
+        <button 
+          type="button" 
+          class="modal-btn cancel" 
+          (click)="closeApproveModal()"
+          [disabled]="isLoading"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="modal-btn approve" 
+          (click)="approveMerchant()"
+          [disabled]="isLoading"
+        >
+          {{ isLoading ? 'Processing...' : 'Confirm Approval' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Up Modal -->
+  <div class="modal" *ngIf="showTopUpModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Deposit Funds</h2>
+
+      <form [formGroup]="topUpForm" (ngSubmit)="submitTopUp()">
+        <div class="form-group">
+          <label>Amount (GHS)</label>
+          <input
+            type="number"
+            formControlName="amount"
+            class="form-input"
+            placeholder="Enter amount"
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              topUpForm.get('amount')?.invalid &&
+              topUpForm.get('amount')?.touched
+            "
+          >
+            <span *ngIf="topUpForm.get('amount')?.errors?.['required']"
+              >Amount is required</span
+            >
+            <span *ngIf="topUpForm.get('amount')?.errors?.['min']"
+              >Minimum amount is 1 GHS</span
+            >
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex justify-end gap-3">
+        <div class="form-group">
+          <label>Account Type</label>
+          <select formControlName="account_type" class="form-input">
+            <option value="momo">Mobile Money</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Account Name</label>
+          <input
+            type="text"
+            formControlName="account_name"
+            class="form-input"
+            placeholder="Enter account name"
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              topUpForm.get('account_name')?.invalid &&
+              topUpForm.get('account_name')?.touched
+            "
+          >
+            <span *ngIf="topUpForm.get('account_name')?.errors?.['required']"
+              >Account name is required</span
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Account Number</label>
+          <input
+            type="text"
+            formControlName="account_number"
+            class="form-input"
+            placeholder="Enter mobile number"
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              topUpForm.get('account_number')?.invalid &&
+              topUpForm.get('account_number')?.touched
+            "
+          >
+            <span *ngIf="topUpForm.get('account_number')?.errors?.['required']"
+              >Account number is required</span
+            >
+            <span *ngIf="topUpForm.get('account_number')?.errors?.['pattern']"
+              >Enter a valid 10-digit number</span
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Network Provider</label>
+          <select formControlName="account_issuer" class="form-input">
+            <option value="mtn">MTN</option>
+            <option value="vodafone">Vodafone</option>
+            <option value="airteltigo">AirtelTigo</option>
+          </select>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="error">
+          {{ error }}
+        </div>
+
+        <div class="modal-actions">
           <button
             type="button"
+            class="modal-btn cancel"
             (click)="closeTopUpModal()"
-            class="px-4 py-2 border rounded-lg hover:bg-gray-50">
+          >
             Cancel
           </button>
           <button
             type="submit"
-            [disabled]="topUpForm.invalid"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
-            Confirm Top Up
+            class="modal-btn submit"
+            [disabled]="topUpForm.invalid || isSubmitting"
+          >
+            {{ isSubmitting ? "Processing..." : "Submit" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" *ngIf="showBalanceModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Account Balance Details</h2>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="modal-loading">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <!-- Balance Data -->
+      <div *ngIf="merchantBalance && !isLoading" class="balance-details">
+        <div class="balance-grid">
+          <div class="balance-item">
+            <label>Account Number</label>
+            <span>{{ merchantBalance.accountNumber }}</span>
+          </div>
+
+          <div class="balance-item">
+            <label>Wallet ID</label>
+            <span>{{ merchantBalance.walletId }}</span>
+          </div>
+
+          <div class="balance-item highlight">
+            <label>Total Balance</label>
+            <span>₵ {{ merchantBalance.totalBalance | number : "1.2-2" }}</span>
+          </div>
+
+          <div class="balance-item">
+            <label>Confirmed Balance</label>
+            <span
+              >₵ {{ merchantBalance.confirmedBalance | number : "1.2-2" }}</span
+            >
+          </div>
+
+          <div class="balance-item">
+            <label>Blocked Balance</label>
+            <span
+              >₵ {{ merchantBalance.blockedBalance | number : "1.2-2" }}</span
+            >
+          </div>
+
+          <div class="balance-item">
+            <label>Account Type</label>
+            <span class="capitalize">{{ merchantBalance.type }}</span>
+          </div>
+
+          <div class="balance-item">
+            <label>Status</label>
+            <span class="status-badge" [class.active]="merchantBalance.active">
+              {{ merchantBalance.active ? "Active" : "Inactive" }}
+            </span>
+          </div>
+
+          <div class="balance-item">
+            <label>Last Updated</label>
+            <span>{{ merchantBalance.updatedAt | date : "medium" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn" (click)="closeBalanceModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal" *ngIf="showChargesModal">
+    <div class="modal-content charges-modal">
+      <h2 class="modal-title">Configure Charges</h2>
+      <p class="merchant-name" *ngIf="selectedMerchantForCharges">
+        {{ selectedMerchantForCharges.merchant_tradeName }}
+      </p>
+  
+      <form [formGroup]="chargesForm" (ngSubmit)="updateCharges()">
+        <div class="charges-grid">
+          <div class="form-group">
+            <label>Account Type</label>
+            <select formControlName="accountType" class="form-input">
+              <option value="CLOSED">Closed</option>
+              <option value="OPEN">Open</option>
+            </select>
+          </div>
+  
+          <div class="form-group">
+            <label>Charge Type</label>
+            <select formControlName="chargeType" class="form-input">
+              <option value="MERCHANT">Merchant</option>
+              <option value="CUSTOMER">Customer</option>
+            </select>
+          </div>
+  
+          <div class="form-group">
+            <label>GIP Charge (%)</label>
+            <input type="number" formControlName="disburse_gip_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>GIP Cap</label>
+            <input type="number" formControlName="disburse_gip_cap" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>NRT Charge (%)</label>
+            <input type="number" formControlName="disburse_nrt_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Charge (%)</label>
+            <input type="number" formControlName="disburse_momo_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Cap</label>
+            <input type="number" formControlName="disburse_momo_cap" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>Min Cap</label>
+            <input type="number" formControlName="disburse_min_cap" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Base Charge (%)</label>
+            <input type="number" formControlName="momo_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>Card Charge (%)</label>
+            <input type="number" formControlName="card_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>BTC Charge (%)</label>
+            <input type="number" formControlName="btc_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Base Cap</label>
+            <input type="number" formControlName="momo_cap" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Min Charge</label>
+            <input type="number" formControlName="momo_min_charge" class="form-input">
+          </div>
+  
+          <div class="form-group">
+            <label>MoMo Charge Cap</label>
+            <input type="number" formControlName="momo_charge_cap" class="form-input">
+          </div>
+        </div>
+  
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="error">
+          {{ error }}
+        </div>
+  
+        <div class="modal-actions">
+          <button 
+            type="button" 
+            class="modal-btn cancel" 
+            (click)="closeChargesModal()"
+            [disabled]="isLoading"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="modal-btn save" 
+            [disabled]="chargesForm.invalid || isLoading"
+          >
+            {{ isLoading ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="modal" *ngIf="showStatusModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Update Transaction Status</h2>
+
+      <form [formGroup]="statusForm" (ngSubmit)="updateTransaction()">
+        <div class="form-group">
+          <label>Select Status</label>
+          <select formControlName="status" class="form-input">
+            <option value="">Select a status...</option>
+            <option value="PAID">Paid</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+          </select>
+          <div
+            class="error-message"
+            *ngIf="
+              statusForm.get('status')?.invalid &&
+              statusForm.get('status')?.touched
+            "
+          >
+            <span *ngIf="statusForm.get('status')?.errors?.['required']"
+              >Status is required</span
+            >
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="error">
+          {{ error }}
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeStatusModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="modal-btn submit"
+            [disabled]="statusForm.invalid || isLoading"
+          >
+            {{ isLoading ? "Updating..." : "Update Status" }}
           </button>
         </div>
       </form>

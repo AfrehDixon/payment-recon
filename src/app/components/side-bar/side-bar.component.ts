@@ -12,8 +12,9 @@ export interface RouteInfo {
 }
 
 export const Routes: RouteInfo[] = [
-  { path: 'mechant', title: 'Mechant', class: 'false' },
   { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
+  { path: 'mechant', title: 'Mechant', class: 'false' },
+  { path: 'admins', title: 'Admins', class: 'false'},
 ];
 
 @Component({
@@ -83,7 +84,9 @@ export class SidebarComponent implements OnInit {
   getMenuIcon(path: string): string {
     const iconMap: { [key: string]: string } = {
       'mechant': 'bi bi-speedometer2',
-      'payment-reconciliation': 'bi bi-person',
+      'payment-reconciliation': 'bi bi-bar-chart',
+      'admins': 'bi bi-person',
+    // 'dashboard': 'bi bi-bar-chart',
     };
 
     return iconMap[path] || 'bi bi-circle';

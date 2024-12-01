@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormsModule, Validators } from '@angular/forms';
 import Chart from 'chart.js/auto';
@@ -59,27 +59,24 @@ export class TransactionTableComponent implements OnInit {
   @Input() transactions: ApiTransaction[] = [];
   @ViewChild('transactionChart') transactionChart!: ElementRef;
   @ViewChild('profitChart') profitChart!: ElementRef;
+  Math = Math;
 
-     calculateFeesAndProfit(amount: number): { bankFee: number; companyFee: number } {
-    const totalFeeRate = 0.012; // 1.2%
+  calculateFeesAndProfit(amount: number): { bankFee: number; companyFee: number } {
     const bankFeeRate = 0.01;   // 1%
     const companyFeeRate = 0.002; // 0.2%
     const increment = 25;
 
-    // Calculate how many complete 25 GHS increments
     const numIncrements = Math.floor(amount / increment);
     const remainder = amount % increment;
 
     let bankFee = 0;
     let companyFee = 0;
 
-    // Calculate fees for complete increments
     if (numIncrements > 0) {
       bankFee += numIncrements * (increment * bankFeeRate);
       companyFee += numIncrements * (increment * companyFeeRate);
     }
 
-    // Add fees for remainder
     if (remainder > 0) {
       bankFee += remainder * bankFeeRate;
       companyFee += remainder * companyFeeRate;
@@ -96,7 +93,7 @@ export class TransactionTableComponent implements OnInit {
     end: new Date(),
   };
 
-  itemsPerPage: number = 20;
+  itemsPerPage: number = 10;
   currentPage: number = 1;
   totalItems: number = 0;
   displayedTransactions: ApiTransaction[] = [];
@@ -123,14 +120,36 @@ export class TransactionTableComponent implements OnInit {
     transactionType: EnumTransactionTypes.CREDIT // Initialize with CREDIT
   };
 
-  ngOnInit(): void {
+  ngOnInit() {
+    if (this.transactions?.length > 0) {
+      this.initializeData();
+    }
+  }
+
+  private initializeData() {
     this.filteredTransactions = [...this.transactions];
     this.calculateTotals();
-    this.applyFilter()
+    this.updateDisplayedTransactions();
+    
+    // Initialize charts after a small delay to ensure the view is ready
+    setTimeout(() => {
+      if (this.transactionChart && this.profitChart) {
+        this.initializeCharts();
+      }
+    }, 100);
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['transactions'] && changes['transactions'].currentValue) {
+      console.log('Transactions updated:', this.transactions.length);
+      this.initializeData();
+    }
   }
 
   ngAfterViewInit() {
-    this.initializeCharts();
+    setTimeout(() => {
+      this.initializeCharts();
+    }, 0);
   }
 
   onItemsPerPageChange() {
@@ -146,8 +165,8 @@ export class TransactionTableComponent implements OnInit {
   updateDisplayedTransactions() {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     const end = start + this.itemsPerPage;
-    this.displayedTransactions = this.transactions.slice(start, end);
-    this.totalItems = this.transactions.length;
+    this.displayedTransactions = this.filteredTransactions.slice(start, end);
+    this.totalItems = this.filteredTransactions.length;
   }
 
   // calculateTotals(): void {
@@ -161,7 +180,7 @@ export class TransactionTableComponent implements OnInit {
   //   );
   // }
 
-   calculateTotals(): void {
+  calculateTotals(): void {
     this.totals = this.filteredTransactions.reduce((acc, curr) => {
       const fees = this.calculateFeesAndProfit(curr.amount);
       return {
@@ -202,6 +221,7 @@ export class TransactionTableComponent implements OnInit {
     }, 0);
     return Number(totalCharges.toFixed(2));
   }
+  
 
   getTotalProfit(): number {
     const totalProfit = this.filteredTransactions.reduce((sum, t) => {
@@ -212,26 +232,45 @@ export class TransactionTableComponent implements OnInit {
   }
 
   initializeCharts(): void {
+    if (this.charts['transaction']) {
+      this.charts['transaction'].destroy();
+    }
+    if (this.charts['profit']) {
+      this.charts['profit'].destroy();
+    }
+  
     const transactionCtx = this.transactionChart.nativeElement.getContext('2d');
     this.charts['transaction'] = new Chart(transactionCtx, {
       type: 'line',
       data: this.getTransactionChartData(),
       options: {
         responsive: true,
+        maintainAspectRatio: true,
         plugins: {
           title: { display: true, text: 'Daily Transaction Volume' },
         },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
       },
     });
-
+  
     const profitCtx = this.profitChart.nativeElement.getContext('2d');
     this.charts['profit'] = new Chart(profitCtx, {
       type: 'bar',
       data: this.getProfitChartData(),
       options: {
         responsive: true,
+        maintainAspectRatio: true,
         plugins: {
           title: { display: true, text: 'Profit Analysis' },
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
         },
       },
     });
@@ -313,6 +352,8 @@ export class TransactionTableComponent implements OnInit {
   }
 
   applyFilters(): void {
+    if (!this.transactions) return;
+    
     this.filteredTransactions = this.transactions.filter((transaction) => {
       const matchesId = transaction.transactionRef
         .toLowerCase()
@@ -323,18 +364,25 @@ export class TransactionTableComponent implements OnInit {
       const matchesStatus =
         !this.filters.status || transaction.status === this.filters.status;
       return matchesId && matchesNumber && matchesStatus;
-      console.log(matchesId)
     });
+    
     this.calculateTotals();
+    this.updateDisplayedTransactions();
     this.updateCharts();
   }
 
  
 
   resetFilters(): void {
-    this.filters = { id: '', transactionNumber: '', status: '',  transactionType: EnumTransactionTypes.CREDIT };
+    this.filters = {
+      id: '',
+      transactionNumber: '',
+      status: '',
+      transactionType: EnumTransactionTypes.CREDIT
+    };
     this.filteredTransactions = [...this.transactions];
     this.calculateTotals();
+    this.updateDisplayedTransactions();
     this.updateCharts();
   }
 

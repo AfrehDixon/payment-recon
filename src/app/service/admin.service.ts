@@ -4,6 +4,16 @@ import { FilterChangedEvent } from 'ag-grid-community';
 import { Observable, catchError, of, take, tap } from 'rxjs';
 import API from '../constants/api.constant';
 
+export interface Admin {
+  _id?: string;
+  email: string;
+  password?: string;
+  name: string;
+  role: 'super' | 'normal';
+  blocked: boolean;
+  account_type: 'admin' | 'merchant';
+  merchantId?: string;
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -53,6 +63,66 @@ export class AdminService {
 
   validate(data: any): Observable<any> {
     return this.http.post(`${API}/otp/validate`, data).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+    getAdmins(): Observable<any> {
+    return this.http.get<any[]>(`${API}/admin/get`).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+  addAdmin(data: any): Observable<any> {
+    return this.http.post(`${API}/admin/add`, data).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+  updateAdmin(data: { id: string; data: any }): Observable<any> {
+    return this.http.put(`${API}/admin/update`, data).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+  deleteAdmin(id: string): Observable<any> {
+    return this.http.delete(`${API}/admin/delete/${id}`).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+  filterAdmins(filters: any): Observable<any> {
+    return this.http.post(`${API}/admin/filter`, filters).pipe(
       take(1),
       catchError((err) => of(err)),
       tap((res) => {
