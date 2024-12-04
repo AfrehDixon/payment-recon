@@ -191,6 +191,17 @@
   border-bottom: 1px solid #dee2e6;
 }
 
+.merchant-table td.actions {
+  width: 360px; /* Fixed width for actions column */
+  white-space: nowrap;
+  padding-right: 16px;
+}
+
+.merchant-table th:last-child {
+  width: 360px; /* Match the td width */
+}
+
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -244,8 +255,8 @@ select.form-input {
 
 .action-icons {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  gap: 4px;
+  justify-content: flex-start;
 }
 
 .icon-btn {

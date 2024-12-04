@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guard/auth.guard';
 import { MerchantTransactionsComponent } from './pages/merchants/merchant-transactions.component';
+import { MerchantDetailsComponent } from './pages/merchants/mechant-details.component';
+import { MerchantSettlementsComponent } from './pages/merchants/merchant-settlement.component';
 
 export const routes: Routes = [
   {
@@ -42,6 +44,14 @@ export const routes: Routes = [
       {
         path: 'merchants/transactions/:id',
         component: MerchantTransactionsComponent,
+      },
+      {
+        path: 'merchants/details/:id',
+        component: MerchantDetailsComponent,
+      },
+      {
+        path: 'merchants/settlements/:id',
+        component: MerchantSettlementsComponent,
       },
       // Add other child routes here
       { path: '', redirectTo: 'payment-reconciliation', pathMatch: 'full' },

@@ -119,6 +119,21 @@ interface MerchantCharges {
   momo_charge_cap: number;
 }
 
+interface Bank {
+  _id: string;
+  BankName: string;
+  BankCode: string;
+}
+
+interface SettlementRequest {
+  recipient_account_name: string;
+  recipient_account_number: string;
+  recipient_account_issuer: string;
+  customerId: string;
+  description: string;
+  amount: string | number;
+}
+
 @Component({
   selector: 'app-merchants',
   standalone: true,
@@ -150,8 +165,13 @@ export class MerchantComponent implements OnInit {
   showApproveModal = false;
   selectedMerchantForApproval: Merchant | null = null;
   showChargesModal = false;
-selectedMerchantForCharges: Merchant | null = null;
-chargesForm: FormGroup;
+  selectedMerchantForCharges: Merchant | null = null;
+  chargesForm: FormGroup;
+
+  showSettleModal = false;
+  selectedMerchantForSettle: Merchant | null = null;
+  banks: Bank[] = [];
+  settleForm: FormGroup;
 
   constructor(
     private http: HttpClient,
@@ -185,7 +205,17 @@ chargesForm: FormGroup;
       btc_charge: [1, [Validators.required, Validators.min(0)]],
       momo_cap: [10, [Validators.required, Validators.min(0)]],
       momo_min_charge: [0.7, [Validators.required, Validators.min(0)]],
-      momo_charge_cap: [0.5, [Validators.required, Validators.min(0)]]
+      momo_charge_cap: [0.5, [Validators.required, Validators.min(0)]],
+    });
+    this.settleForm = this.fb.group({
+      recipient_account_name: ['', Validators.required],
+      recipient_account_number: [
+        '',
+        [Validators.required, Validators.pattern('^[0-9]{10}$')],
+      ],
+      recipient_account_issuer: ['', Validators.required],
+      amount: ['', [Validators.required, Validators.min(1)]],
+      description: ['', Validators.required],
     });
   }
 
@@ -209,7 +239,7 @@ chargesForm: FormGroup;
           this.isLoading = false;
         })
       )
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         if (response.success) {
           this.merchants = response.data;
           this.filteredMerchants = this.merchants;
@@ -218,43 +248,100 @@ chargesForm: FormGroup;
       });
   }
 
+  loadBanks(): void {
+    this.http
+      .get<{ success: boolean; data: Bank[] }>(`${API}/hub/banks/get`)
+      .pipe(take(1))
+      .subscribe((response) => {
+        if (response?.success) {
+          this.banks = response.data;
+        }
+      });
+  }
+
+  openSettleModal(merchant: Merchant): void {
+    this.selectedMerchantForSettle = merchant;
+    this.loadBanks();
+    this.showSettleModal = true;
+  }
+
+  closeSettleModal(): void {
+    this.showSettleModal = false;
+    this.selectedMerchantForSettle = null;
+    this.settleForm.reset();
+  }
+
+  submitSettlement(): void {
+    if (this.settleForm.valid && this.selectedMerchantForSettle) {
+      this.isLoading = true;
+
+      const settlementData: SettlementRequest = {
+        ...this.settleForm.value,
+        customerId: this.selectedMerchantForSettle._id,
+      };
+
+      this.http
+        .post(`${API}/transactions/settle`, settlementData)
+        .pipe(
+          take(1),
+          catchError((error) => {
+            this.error = error.error?.message || 'Settlement failed';
+            return of(null);
+          }),
+          finalize(() => {
+            this.isLoading = false;
+          })
+        )
+        .subscribe((response) => {
+          if (response) {
+            this.closeChargesModal();
+            this.getAllMerchants();
+          }
+        });
+    }
+  }
+
   openChargesModal(merchant: Merchant): void {
     this.selectedMerchantForCharges = merchant;
     // Pre-fill form with existing values if available
     const formValues = {
-      accountType: merchant.accountType ,
-      chargeType: merchant.chargeType ,
-      disburse_gip_charge: merchant.disburse_gip_charge ,
-      disburse_gip_cap: merchant.disburse_gip_cap ,
-      disburse_nrt_charge: merchant.disburse_nrt_charge ,
-      disburse_momo_charge: merchant.disburse_momo_charge ,
-      disburse_momo_cap: merchant.disburse_momo_cap ,
-      disburse_min_cap: merchant.disburse_min_cap ,
-      momo_charge: merchant.momo_charge ,
-      card_charge: merchant.card_charge ,
-      btc_charge: merchant.btc_charge ,
-      momo_cap: merchant.momo_cap ,
-      momo_min_charge: merchant.momo_min_charge ,
-      momo_charge_cap: merchant.momo_charge_cap 
+      accountType: merchant.accountType,
+      chargeType: merchant.chargeType,
+      disburse_gip_charge: merchant.disburse_gip_charge,
+      disburse_gip_cap: merchant.disburse_gip_cap,
+      disburse_nrt_charge: merchant.disburse_nrt_charge,
+      disburse_momo_charge: merchant.disburse_momo_charge,
+      disburse_momo_cap: merchant.disburse_momo_cap,
+      disburse_min_cap: merchant.disburse_min_cap,
+      momo_charge: merchant.momo_charge,
+      card_charge: merchant.card_charge,
+      btc_charge: merchant.btc_charge,
+      momo_cap: merchant.momo_cap,
+      momo_min_charge: merchant.momo_min_charge,
+      momo_charge_cap: merchant.momo_charge_cap,
     };
-  
+
     // Update the form with merged values
     this.chargesForm.patchValue(formValues);
     this.showChargesModal = true;
   }
-  
+
   closeChargesModal(): void {
     this.showChargesModal = false;
     this.selectedMerchantForCharges = null;
     this.chargesForm.reset();
   }
-  
+
   updateCharges(): void {
     if (this.chargesForm.valid && this.selectedMerchantForCharges) {
       this.isLoading = true;
       const chargesData = this.chargesForm.value;
-  
-      this.http.put(`${API}/merchants/charges/set/${this.selectedMerchantForCharges._id}`, chargesData)
+
+      this.http
+        .put(
+          `${API}/merchants/charges/set/${this.selectedMerchantForCharges._id}`,
+          chargesData
+        )
         .pipe(
           take(1),
           catchError((error) => {
@@ -336,7 +423,7 @@ chargesForm: FormGroup;
           this.isLoading = false;
         })
       )
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         if (response?.success) {
           this.closeApproveModal();
           // Refresh merchant list
@@ -395,7 +482,7 @@ chargesForm: FormGroup;
             this.isLoading = false;
           })
         )
-        .subscribe((response) => {
+        .subscribe((response: any) => {
           if (response?.success) {
             this.getAllMerchants();
             this.closeStatusModal();

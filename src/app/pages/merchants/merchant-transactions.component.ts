@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, finalize, take, of } from 'rxjs';
 import API from '../../constants/api.constant';
+import { FormsModule } from '@angular/forms';
 
 interface Transaction {
   _id: string;
@@ -40,10 +41,17 @@ interface ReverseResponse {
   data?: any;
 }
 
+interface Filters {
+  startDate: string;
+  endDate: string;
+  phone: string;
+  name: string;
+}
+
 @Component({
   selector: 'app-merchant-transactions',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="transactions-container">
       <!-- Header Section -->
@@ -57,6 +65,50 @@ interface ReverseResponse {
         <p class="merchant-name" *ngIf="transactions.length > 0">
           {{ transactions[0].customerId.merchant_tradeName }}
         </p>
+      </div>
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-grid">
+          <div class="filter-item">
+            <label>Start Date</label>
+            <input
+              type="date"
+              [(ngModel)]="filters.startDate"
+              (change)="applyFilters()"
+            />
+          </div>
+          <div class="filter-item">
+            <label>End Date</label>
+            <input
+              type="date"
+              [(ngModel)]="filters.endDate"
+              (change)="applyFilters()"
+            />
+          </div>
+          <div class="filter-item">
+            <label>Phone Number</label>
+            <input
+              type="text"
+              [(ngModel)]="filters.phone"
+              (input)="applyFilters()"
+              placeholder="Search by phone number"
+            />
+          </div>
+          <div class="filter-item">
+            <label>Name</label>
+            <input
+              type="text"
+              [(ngModel)]="filters.name"
+              (input)="applyFilters()"
+              placeholder="Search by name"
+            />
+          </div>
+          <div class="filter-actions">
+            <button class="clear-btn" (click)="clearFilters()">
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -144,7 +196,7 @@ interface ReverseResponse {
         <div class="pagination-container">
           <div class="pagination-info">
             Showing {{ startIndex + 1 }} to {{ endIndex }} of
-            {{ transactions.length }} entries
+            {{ filteredTransactions.length }} entries
           </div>
           <div class="pagination-controls">
             <button
@@ -258,6 +310,68 @@ interface ReverseResponse {
         color: #6b7280;
         font-size: 16px;
         margin: 0;
+      }
+
+      .filters-section {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+      }
+
+      .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .filter-item label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .filter-item input {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .filter-item input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+
+      .filter-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .clear-btn {
+        padding: 8px 16px;
+        background-color: #f3f4f6;
+        border: none;
+        border-radius: 6px;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .clear-btn:hover {
+        background-color: #e5e7eb;
       }
 
       .modal {
@@ -610,6 +724,7 @@ interface ReverseResponse {
 })
 export class MerchantTransactionsComponent implements OnInit {
   transactions: Transaction[] = [];
+  filteredTransactions: Transaction[] = [];
   paginatedTransactions: Transaction[] = [];
   isLoading = false;
   error: string | null = null;
@@ -617,6 +732,13 @@ export class MerchantTransactionsComponent implements OnInit {
 
   showReverseModal = false;
   selectedTransaction: Transaction | null = null;
+
+  filters: Filters = {
+    startDate: '',
+    endDate: '',
+    phone: '',
+    name: '',
+  };
 
   // Pagination
   currentPage = 1;
@@ -633,6 +755,76 @@ export class MerchantTransactionsComponent implements OnInit {
     if (this.merchantId) {
       this.getTransactions();
     }
+  }
+
+  applyFilters(): void {
+    this.filteredTransactions = this.transactions.filter((transaction) => {
+      // Date Range Filter
+      let matchesDateRange = true;
+      if (this.filters.startDate || this.filters.endDate) {
+        const transactionDate = new Date(transaction.createdAt);
+        // Remove time portion from dates for accurate comparison
+        transactionDate.setHours(0, 0, 0, 0);
+
+        if (this.filters.startDate) {
+          const startDate = new Date(this.filters.startDate);
+          startDate.setHours(0, 0, 0, 0);
+          matchesDateRange = matchesDateRange && transactionDate >= startDate;
+        }
+
+        if (this.filters.endDate) {
+          const endDate = new Date(this.filters.endDate);
+          endDate.setHours(0, 0, 0, 0);
+          matchesDateRange = matchesDateRange && transactionDate <= endDate;
+        }
+      }
+
+      // Phone Number Filter
+      const matchesPhone =
+        !this.filters.phone ||
+        (transaction.payment_account_number &&
+          transaction.payment_account_number.includes(this.filters.phone)) ||
+        (transaction.recipient_account_number &&
+          transaction.recipient_account_number.includes(this.filters.phone));
+
+      // Name Filter - Case insensitive search
+      const searchName = this.filters.name.toLowerCase();
+      const matchesName =
+        !this.filters.name ||
+        (transaction.payment_account_name &&
+          transaction.payment_account_name
+            .toLowerCase()
+            .includes(searchName)) ||
+        (transaction.recipient_account_name &&
+          transaction.recipient_account_name
+            .toLowerCase()
+            .includes(searchName));
+
+      return matchesDateRange && matchesPhone && matchesName;
+    });
+
+    // Reset pagination to first page and update display
+    this.currentPage = 1;
+    this.updatePagination();
+
+    // Update pagination info to show filtered results count
+    this.startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    this.endIndex = Math.min(
+      this.startIndex + this.itemsPerPage,
+      this.filteredTransactions.length
+    );
+  }
+
+  clearFilters(): void {
+    this.filters = {
+      startDate: '',
+      endDate: '',
+      phone: '',
+      name: '',
+    };
+    this.filteredTransactions = [...this.transactions];
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
   getTransactions(): void {
@@ -659,9 +851,26 @@ export class MerchantTransactionsComponent implements OnInit {
       .subscribe((response) => {
         if (response?.success) {
           this.transactions = response.data;
+          this.filteredTransactions = [...this.transactions];
           this.updatePagination();
         }
       });
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(
+      this.filteredTransactions.length / this.itemsPerPage
+    );
+    this.pageNumbers = this.getPageNumbers();
+    this.startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    this.endIndex = Math.min(
+      this.startIndex + this.itemsPerPage,
+      this.filteredTransactions.length
+    );
+    this.paginatedTransactions = this.filteredTransactions.slice(
+      this.startIndex,
+      this.endIndex
+    );
   }
 
   openReverseModal(transaction: Transaction): void {
@@ -710,19 +919,19 @@ export class MerchantTransactionsComponent implements OnInit {
       });
   }
 
-  updatePagination(): void {
-    this.totalPages = Math.ceil(this.transactions.length / this.itemsPerPage);
-    this.pageNumbers = this.getPageNumbers();
-    this.startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    this.endIndex = Math.min(
-      this.startIndex + this.itemsPerPage,
-      this.transactions.length
-    );
-    this.paginatedTransactions = this.transactions.slice(
-      this.startIndex,
-      this.endIndex
-    );
-  }
+  // updatePagination(): void {
+  //   this.totalPages = Math.ceil(this.transactions.length / this.itemsPerPage);
+  //   this.pageNumbers = this.getPageNumbers();
+  //   this.startIndex = (this.currentPage - 1) * this.itemsPerPage;
+  //   this.endIndex = Math.min(
+  //     this.startIndex + this.itemsPerPage,
+  //     this.transactions.length
+  //   );
+  //   this.paginatedTransactions = this.transactions.slice(
+  //     this.startIndex,
+  //     this.endIndex
+  //   );
+  // }
 
   getPageNumbers(): number[] {
     const pageNumbers: number[] = [];
