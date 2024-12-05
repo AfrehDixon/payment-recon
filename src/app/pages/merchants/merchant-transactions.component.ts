@@ -5,7 +5,13 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, finalize, take, of } from 'rxjs';
 import API from '../../constants/api.constant';
-import { FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
 interface Transaction {
   _id: string;
@@ -27,6 +33,19 @@ interface Transaction {
   customerId: {
     merchant_tradeName: string;
   };
+}
+
+interface TransactionUpdateRequest {
+  id: string;
+  data: {
+    status: string;
+  };
+}
+
+interface TransactionUpdateResponse {
+  success: boolean;
+  message: string;
+  data?: any;
 }
 
 interface ReverseRequest {
@@ -51,7 +70,7 @@ interface Filters {
 @Component({
   selector: 'app-merchant-transactions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
     <div class="transactions-container">
       <!-- Header Section -->
@@ -121,6 +140,57 @@ interface Filters {
         {{ error }}
       </div>
 
+      <div class="modal" *ngIf="showStatusModal">
+        <div class="modal-content">
+          <h2 class="modal-title">Update Transaction Status</h2>
+
+          <form [formGroup]="statusForm" (ngSubmit)="updateTransaction()">
+            <div class="form-group">
+              <label>Select Status</label>
+              <select formControlName="status" class="form-input">
+                <option value="">Select a status...</option>
+                <option value="PAID">Paid</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
+              <div
+                class="error-message"
+                *ngIf="
+                  statusForm.get('status')?.invalid &&
+                  statusForm.get('status')?.touched
+                "
+              >
+                <span *ngIf="statusForm.get('status')?.errors?.['required']"
+                  >Status is required</span
+                >
+              </div>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" *ngIf="error">
+              {{ error }}
+            </div>
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="modal-btn cancel"
+                (click)="closeStatusModal()"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="modal-btn submit"
+                [disabled]="statusForm.invalid || isLoading"
+              >
+                {{ isLoading ? 'Updating...' : 'Update Status' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- Transactions Table -->
       <div
         class="table-container"
@@ -132,6 +202,7 @@ interface Filters {
               <th>Date</th>
               <th>Reference</th>
               <th>Description</th>
+              <th>Type</th>
               <th>Amount</th>
               <th>Charges</th>
               <th>Total</th>
@@ -146,6 +217,7 @@ interface Filters {
               <td>{{ transaction.createdAt | date : 'medium' }}</td>
               <td>{{ transaction.transactionRef }}</td>
               <td>{{ transaction.description }}</td>
+              <td>{{ transaction.transaction_type }}</td>
               <td>₵ {{ transaction.actualAmount | number : '1.2-2' }}</td>
               <td>₵ {{ transaction.charges | number : '1.2-2' }}</td>
               <td>₵ {{ transaction.amount | number : '1.2-2' }}</td>
@@ -179,14 +251,23 @@ interface Filters {
                 </span>
               </td>
               <td>
-                <button
-                  class="icon-btn"
-                  (click)="openReverseModal(transaction)"
-                  title="Reverse Transaction"
-                  [disabled]="transaction.status !== 'PAID'"
-                >
-                  <i class="fas fa-undo"></i>
-                </button>
+                <div class="action-icons">
+                  <button
+                    class="icon-btn"
+                    (click)="openReverseModal(transaction)"
+                    title="Reverse Transaction"
+                    [disabled]="transaction.status !== 'PAID'"
+                  >
+                    <i class="fas fa-undo"></i>
+                  </button>
+                  <button
+                    class="icon-btn"
+                    (click)="openStatusModal(transaction._id)"
+                    title="Update Transaction Status"
+                  >
+                    <i class="fas fa-sync-alt"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -331,6 +412,58 @@ interface Filters {
         display: flex;
         flex-direction: column;
         gap: 8px;
+      }
+
+      .action-icons {
+        display: flex;
+        gap: 4px;
+        justify-content: flex-start;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #495057;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      .form-input:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      }
+
+      select.form-input {
+        background-color: white;
+        cursor: pointer;
+      }
+
+      .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+
+      .modal-btn.submit {
+        min-width: 100px;
+      }
+
+      .modal-btn.submit:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
       }
 
       .filter-item label {
@@ -729,6 +862,9 @@ export class MerchantTransactionsComponent implements OnInit {
   isLoading = false;
   error: string | null = null;
   merchantId: string | null = null;
+  statusForm: FormGroup;
+  selectedTransactionId: string | null = null;
+  showStatusModal = false;
 
   showReverseModal = false;
   selectedTransaction: Transaction | null = null;
@@ -748,7 +884,15 @@ export class MerchantTransactionsComponent implements OnInit {
   endIndex = 0;
   pageNumbers: number[] = [];
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+  constructor(
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private fb: FormBuilder
+  ) {
+    this.statusForm = this.fb.group({
+      status: ['', Validators.required],
+    });
+  }
 
   ngOnInit(): void {
     this.merchantId = this.route.snapshot.paramMap.get('id');
@@ -813,6 +957,58 @@ export class MerchantTransactionsComponent implements OnInit {
       this.startIndex + this.itemsPerPage,
       this.filteredTransactions.length
     );
+  }
+
+  updateTransaction(): void {
+    if (this.statusForm.valid && this.selectedTransactionId) {
+      this.isLoading = true;
+      this.error = null;
+
+      const updateData: TransactionUpdateRequest = {
+        id: this.selectedTransactionId,
+        data: {
+          status: this.statusForm.get('status')?.value,
+        },
+      };
+
+      this.http
+        .put<TransactionUpdateResponse>(
+          `${API}/transactions/update`,
+          updateData
+        )
+        .pipe(
+          take(1),
+          catchError((error) => {
+            console.error('Error response:', error);
+            this.error =
+              error.error?.message || 'Failed to update transaction status';
+            return of(null);
+          }),
+          finalize(() => {
+            this.isLoading = false;
+          })
+        )
+        .subscribe((response) => {
+          if (response?.success) {
+            // Refresh the transaction list
+            this.getTransactions();
+            this.closeStatusModal();
+          } else if (response) {
+            this.error = response.message || 'Failed to update status';
+          }
+        });
+    }
+  }
+
+  openStatusModal(transactionId: string): void {
+    this.selectedTransactionId = transactionId;
+    this.showStatusModal = true;
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.selectedTransactionId = null;
+    this.statusForm.reset();
   }
 
   clearFilters(): void {

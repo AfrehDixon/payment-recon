@@ -82,9 +82,7 @@
               </button>
 
               <!-- Update Transaction -->
-              <button class="icon-btn" (click)="openStatusModal(merchant._id)" title="Update Transaction Status">
-                <i class="fas fa-sync-alt"></i>
-              </button>
+              
               <button class="icon-btn" (click)="openApproveModal(merchant)" title="Approve Merchant">
                 <i class="fas fa-check-circle"></i>
               </button>
@@ -167,7 +165,7 @@
       <form [formGroup]="settleForm" (ngSubmit)="submitSettlement()">
         <div class="form-group">
           <label>Amount (GHS)</label>
-          <input type="number" formControlName="amount" class="form-input"/>
+          <input type="text" formControlName="amount" class="form-input"/>
         </div>
   
         <div class="form-group">

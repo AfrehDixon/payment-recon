@@ -274,14 +274,17 @@ export class MerchantComponent implements OnInit {
   submitSettlement(): void {
     if (this.settleForm.valid && this.selectedMerchantForSettle) {
       this.isLoading = true;
-
+  
       const settlementData: SettlementRequest = {
         ...this.settleForm.value,
         customerId: this.selectedMerchantForSettle._id,
       };
-
+  
       this.http
-        .post(`${API}/transactions/settle`, settlementData)
+        .post<{ success: boolean; message: string; data: any }>(
+          `${API}/transactions/settle`,
+          settlementData
+        )
         .pipe(
           take(1),
           catchError((error) => {
@@ -293,13 +296,16 @@ export class MerchantComponent implements OnInit {
           })
         )
         .subscribe((response) => {
-          if (response) {
-            this.closeChargesModal();
-            this.getAllMerchants();
+          if (response?.success) {
+            const successMessage = response.data?.message || 'Settlement successful';
+            alert(successMessage); // Display the message
+            this.closeSettleModal(); // Close the modal
+            this.getAllMerchants(); // Refresh the merchants
           }
         });
     }
   }
+  
 
   openChargesModal(merchant: Merchant): void {
     this.selectedMerchantForCharges = merchant;
