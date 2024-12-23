@@ -318,6 +318,47 @@
         </div>
       </form>
     </div>
+    
+  </div>
+  <div class="modal" *ngIf="showOtpModal" style="z-index: 1100;">
+    <div class="modal-content">
+      <h2 class="modal-title">Verify OTP</h2>
+      <p class="modal-subtitle">Enter the verification code sent to {{ userEmail }}</p>
+  
+      <form [formGroup]="otpForm" (ngSubmit)="verifyOtpAndTopUp()">
+        <div class="form-group">
+          <label>OTP Code</label>
+          <input 
+            type="text" 
+            formControlName="otp" 
+            class="form-input"
+            placeholder="Enter 5-digit OTP"
+            maxlength="5"
+            pattern="[0-9]*"
+            [class.error-input]="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched || error"
+          />
+          <div class="error-message" *ngIf="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched">
+            <span *ngIf="otpForm.get('otp')?.errors?.['required']">OTP is required</span>
+            <span *ngIf="otpForm.get('otp')?.errors?.['pattern']">Please enter a valid 5-digit OTP</span>
+          </div>
+        </div>
+  
+        <!-- Error Message with improved visibility -->
+        <div class="error-message validation-error" *ngIf="error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ error }}
+        </div>
+  
+        <div class="modal-actions">
+          <button type="button" class="modal-btn cancel" (click)="closeOtpModal()" [disabled]="isLoading">
+            Cancel
+          </button>
+          <button type="submit" class="modal-btn submit" [disabled]="otpForm.invalid || isLoading">
+            {{ isLoading ? "Verifying..." : "Verify & Process" }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="modal" *ngIf="showBalanceModal">

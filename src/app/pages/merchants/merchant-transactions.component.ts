@@ -65,6 +65,7 @@ interface Filters {
   endDate: string;
   phone: string;
   name: string;
+  ref: string;
 }
 
 @Component({
@@ -120,6 +121,15 @@ interface Filters {
               [(ngModel)]="filters.name"
               (input)="applyFilters()"
               placeholder="Search by name"
+            />
+          </div>
+          <div class="filter-item">
+            <label>Reference</label>
+            <input
+              type="text"
+              [(ngModel)]="filters.ref"
+              (input)="applyFilters()"
+              placeholder="Search by transaction reference"
             />
           </div>
           <div class="filter-actions">
@@ -874,6 +884,7 @@ export class MerchantTransactionsComponent implements OnInit {
     endDate: '',
     phone: '',
     name: '',
+    ref: '',
   };
 
   // Pagination
@@ -931,6 +942,11 @@ export class MerchantTransactionsComponent implements OnInit {
         (transaction.recipient_account_number &&
           transaction.recipient_account_number.includes(this.filters.phone));
 
+          // Transaction Ref Filter
+          const matchesRef =
+          !this.filters.ref ||
+          transaction.transactionRef.includes(this.filters.ref);
+
       // Name Filter - Case insensitive search
       const searchName = this.filters.name.toLowerCase();
       const matchesName =
@@ -944,7 +960,7 @@ export class MerchantTransactionsComponent implements OnInit {
             .toLowerCase()
             .includes(searchName));
 
-      return matchesDateRange && matchesPhone && matchesName;
+      return matchesDateRange && matchesPhone && matchesName && matchesRef;
     });
 
     // Reset pagination to first page and update display
@@ -1017,6 +1033,7 @@ export class MerchantTransactionsComponent implements OnInit {
       endDate: '',
       phone: '',
       name: '',
+      ref: ''
     };
     this.filteredTransactions = [...this.transactions];
     this.currentPage = 1;

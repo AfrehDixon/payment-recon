@@ -134,6 +134,14 @@ interface SettlementRequest {
   amount: string | number;
 }
 
+interface OtpRequest {
+  email: string; // Auth user email
+}
+
+interface OtpValidateRequest {
+  email: string;  // Auth user email
+  otp: string;
+}
 @Component({
   selector: 'app-merchants',
   standalone: true,
@@ -172,6 +180,11 @@ export class MerchantComponent implements OnInit {
   selectedMerchantForSettle: Merchant | null = null;
   banks: Bank[] = [];
   settleForm: FormGroup;
+
+  showOtpModal = false;
+  otpForm: FormGroup;
+  pendingDepositData: DepositRequest | null = null;
+  userEmail: string = '';
 
   constructor(
     private http: HttpClient,
@@ -217,6 +230,12 @@ export class MerchantComponent implements OnInit {
       amount: ['', [Validators.required, Validators.min(1)]],
       description: ['', Validators.required],
     });
+    this.otpForm = this.fb.group({
+      otp: ['', [Validators.required, Validators.pattern('^[0-9]{5}$')]] // Changed to 5 digits based on example
+    });
+
+    // Get authenticated user's email (replace this with your actual auth implementation)
+    this.userEmail = this.store.selectSnapshot(state => state.auth.user.email);
   }
 
   ngOnInit(): void {
@@ -269,6 +288,148 @@ export class MerchantComponent implements OnInit {
     this.showSettleModal = false;
     this.selectedMerchantForSettle = null;
     this.settleForm.reset();
+  }
+
+  verifyOtpAndTopUp(): void {
+    if (!this.otpForm.valid || !this.pendingDepositData) return;
+  
+    const validateRequest: OtpValidateRequest = {
+      email: this.userEmail,
+      otp: this.otpForm.get('otp')?.value
+    };
+  
+    this.isLoading = true;
+    this.error = null;
+  
+    // First verify OTP
+    this.http.post<{success: boolean; message: string}>(
+      'https://lazypaygh.com/api/otp/validate', 
+      validateRequest
+    )
+    .pipe(
+      take(1),
+      catchError(error => {
+        console.log('OTP Validation Error:', error);  // Debug log
+        this.isLoading = false;
+        this.error = error.error?.message || 'Invalid OTP. Please try again.';
+        return of(null);
+      })
+    )
+    .subscribe((response) => {
+      if (!response) {
+        this.isLoading = false;
+        return;
+      }
+  
+      if (response.success) {
+        // Proceed with deposit
+        this.processDeposit();
+      } else {
+        this.isLoading = false;
+        this.error = response.message || 'OTP validation failed. Please try again.';
+      }
+    });
+  }
+  
+  // Update the requestOtp method to also handle errors better
+  requestOtp(): void {
+    if (!this.selectedMerchantId || !this.topUpForm.valid) return;
+  
+    const otpRequest: OtpRequest = {
+      email: this.userEmail
+    };
+  
+    this.isLoading = true;
+    this.error = null;
+  
+    this.http.post<{success: boolean; message: string}>(
+      'https://lazypaygh.com/api/otp/sendotp', 
+      otpRequest
+    )
+    .pipe(
+      take(1),
+      catchError(error => {
+        console.log('Send OTP Error:', error);  // Debug log
+        this.isLoading = false;
+        this.error = error.error?.message || 'Failed to send OTP. Please try again.';
+        return of(null);
+      })
+    )
+    .subscribe((response) => {
+      this.isLoading = false;
+  
+      if (!response) {
+        return;
+      }
+  
+      if (response.success) {
+        this.showOtpModal = true;
+        this.error = null;
+        this.pendingDepositData = {
+          merchantId: this.selectedMerchantId!,
+          amount: this.topUpForm.get('amount')?.value,
+          account_type: this.topUpForm.get('account_type')?.value,
+          account_name: this.topUpForm.get('account_name')?.value,
+          account_number: this.topUpForm.get('account_number')?.value,
+          account_issuer: this.topUpForm.get('account_issuer')?.value,
+        };
+      } else {
+        this.error = response.message || 'Failed to send OTP. Please try again.';
+      }
+    });
+  }
+
+  private resetLoadingState(): void {
+    this.isLoading = false;
+    this.error = null;
+  }
+
+  private processDeposit(): void {
+    if (!this.pendingDepositData) {
+      this.isLoading = false;
+      return;
+    }
+  
+    this.http.put<DepositResponse>(`${API}/accounts/deposit`, this.pendingDepositData)
+      .pipe(
+        take(1),
+        catchError(error => {
+          console.log('Deposit Error:', error);  // Debug log
+          this.isLoading = false;
+          this.error = error.error?.message || 'Failed to process deposit';
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        this.isLoading = false;
+        
+        if (!response) {
+          return;
+        }
+  
+        if (response.success) {
+          // Clear any previous errors
+          this.error = null;
+          this.closeOtpModal();
+          this.closeTopUpModal();
+          this.getAllMerchants();
+        } else {
+          this.error = response.message || 'Failed to process deposit';
+        }
+      });
+  }
+
+  closeOtpModal(): void {
+    this.showOtpModal = false;
+    this.otpForm.reset();
+    this.pendingDepositData = null;
+  }
+
+  // Modify existing submitTopUp method
+  submitTopUp(): void {
+    if (this.topUpForm.valid && this.selectedMerchantId) {
+      this.requestOtp();
+    }
   }
 
   submitSettlement(): void {
@@ -552,41 +713,41 @@ export class MerchantComponent implements OnInit {
   //   }
   // }
 
-  submitTopUp(): void {
-    if (this.topUpForm.valid && this.selectedMerchantId) {
-      this.isSubmitting = true;
+  // submitTopUp(): void {
+  //   if (this.topUpForm.valid && this.selectedMerchantId) {
+  //     this.isSubmitting = true;
 
-      const depositData: DepositRequest = {
-        merchantId: this.selectedMerchantId,
-        amount: this.topUpForm.get('amount')?.value,
-        account_type: this.topUpForm.get('account_type')?.value,
-        account_name: this.topUpForm.get('account_name')?.value,
-        account_number: this.topUpForm.get('account_number')?.value,
-        account_issuer: this.topUpForm.get('account_issuer')?.value,
-      };
+  //     const depositData: DepositRequest = {
+  //       merchantId: this.selectedMerchantId,
+  //       amount: this.topUpForm.get('amount')?.value,
+  //       account_type: this.topUpForm.get('account_type')?.value,
+  //       account_name: this.topUpForm.get('account_name')?.value,
+  //       account_number: this.topUpForm.get('account_number')?.value,
+  //       account_issuer: this.topUpForm.get('account_issuer')?.value,
+  //     };
 
-      this.http
-        .put<DepositResponse>(`${API}/accounts/deposit`, depositData)
-        .pipe(
-          take(1),
-          catchError((error) => {
-            this.error = error.error?.message || 'Failed to process deposit';
-            return of(null);
-          }),
-          finalize(() => {
-            this.isSubmitting = false;
-          })
-        )
-        .subscribe((response) => {
-          if (response?.success) {
-            // Success handling
-            this.closeTopUpModal();
-            // Optionally refresh merchants or show success message
-            this.getAllMerchants();
-          }
-        });
-    }
-  }
+  //     this.http
+  //       .put<DepositResponse>(`${API}/accounts/deposit`, depositData)
+  //       .pipe(
+  //         take(1),
+  //         catchError((error) => {
+  //           this.error = error.error?.message || 'Failed to process deposit';
+  //           return of(null);
+  //         }),
+  //         finalize(() => {
+  //           this.isSubmitting = false;
+  //         })
+  //       )
+  //       .subscribe((response) => {
+  //         if (response?.success) {
+  //           // Success handling
+  //           this.closeTopUpModal();
+  //           // Optionally refresh merchants or show success message
+  //           this.getAllMerchants();
+  //         }
+  //       });
+  //   }
+  // }
 
   checkBalance(merchantId: string): void {
     this.isLoading = true;
