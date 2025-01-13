@@ -10,7 +10,7 @@ import API from '../constants/api.constant';
 interface TransactionFilter {
   startDate: string;
   endDate: string;
-  roleId: string;
+  merchantId: string;
   status: string;
   transaction_type: string;
 }
@@ -19,7 +19,7 @@ interface TransactionFilter {
   providedIn: 'root'
 })
 export class ReconciliationService {
-  private readonly apiUrl = `${API}/transactions/role/reports`;
+  private readonly apiUrl = `${API}/transactions/reports`;
   
   constructor(private http: HttpClient) {}
 

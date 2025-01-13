@@ -1,0 +1,127 @@
+<div class="transaction-container">
+    <!-- Search Section -->
+    <div class="search-section">
+      <form [formGroup]="searchForm" (ngSubmit)="searchTransaction()">
+        <div class="search-input">
+          <input
+            type="text"
+            formControlName="transactionId"
+            placeholder="Enter Transaction ID or Phone Number"
+            class="form-input"
+          />
+          <button type="submit" [disabled]="searchForm.invalid || loading" class="search-button">
+            <span *ngIf="!loading">Search</span>
+            <div *ngIf="loading" class="spinner"></div>
+          </button>
+        </div>
+      </form>
+    </div>
+  
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message">
+      {{ error }}
+    </div>
+  
+    <!-- Transaction Details -->
+    <div *ngIf="transaction" class="transaction-details">
+      <!-- Header Section -->
+      <div class="details-header">
+        <div class="header-left">
+          <h2>Transaction Details</h2>
+          <span [class]="'status-badge ' + getStatusClass(transaction.status)">
+            {{ transaction.status }}
+          </span>
+        </div>
+        <div class="header-right">
+          <span class="transaction-ref">Ref: {{ transaction.transactionRef }}</span>
+        </div>
+      </div>
+  
+      <!-- Main Details Grid -->
+      <div class="details-grid">
+        <!-- Amount Section -->
+        <div class="detail-section">
+          <h3>Amount Details</h3>
+          <div class="detail-content">
+            <div class="detail-row">
+              <span class="label">Amount</span>
+              <span class="value">{{ formatAmount(transaction.amount) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Actual Amount</span>
+              <span class="value">{{ formatAmount(transaction.actualAmount) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Charges</span>
+              <span class="value">{{ formatAmount(transaction.charges) }}</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Payment Details -->
+        <div class="detail-section">
+          <h3>Payment Details</h3>
+          <div class="detail-content">
+            <div class="detail-row">
+              <span class="label">Account Name</span>
+              <span class="value">{{ transaction.payment_account_name }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number</span>
+              <span class="value">{{ transaction.payment_account_number }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Type</span>
+              <span class="value">{{ transaction.payment_account_type }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Issuer</span>
+              <span class="value">{{ transaction.payment_account_issuer }}</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Recipient Details -->
+        <div class="detail-section">
+          <h3>Recipient Details</h3>
+          <div class="detail-content">
+            <div class="detail-row">
+              <span class="label">Account Name</span>
+              <span class="value">{{ transaction.recipient_account_name }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number</span>
+              <span class="value">{{ transaction.recipient_account_number }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Type</span>
+              <span class="value">{{ transaction.recipient_account_type }}</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Transaction Details -->
+        <div class="detail-section">
+          <h3>Transaction Info</h3>
+          <div class="detail-content">
+            <div class="detail-row">
+              <span class="label">Type</span>
+              <span class="value">{{ transaction.transaction_type }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Channel</span>
+              <span class="value">{{ transaction.channel }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Created At</span>
+              <span class="value">{{ formatDate(transaction.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Updated</span>
+              <span class="value">{{ formatDate(transaction.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

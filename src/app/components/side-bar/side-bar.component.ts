@@ -15,6 +15,12 @@ export const Routes: RouteInfo[] = [
   { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'mechant', title: 'Mechant', class: 'false' },
   { path: 'admins', title: 'Admins', class: 'false'},
+  { path: 'reports', title: 'Reports', class: 'false' },
+  { path: 'wallets', title: 'Wallets', class: 'false' },
+  { path: 'hub', title: "Hub", class: 'false' },
+  { path: 'queues', title: "Queues", class: 'false' },
+  { path: 'transactions', title: "Transactions Filters", class: 'false' }
+
 ];
 
 @Component({
@@ -86,6 +92,12 @@ export class SidebarComponent implements OnInit {
       'mechant': 'bi bi-speedometer2',
       'payment-reconciliation': 'bi bi-bar-chart',
       'admins': 'bi bi-person',
+      'reports': 'bi bi-file-earmark-text',
+      'wallets': 'bi bi-wallet',
+      'hub': 'bi bi-house-door',
+      'queues': 'bi bi-list',
+      'transactions': 'bi bi-cash',
+
     // 'dashboard': 'bi bi-bar-chart',
     };
 

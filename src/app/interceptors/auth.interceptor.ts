@@ -24,6 +24,8 @@ export const authInterceptor: HttpInterceptorFn = (
   }
 
   const token = store.selectSnapshot(AuthState.token);
+  console.log('morad token', token);
+  
   
   if (token) {
     const clonedRequest = req.clone({

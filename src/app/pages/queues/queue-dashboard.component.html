@@ -1,0 +1,302 @@
+<!-- src/app/components/queue-dashboard/queue-dashboard.component.html -->
+<div class="dashboard-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading()" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="error-alert">
+    <div class="error-content">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+    <button (click)="clearError()" class="close-button">
+      <span class="sr-only">Close</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-section">
+    <div class="stats-grid">
+      <div *ngFor="let stat of queueStats" class="stats-card">
+        <div class="stats-header">
+          {{ stat.processorType || "Total" }} -
+          {{ stat.internalStatus || "All Status" }}
+        </div>
+        <div class="stats-content">
+          <div class="stat-item">
+            <div class="stat-label">Count</div>
+            <div class="stat-value">{{ stat.count }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Failed</div>
+            <div class="stat-value">{{ stat.failedCount }}</div>
+          </div>
+          <div class="stat-item" *ngIf="stat.avgAttempts !== null">
+            <div class="stat-label">Avg Attempts</div>
+            <div class="stat-value">{{ stat.avgAttempts.toFixed(2) }}</div>
+          </div>
+          <div class="stat-item" *ngIf="stat.processingTimeAvg !== null">
+            <div class="stat-label">Avg Processing Time</div>
+            <div class="stat-value">
+              {{ stat.processingTimeAvg.toFixed(2) }}s
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <form [formGroup]="filterForm" class="filter-grid">
+      <div class="form-group">
+        <label>Transaction Ref</label>
+        <input
+          type="text"
+          formControlName="transactionRef"
+          placeholder="Search reference..."
+        />
+      </div>
+      <div class="form-group">
+        <label>Processor Type</label>
+        <input
+          type="text"
+          formControlName="processorType"
+          placeholder="Filter by type..."
+        />
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <input
+          type="text"
+          formControlName="internalStatus"
+          placeholder="Filter by status..."
+        />
+      </div>
+      <div class="form-group">
+        <label>Processed</label>
+        <select formControlName="processed">
+          <option [ngValue]="null">All</option>
+          <option [ngValue]="true">Yes</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From Date</label>
+        <input type="date" formControlName="fromDate" />
+      </div>
+      <div class="form-group">
+        <label>To Date</label>
+        <input type="date" formControlName="toDate" />
+      </div>
+    </form>
+  </div>
+
+  <!-- Queue Items Table -->
+  <div class="table-section custom-scrollbar">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Transaction Ref</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th class="w-20 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of queueItems">
+            <td>{{ item.transactionRef || "N/A" }}</td>
+            <td>{{ getTransactionAmount(item) }}</td>
+            <td>{{ getTransactionType(item) }}</td>
+            <td>
+              <span
+                [class]="'status-badge ' + getStatusClass(item.internalStatus)"
+              >
+                {{ item.internalStatus || "N/A" }}
+              </span>
+            </td>
+            <td>{{ getFormattedDate(item.createdAt) }}</td>
+            <td class="text-center">
+              <button
+                (click)="viewItemDetails(item._id)"
+                class="action-button"
+                title="View Details"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">
+        <select
+          [value]="pageSize"
+          (change)="onPageSizeChange($event)"
+          class="page-size-select"
+        >
+          <option value="10">10 / page</option>
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+        </select>
+        <span class="mx-4">
+          <ng-container *ngIf="queueItems.length > 0; else noEntries">
+            Showing {{ startIndex }} to {{ endIndex }} of {{ totalItems }} entries
+          </ng-container>
+          <ng-template #noEntries>
+            Showing {{ queueItems.length }} entries
+          </ng-template>
+        </span>
+      </div>
+      <!-- Replace the existing pagination controls div -->
+      <div class="pagination-controls" *ngIf="totalPages > 1">
+        <button
+    class="pagination-button"
+    [disabled]="currentPage <= 1"
+    (click)="goToPage(1)"
+    title="First Page">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+  <button
+    class="pagination-button"
+    [disabled]="currentPage <= 1"
+    (click)="goToPage(currentPage - 1)"
+    title="Previous Page">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+
+  <div class="pagination-pages">
+    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+  </div>
+
+  <button
+    class="pagination-button"
+    [disabled]="currentPage >= totalPages"
+    (click)="goToPage(currentPage + 1)"
+    title="Next Page">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+  <button
+    class="pagination-button"
+    [disabled]="currentPage >= totalPages"
+    (click)="goToPage(totalPages)"
+    title="Last Page">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414zm6 0a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L14.586 10l-4.293 4.293a1 1 0 000 1.414z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+</div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div *ngIf="selectedItem" class="modal-overlay" (click)="closeModal($event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Transaction Details</h3>
+        <button (click)="selectedItem = null" class="close-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="detail-item">
+            <div class="detail-label">Transaction Reference</div>
+            <div class="detail-value">{{ selectedItem.transactionRef }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">
+              <span
+                [class]="
+                  'status-badge ' + getStatusClass(selectedItem.internalStatus)
+                "
+              >
+                {{ selectedItem.internalStatus }}
+              </span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Amount</div>
+            <div class="detail-value">
+              {{ getTransactionAmount(selectedItem) }}
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Processor Type</div>
+            <div class="detail-value">{{ selectedItem.processorType }}</div>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Callback Payload</div>
+          <pre class="detail-code">{{
+            selectedItem.callbackPayload | json
+          }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

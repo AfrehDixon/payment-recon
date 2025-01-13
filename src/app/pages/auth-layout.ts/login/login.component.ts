@@ -27,9 +27,6 @@ export class LoginComponent implements OnInit {
   formGroup: FormGroup;
   loading: boolean = false;
   triggerOtp: boolean = false;
-  otp: string = '';
-  validatedData: any;
-  validatedToken: any;
   validatedEmail: string = '';
   buttonOperation: string = 'Send Otp';
 
@@ -46,64 +43,65 @@ export class LoginComponent implements OnInit {
       otp: [null, Validators.required],
     });
   }
-
-  ngOnInit(): void {}
+  ngOnInit() {
+    this.store.select(state => state.auth).subscribe(
+      authState => console.log('Current auth state:', authState)
+    );
+  }
 
   login() {
     const form = this.formGroup;
     if (!form.get('email')?.valid || !form.get('password')?.valid) return;
+    
     const { email, password } = form.value;
     this.loading = true;
-    this.service.login({ email, password }).subscribe({
-      next: (response: { data: { email: any; }; token: any; }) => {
-        this.validatedData = response.data;
-        this.validatedEmail = this.validatedData.email;
-        this.validatedToken = response.token;
+    
+    this.service.sendotp({ email }).subscribe({
+      next: () => {
+        this.validatedEmail = email;
         this.buttonOperation = 'Log In';
         this.triggerOtp = true;
-        this.service.sendotp({ email: response.data.email }).subscribe();
       },
-      error: (err: Error) => {
-        this.dialog.open(AlertComponent, {
-          data: { title: 'Login Failed', message: (err as Error)?.message },
-        });
-        this.loading = false;
+      error: (err) => {
+        this.showError('Failed to send OTP: ' + err.message);
       },
       complete: () => {
         this.loading = false;
-      },
+      }
     });
   }
 
   confirmOtp() {
     const form = this.formGroup;
     if (!form.get('otp')?.valid) return;
-    const { otp } = form.value;
-    this.loading = true;
     
-    this.service.validate({ email: this.validatedEmail, otp }).subscribe({
-      next: () => {
+    const { email, password, otp } = form.value;
+    this.loading = true;
+
+    this.service.login({ email, password, otp }).subscribe({
+      next: (response) => {
         this.store.dispatch(
           new AdminLogin({
-            user: this.validatedData,
-            token: this.validatedToken,
+            user: response.data,
+            token: response.token
           })
         ).subscribe(() => {
           this.router.navigate(['/payment-reconciliation']);
-          
         });
       },
-      error: (err: { message: any; }) => {
-        this.loading = false;
-        this.dialog.open(AlertComponent, {
-          data: { title: 'Oops!', message: err.message },
-        });
+      error: (err) => {
+        this.showError('Login failed: ' + err.message);
       },
       complete: () => {
         this.loading = false;
-      },
+      }
     });
   }
 
-  ngOnDestroy(): void {}
+  private showError(message: string): void {
+    this.dialog.open(AlertComponent, {
+      data: { title: 'Error', message }
+    });
+    this.loading = false;
+  }
 }

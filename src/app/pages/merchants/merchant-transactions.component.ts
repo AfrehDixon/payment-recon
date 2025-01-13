@@ -30,7 +30,7 @@ interface Transaction {
   recipient_account_type: string;
   description: string;
   createdAt: string;
-  customerId: {
+  merchantId: {
     merchant_tradeName: string;
   };
 }
@@ -83,7 +83,7 @@ interface Filters {
           </button>
         </div>
         <p class="merchant-name" *ngIf="transactions.length > 0">
-          {{ transactions[0].customerId.merchant_tradeName }}
+          {{ transactions[0].merchantId.merchant_tradeName }}
         </p>
       </div>
       <!-- Filters Section -->
@@ -1045,7 +1045,7 @@ export class MerchantTransactionsComponent implements OnInit {
     this.error = null;
 
     this.http
-      .get<any>(`${API}/transactions/get/customer/${this.merchantId}`)
+      .get<any>(`${API}/transactions/merchant/${this.merchantId}`)
       .pipe(
         take(1),
         catchError((error) => {

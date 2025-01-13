@@ -42,9 +42,13 @@ interface MerchantBalanceResponse {
   success: boolean;
   message: string;
   data: {
+    accountType: string;
+    walletType: string;
+    currency: string;
+    unConfirmedBalance: number;
     _id: string;
-    walletId: string;
     merchantId: string;
+    walletId: string;
     totalBalance: number;
     blockedBalance: number;
     confirmedBalance: number;
@@ -52,9 +56,10 @@ interface MerchantBalanceResponse {
     lastBalance: number;
     type: string;
     active: boolean;
-    accountNumber: string;
     createdAt: string;
     updatedAt: string;
+    accountNumber: string;
+    availableBalance: number;
   };
 }
 
@@ -129,7 +134,7 @@ interface SettlementRequest {
   recipient_account_name: string;
   recipient_account_number: string;
   recipient_account_issuer: string;
-  customerId: string;
+  merchantId: string;
   description: string;
   amount: string | number;
 }
@@ -224,7 +229,7 @@ export class MerchantComponent implements OnInit {
       recipient_account_name: ['', Validators.required],
       recipient_account_number: [
         '',
-        [Validators.required, Validators.pattern('^[0-9]{10}$')],
+        [Validators.required],
       ],
       recipient_account_issuer: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
@@ -379,6 +384,35 @@ export class MerchantComponent implements OnInit {
     });
   }
 
+  toggleAutosettle(merchant: Merchant): void {
+    const confirmMessage = merchant.autosettle ? 
+      'Are you sure you want to disable auto-settlement?' : 
+      'Are you sure you want to enable auto-settlement?';
+  
+    if (window.confirm(confirmMessage)) {
+      this.isLoading = true;
+      this.error = null;
+  
+      this.http.put<{success: boolean; message: string}>(
+        `${API}/merchants/autosettle/toggle`,
+        { merchantId: merchant._id }
+      ).pipe(
+        take(1),
+        catchError(error => {
+          this.error = error.error?.message || 'Failed to toggle auto-settlement';
+          return of(null);
+        }),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      ).subscribe(response => {
+        if (response?.success) {
+          this.getAllMerchants(); // Refresh the merchants list
+        }
+      });
+    }
+  }
+
   private resetLoadingState(): void {
     this.isLoading = false;
     this.error = null;
@@ -438,7 +472,7 @@ export class MerchantComponent implements OnInit {
   
       const settlementData: SettlementRequest = {
         ...this.settleForm.value,
-        customerId: this.selectedMerchantForSettle._id,
+        merchantId: this.selectedMerchantForSettle._id,
       };
   
       this.http
@@ -754,7 +788,7 @@ export class MerchantComponent implements OnInit {
     this.error = null;
 
     this.http
-      .get<MerchantBalanceResponse>(`${API}/accounts/customer/${merchantId}`)
+      .get<MerchantBalanceResponse>(`${API}/accounts/merchant/${merchantId}`)
       .pipe(
         take(1),
         catchError((error) => {

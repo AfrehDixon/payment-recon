@@ -72,7 +72,7 @@ export class PaymentReconciliationComponent implements OnInit {
     const payload = {
       startDate: this.formGroup.get('startDate')?.value,
       endDate: this.formGroup.get('endDate')?.value,
-      roleId: this.formGroup.get('roleId')?.value,
+      merchantId: this.formGroup.get('roleId')?.value,
       status: this.formGroup.get('status')?.value,
       transaction_type: this.formGroup.get('transaction_type')?.value,
     };

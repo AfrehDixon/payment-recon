@@ -83,12 +83,12 @@ import { ApiTransaction } from '../types';
                     {{transaction?.currency}} {{transaction?.charges | number:'1.2-2'}}
                   </span>
                 </div>
-                <div class="grid grid-cols-2">
+                <!-- <div class="grid grid-cols-2">
                   <span class="text-sm text-gray-500">Profit</span>
                   <span class="text-sm font-medium text-blue-600">
                     {{transaction?.currency}} {{transaction?.profitEarned | number:'1.2-2'}}
                   </span>
-                </div>
+                </div> -->
               </div>
             </div>
           </div>

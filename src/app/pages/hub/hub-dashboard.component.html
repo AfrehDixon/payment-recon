@@ -1,0 +1,321 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="search-section">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search apps by name, mode, or operations..." 
+            (keyup)="searchApps($event)"
+            class="search-input"
+          >
+        </div>
+        <div class="apps-count" *ngIf="!loading">
+          {{ filteredApps.length }} application{{ filteredApps.length !== 1 ? 's' : '' }}
+        </div>
+      </div>
+      <button class="create-btn" (click)="showCreateModal = true">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+          <path d="M12 5v14m-7-7h14"/>
+        </svg>
+        Create New App
+      </button>
+    </div>
+  </div>
+    
+      <!-- Create App Modal -->
+      <div class="modal" *ngIf="showCreateModal">
+        <div class="modal-content">
+          <h2>Create New App</h2>
+          <div class="form-group">
+            <label>App Name:</label>
+            <input type="text" [(ngModel)]="newAppName" placeholder="Enter app name">
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="showCreateModal = false">Cancel</button>
+            <button class="btn btn-primary" (click)="createNewApp()" [disabled]="loading">
+              <span class="spinner" *ngIf="loading"></span>
+              Create App
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!--Update details Modal-->
+      <div class="modal-overlay" *ngIf="showUpdateModal" (click)="closeModal($event)">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Update Wallet Details</h2>
+            <button class="close-button" (click)="showUpdateModal = false">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+      
+          <form [formGroup]="updateForm" (ngSubmit)="updateWalletDetails()" class="modal-form">
+            <div class="form-group">
+              <label for="name">App Name</label>
+              <input 
+                type="text" 
+                id="name"
+                formControlName="name"
+                placeholder="Enter USSD shortcode (e.g., *123#)"
+                class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="ussdCode">USSD Shortcode</label>
+              <input 
+                type="text" 
+                id="ussdCode"
+                formControlName="ussdShortCode"
+                placeholder="Enter USSD shortcode (e.g., *123#)"
+                class="form-input">
+            </div>
+      
+            <div class="form-group">
+              <label for="ussdUrl">USSD Payment URL</label>
+              <input 
+                type="text" 
+                id="ussdUrl"
+                formControlName="ussdPaymentCallbackUrl"
+                placeholder="Enter callback URL for USSD payments"
+                class="form-input">
+            </div>
+      
+            <div class="form-group checkbox-group">
+              <label for="ussdEnabled" class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  id="ussdEnabled"
+                  formControlName="ussdEnabled"
+                  class="checkbox-input">
+                <span class="checkbox-text">Enable USSD Payments</span>
+              </label>
+            </div>
+      
+            <div class="modal-footer">
+              <button 
+                type="button" 
+                class="btn btn-secondary" 
+                (click)="showUpdateModal = false">
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary" 
+                [disabled]="updateForm.invalid || loading">
+                <span *ngIf="!loading">Update Settings</span>
+                <span *ngIf="loading" class="loader"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- <div class="cards-container">
+        <div class="card" *ngIf="balance">
+          <div class="card-front">
+            <div class="card-header">
+              <div class="chip-container">
+                <div class="chip"></div>
+                <div class="contactless">
+                  <svg viewBox="0 0 24 24" class="contactless-icon">
+                    <path
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <span class="card-type">{{balance.walletType}}</span>
+            </div>
+      
+            <div class="card-body">
+              <div class="card-number">
+                <span>{{formatAccountNumber(balance.accountNumber)}}</span>
+              </div>
+              <div class="balance-info">
+                <div class="balance-primary">
+                  <span class="label">Available Balance</span>
+                  <span class="amount">{{formatCurrency(balance.availableBalance)}}</span>
+                </div>
+              </div>
+      
+              <div class="balance-details">
+                <div class="detail-item">
+                  <span class="label">Confirmed Balance</span>
+                  <span class="value">{{formatCurrency(balance.confirmedBalance)}}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Blocked Balance</span>
+                  <span class="value">{{formatCurrency(balance.blockedBalance)}}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Unconfirmed Balance</span>
+                  <span class="value">{{formatCurrency(balance.unConfirmedBalance)}}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Total Balance</span>
+                  <span class="value">{{formatCurrency(balance.totalBalance)}}</span>
+                </div>
+              </div>
+            </div>
+      
+            <div class="card-footer">
+              <div class="merchant-info">
+                <span class="merchant-name">{{merchantname}}</span>
+                <span class="account-type">{{balance.accountType}}</span>
+              </div>
+              <div class="card-badges">
+                <span class="currency-badge">{{balance.currency}}</span>
+                <span class="status-badge" [class.active]="balance.active">
+                  {{balance.active ? 'ACTIVE' : 'INACTIVE'}}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> -->
+      
+  
+    <!-- Apps Section -->
+    <div class="apps-section">
+      <div class="section-header">
+        <h2>Applications</h2>
+        <!-- <button class="create-app-btn" (click)="showCreateModal = true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14"/>
+          </svg>
+          New Application
+        </button> -->
+      </div>
+    
+      <div class="loading-container" *ngIf="loading">
+        <div class="loader">
+          <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+          </svg>
+        </div>
+        <span>Loading applications...</span>
+      </div>
+    
+      <div class="error-banner" *ngIf="error">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4m0 4h.01"/>
+        </svg>
+        <span>{{error}}</span>
+      </div>
+    
+      <div class="apps-grid">
+        <div class="app-card" *ngFor="let app of filteredApps">
+          <div class="app-card-header">
+            <div class="app-info">
+              <h3>{{app.name}}</h3>
+              <span class="mode-badge" [class.live]="app.mode === 'live'">
+                {{app.mode}}
+              </span>
+            </div>
+            <div class="header-actions">
+              <button class="icon-button" (click)="openUpdateModal(app)" title="Update Details">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+    
+          <div class="app-card-content">
+            <div class="api-key-section">
+              <h3>{{app.merchantId?.merchant_tradeName}}</h3> <br>
+
+              <div class="section-label">API Key</div>
+              <div class="api-key-container">
+                <code class="api-key" [class.masked]="!isKeyVisible[app._id]">
+                  {{ isKeyVisible[app._id] ? app.apikey : '•'.repeat(24) }}
+                </code>
+                <div class="api-key-actions">
+                  <button 
+                    class="icon-button" 
+                    (click)="toggleKeyVisibility(app._id)" 
+                    [title]="isKeyVisible[app._id] ? 'Hide API Key' : 'Show API Key'">
+                    <svg *ngIf="!isKeyVisible[app._id]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg *ngIf="isKeyVisible[app._id]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  </button>
+                  <button 
+                    class="icon-button"
+                    [disabled]="!isKeyVisible[app._id]"
+                    (click)="copyApiKey(app.apikey)"
+                    title="Copy API Key">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+    
+            <div class="operations-section">
+              <div class="section-label">Operations</div>
+              <div class="operations-list">
+                <span class="operation-tag" *ngFor="let op of app.operations">
+                  {{op}}
+                </span>
+              </div>
+            </div>
+    
+            <div class="app-meta">
+              <div class="meta-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v10l4.5 4.5"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span>Created {{formatDate(app.createdAt)}}</span>
+              </div>
+              <div class="meta-item ussd-status">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                  <path d="M12 18h.01"/>
+                </svg>
+                <span>USSD Payments:</span>
+                <div class="status-indicator" [class.enabled]="app.ussdEnabled">
+                  {{ app.ussdEnabled ? 'Enabled' : 'Disabled' }}
+                </div>
+              </div>
+            </div>
+          </div>
+    
+          <div class="app-card-actions">
+            <button class="action-button primary" (click)="generateNewKey(app._id, merchantId)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 2v6h-6"/>
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+                <path d="M3 22v-6h6"/>
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+              </svg>
+              Generate New Key
+            </button>
+            <button class="action-button secondary" (click)="viewTransactions(app._id)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              View Transactions
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

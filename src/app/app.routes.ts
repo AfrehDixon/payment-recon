@@ -3,6 +3,12 @@ import { AuthGuard } from './guard/auth.guard';
 import { MerchantTransactionsComponent } from './pages/merchants/merchant-transactions.component';
 import { MerchantDetailsComponent } from './pages/merchants/mechant-details.component';
 import { MerchantSettlementsComponent } from './pages/merchants/merchant-settlement.component';
+import { ReportsComponent } from './pages/merchants-reports/merchants-reports.component';
+import { MerchantWalletsComponent } from './pages/merchant-wallets/merchant-wallets.component';
+import { HubDashboardComponent } from './pages/hub/hub-dashboard.component';
+import { QueueDashboardComponent } from './pages/queues/queue-dashboard.component';
+import { TransactionModalComponent } from './components/transactoin.modal';
+import { TransactionDetailsComponent } from './pages/transactions/transaction-details.component';
 
 export const routes: Routes = [
   {
@@ -52,6 +58,26 @@ export const routes: Routes = [
       {
         path: 'merchants/settlements/:id',
         component: MerchantSettlementsComponent,
+      },
+      {
+        path: 'reports',
+        component: ReportsComponent,
+      },
+      {
+        path: 'wallets',
+        component: MerchantWalletsComponent,
+      },
+      {
+        path: 'hub',
+        component: HubDashboardComponent,
+      },
+      {
+        path: 'queues',
+        component: QueueDashboardComponent,
+      },
+      {
+        path: 'transactions',
+        component: TransactionDetailsComponent,
       },
       // Add other child routes here
       { path: '', redirectTo: 'payment-reconciliation', pathMatch: 'full' },

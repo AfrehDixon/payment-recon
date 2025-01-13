@@ -82,7 +82,7 @@
               </button>
 
               <!-- Update Transaction -->
-              
+
               <button class="icon-btn" (click)="openApproveModal(merchant)" title="Approve Merchant">
                 <i class="fas fa-check-circle"></i>
               </button>
@@ -98,6 +98,11 @@
               </button>
               <button class="icon-btn" (click)="openSettleModal(merchant)" title="Settle Account">
                 <i class="fas fa-money-bill-wave"></i>
+              </button>
+              <button class="icon-btn" (click)="toggleAutosettle(merchant)"
+                [title]="merchant.autosettle ? 'Disable Auto-settlement' : 'Enable Auto-settlement'">
+                <i class="fas" [class.fa-toggle-on]="merchant.autosettle" [class.fa-toggle-off]="!merchant.autosettle"
+                  [style.color]="merchant.autosettle ? '#4CAF50' : '#999'"></i>
               </button>
             </div>
           </td>
@@ -161,23 +166,23 @@
       <p *ngIf="selectedMerchantForSettle">
         {{ selectedMerchantForSettle.merchant_tradeName }}
       </p>
-  
+
       <form [formGroup]="settleForm" (ngSubmit)="submitSettlement()">
         <div class="form-group">
           <label>Amount (GHS)</label>
-          <input type="text" formControlName="amount" class="form-input"/>
+          <input type="text" formControlName="amount" class="form-input" />
         </div>
-  
+
         <div class="form-group">
           <label>Account Name</label>
-          <input type="text" formControlName="recipient_account_name" class="form-input"/>
+          <input type="text" formControlName="recipient_account_name" class="form-input" />
         </div>
-  
+
         <div class="form-group">
           <label>Account Number</label>
-          <input type="text" formControlName="recipient_account_number" class="form-input"/>
+          <input type="text" formControlName="recipient_account_number" class="form-input" />
         </div>
-  
+
         <div class="form-group">
           <label>Bank</label>
           <select formControlName="recipient_account_issuer" class="form-input">
@@ -187,14 +192,14 @@
             </option>
           </select>
         </div>
-  
+
         <div class="form-group">
           <label>Description</label>
-          <input type="text" formControlName="description" class="form-input"/>
+          <input type="text" formControlName="description" class="form-input" />
         </div>
-  
+
         <div class="error-message" *ngIf="error">{{ error }}</div>
-  
+
         <div class="modal-actions">
           <button type="button" class="modal-btn cancel" (click)="closeSettleModal()">
             Cancel
@@ -318,37 +323,31 @@
         </div>
       </form>
     </div>
-    
+
   </div>
   <div class="modal" *ngIf="showOtpModal" style="z-index: 1100;">
     <div class="modal-content">
       <h2 class="modal-title">Verify OTP</h2>
       <p class="modal-subtitle">Enter the verification code sent to {{ userEmail }}</p>
-  
+
       <form [formGroup]="otpForm" (ngSubmit)="verifyOtpAndTopUp()">
         <div class="form-group">
           <label>OTP Code</label>
-          <input 
-            type="text" 
-            formControlName="otp" 
-            class="form-input"
-            placeholder="Enter 5-digit OTP"
-            maxlength="5"
+          <input type="text" formControlName="otp" class="form-input" placeholder="Enter 5-digit OTP" maxlength="5"
             pattern="[0-9]*"
-            [class.error-input]="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched || error"
-          />
+            [class.error-input]="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched || error" />
           <div class="error-message" *ngIf="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched">
             <span *ngIf="otpForm.get('otp')?.errors?.['required']">OTP is required</span>
             <span *ngIf="otpForm.get('otp')?.errors?.['pattern']">Please enter a valid 5-digit OTP</span>
           </div>
         </div>
-  
+
         <!-- Error Message with improved visibility -->
         <div class="error-message validation-error" *ngIf="error">
           <i class="fas fa-exclamation-circle"></i>
           {{ error }}
         </div>
-  
+
         <div class="modal-actions">
           <button type="button" class="modal-btn cancel" (click)="closeOtpModal()" [disabled]="isLoading">
             Cancel
@@ -364,17 +363,17 @@
   <div class="modal" *ngIf="showBalanceModal">
     <div class="modal-content">
       <h2 class="modal-title">Account Balance Details</h2>
-
+  
       <!-- Loading State -->
       <div *ngIf="isLoading" class="modal-loading">
         <div class="spinner"></div>
       </div>
-
+  
       <!-- Error State -->
       <div *ngIf="error" class="error-message">
         {{ error }}
       </div>
-
+  
       <!-- Balance Data -->
       <div *ngIf="merchantBalance && !isLoading" class="balance-details">
         <div class="balance-grid">
@@ -382,46 +381,66 @@
             <label>Account Number</label>
             <span>{{ merchantBalance.accountNumber }}</span>
           </div>
-
+  
           <div class="balance-item">
             <label>Wallet ID</label>
             <span>{{ merchantBalance.walletId }}</span>
           </div>
-
-          <div class="balance-item highlight">
-            <label>Total Balance</label>
-            <span>₵ {{ merchantBalance.totalBalance | number : "1.2-2" }}</span>
-          </div>
-
-          <div class="balance-item">
-            <label>Confirmed Balance</label>
-            <span>₵ {{ merchantBalance.confirmedBalance | number : "1.2-2" }}</span>
-          </div>
-
-          <div class="balance-item">
-            <label>Blocked Balance</label>
-            <span>₵ {{ merchantBalance.blockedBalance | number : "1.2-2" }}</span>
-          </div>
-
+  
           <div class="balance-item">
             <label>Account Type</label>
-            <span class="capitalize">{{ merchantBalance.type }}</span>
+            <span class="capitalize">{{ merchantBalance.accountType }}</span>
           </div>
-
+  
+          <div class="balance-item">
+            <label>Wallet Type</label>
+            <span class="capitalize">{{ merchantBalance.walletType }}</span>
+          </div>
+  
+          <div class="balance-item">
+            <label>Currency</label>
+            <span>{{ merchantBalance.currency }}</span>
+          </div>
+  
+          <div class="balance-item highlight">
+            <label>Total Balance</label>
+            <span>{{ merchantBalance.currency }} {{ merchantBalance.totalBalance | number : "1.2-2" }}</span>
+          </div>
+  
+          <div class="balance-item">
+            <label>Available Balance</label>
+            <span>{{ merchantBalance.currency }} {{ merchantBalance.availableBalance | number : "1.2-2" }}</span>
+          </div>
+  
+          <div class="balance-item">
+            <label>Unconfirmed Balance</label>
+            <span>{{ merchantBalance.currency }} {{ merchantBalance.unConfirmedBalance | number : "1.2-2" }}</span>
+          </div>
+  
+          <div class="balance-item">
+            <label>Blocked Balance</label>
+            <span>{{ merchantBalance.currency }} {{ merchantBalance.blockedBalance | number : "1.2-2" }}</span>
+          </div>
+  
+          <div class="balance-item">
+            <label>Last Balance</label>
+            <span>{{ merchantBalance.currency }} {{ merchantBalance.lastBalance | number : "1.2-2" }}</span>
+          </div>
+  
           <div class="balance-item">
             <label>Status</label>
             <span class="status-badge" [class.active]="merchantBalance.active">
               {{ merchantBalance.active ? "Active" : "Inactive" }}
             </span>
           </div>
-
+  
           <div class="balance-item">
             <label>Last Updated</label>
             <span>{{ merchantBalance.updatedAt | date : "medium" }}</span>
           </div>
         </div>
       </div>
-
+  
       <div class="modal-actions">
         <button class="modal-btn" (click)="closeBalanceModal()">Close</button>
       </div>

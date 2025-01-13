@@ -1,0 +1,312 @@
+<div class="merchant-wallets-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>Merchant Wallets</h1>
+      <div class="search-section">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search wallets by account number, type, merchant..." 
+            (keyup)="searchWallets($event)"
+            class="search-input"
+          >
+        </div>
+        <div class="wallets-count" *ngIf="!loading">
+          {{ filteredWallets.length }} wallet{{ filteredWallets.length !== 1 ? 's' : '' }}
+        </div>
+      </div>
+      <button class="add-wallet-btn" (click)="openAddWalletModal()">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+          <path d="M12 5v14m-7-7h14"/>
+        </svg>
+        Add New Wallet
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="close-btn" (click)="error = null">&times;</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <span>Loading wallets...</span>
+  </div>
+
+  <!-- Wallets Grid -->
+  <div class="wallets-grid" *ngIf="!loading && wallets.length > 0">
+    <div class="wallet-card" *ngFor="let wallet of filteredWallets">
+      <div class="wallet-header">
+        <span class="wallet-id">ID: {{ wallet.walletId }}</span>
+        <span [class]="'status-badge ' + getStatusClass(wallet.accountType)">
+          {{ wallet.accountType }}
+        </span>
+      </div>
+
+      <div class="wallet-body">
+        <div class="merchant-info">
+          <h3>{{ getMerchantName(wallet) }}</h3>
+          <p>{{ getMerchantEmail(wallet) }}</p>
+        </div>
+
+        <div class="balance-info">
+          <div class="balance-item">
+            <label>Available Balance</label>
+            <span class="amount">{{
+              formatCurrency(wallet.availableBalance)
+            }}</span>
+          </div>
+          <div class="balance-item">
+            <label>Total Balance</label>
+            <span class="amount">{{
+              formatCurrency(wallet.totalBalance ?? 0)
+            }}</span>
+          </div>
+          <div class="balance-item">
+            <label>Blocked Balance</label>
+            <span class="amount">{{
+              formatCurrency(wallet.blockedBalance)
+            }}</span>
+          </div>
+        </div>
+
+        <div class="wallet-details">
+          <span class="detail-item">
+            <strong>Type:</strong> {{ wallet.walletType }}
+          </span>
+          <span class="detail-item">
+            <strong>Currency:</strong> {{ wallet.currency }}
+          </span>
+          <span class="detail-item">
+            <strong>Account:</strong> {{ wallet.accountNumber }}
+          </span>
+        </div>
+
+        <div class="wallet-actions">
+          <button class="update-btn" (click)="openUpdateWalletModal(wallet)">
+            Update Wallet
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && wallets.length === 0" class="empty-state">
+    <i class="fas fa-wallet"></i>
+    <p>No wallets found. Click "Add New Wallet" to create one.</p>
+  </div>
+
+  <!-- Add Wallet Modal -->
+  <div class="modal" *ngIf="showAddWalletModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Wallet</h2>
+        <button class="close-btn" (click)="closeAddWalletModal()">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="addWalletForm" (ngSubmit)="submitAddWallet()">
+        <div class="form-group">
+          <label for="merchantId">Select Merchant</label>
+          <select
+            id="merchantId"
+            formControlName="merchantId"
+            class="merchant-select"
+          >
+            <option value="">Select a merchant</option>
+            <option *ngFor="let merchant of merchants" [value]="merchant._id">
+              {{ merchant.address }} ({{ merchant.type }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="walletType">Wallet Type</label>
+          <select id="walletType" formControlName="walletType">
+            <option value="FIAT">FIAT</option>
+            <option value="BTC">BTC</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="currency">Currency</label>
+          <select id="currency" formControlName="currency">
+            <option value="GHS">GHS</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="initialBalance">Initial Balance</label>
+          <input
+            id="initialBalance"
+            type="number"
+            formControlName="initialBalance"
+            placeholder="Enter initial balance"
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeAddWalletModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="!addWalletForm.valid || loading"
+          >
+            Add Wallet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Wallet Modal -->
+  <div class="modal" *ngIf="showUpdateWalletModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Update Wallet</h2>
+        <button class="close-btn" (click)="closeUpdateWalletModal()">
+          &times;
+        </button>
+      </div>
+
+      <div *ngIf="selectedWallet" class="wallet-info">
+        <div class="info-row">
+          <span class="label">Wallet ID:</span>
+          <span class="value">{{ selectedWallet.walletId }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Account Number:</span>
+          <span class="value">{{ selectedWallet.accountNumber }}</span>
+        </div>
+      </div>
+
+      <form [formGroup]="updateWalletForm" (ngSubmit)="submitUpdateWallet()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="accountType">Account Type</label>
+            <select id="accountType" formControlName="accountType">
+              <option value="CLOSED">CLOSED</option>
+              <option value="OPEN">OPEN</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="walletType">Wallet Type</label>
+            <select id="walletType" formControlName="walletType">
+              <option value="FIAT">FIAT</option>
+              <option value="BTC">BTC</option>
+              <!-- Add other wallet types if needed -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="currency">Currency</label>
+            <select id="currency" formControlName="currency">
+              <option value="GHS">GHS</option>
+              <option value="USD">USD</option>
+              <!-- Add other currencies if needed -->
+            </select>
+          </div>
+
+          <!-- <div class="form-group">
+            <label for="balance">Balance</label>
+            <input 
+              id="balance"
+              type="number"
+              formControlName="balance"
+              placeholder="Enter balance"
+            >
+          </div> -->
+
+          <div class="form-group">
+            <label for="blockedBalance">Blocked Balance</label>
+            <input
+              id="blockedBalance"
+              type="number"
+              formControlName="blockedBalance"
+              placeholder="Enter blocked balance"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirmedBalance">Confirmed Balance</label>
+            <input
+              id="confirmedBalance"
+              type="number"
+              formControlName="confirmedBalance"
+              placeholder="Enter confirmed balance"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="unConfirmedBalance">Unconfirmed Balance</label>
+            <input
+              id="unConfirmedBalance"
+              type="number"
+              formControlName="unConfirmedBalance"
+              placeholder="Enter total unconfirmed balance"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="availableBalance">Available Balance</label>
+            <input
+              id="availableBalance"
+              type="number"
+              formControlName="availableBalance"
+              placeholder="Enter available balance"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="active">Status</label>
+            <select id="active" formControlName="active">
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <p class="warning-text">
+            * Please ensure all balance updates are accurate before submitting
+          </p>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="cancel-btn"
+              (click)="closeUpdateWalletModal()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="submit-btn"
+              [disabled]="!updateWalletForm.valid || loading"
+            >
+              Update Wallet
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
