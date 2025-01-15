@@ -10,6 +10,7 @@ interface Merchant {
   _id: string;
   accountType: string;
   address: string;
+  merchant_tradeName: string;
   type: string;
   active: boolean;
 }
