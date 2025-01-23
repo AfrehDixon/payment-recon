@@ -19,7 +19,9 @@ export const Routes: RouteInfo[] = [
   { path: 'wallets', title: 'Wallets', class: 'false' },
   { path: 'hub', title: "Hub", class: 'false' },
   { path: 'queues', title: "Queues", class: 'false' },
-  { path: 'transactions', title: "Transactions Filters", class: 'false' }
+  { path: 'transactions', title: "Transactions Filters", class: 'false' },
+  { path: 'settings', title: "System Settings", class: 'false' },
+
 
 ];
 
@@ -97,6 +99,7 @@ export class SidebarComponent implements OnInit {
       'hub': 'bi bi-house-door',
       'queues': 'bi bi-list',
       'transactions': 'bi bi-cash',
+      'settings': 'bi bi-gear',
 
     // 'dashboard': 'bi bi-bar-chart',
     };

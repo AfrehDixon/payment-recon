@@ -40,7 +40,7 @@ export class PaymentReconciliationComponent implements OnInit {
     private store: Store,
     private reconciliationService: ReconciliationService
   ) {
-    this.userId = this.store.selectSnapshot(AuthState.user)._id;
+    this.userId = this.store.selectSnapshot(AuthState.user).merchantId._id;
     this.setupFormGroup();
     this.setupDateRange();
   }
@@ -48,12 +48,12 @@ export class PaymentReconciliationComponent implements OnInit {
   private setupFormGroup() {
     this.formGroup = new FormGroup({
       startDate: new FormControl(
-        new Date(new Date().valueOf() - 1000 * 60 * 60 * 24).toLocaleDateString('en-CA')
+        new Date(new Date().valueOf() - 1000 * 60 * 60 * 24 * 7).toLocaleDateString('en-CA')
       ),
       endDate: new FormControl(new Date().toLocaleDateString('en-CA')),
       roleId: new FormControl(this.userId, Validators.required),
       status: new FormControl(EnumPaymentTransactionStatus.PAID, Validators.required),
-      transaction_type: new FormControl(EnumTransactionTypes.DEBIT, Validators.required),
+      transaction_type: new FormControl(EnumTransactionTypes.CREDIT, Validators.required),
     });
   }
 

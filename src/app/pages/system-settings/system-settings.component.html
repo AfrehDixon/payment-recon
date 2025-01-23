@@ -1,0 +1,94 @@
+<div class="settings-container">
+    <div class="header">
+      <h1>System Settings</h1>
+      <div class="header-actions">
+        <button (click)="toggleEdit()" class="edit-btn" [disabled]="loading" *ngIf="!isEditing">
+          <i class="fas fa-edit"></i>
+          Edit
+        </button>
+        <button (click)="fetchSettings()" class="refresh-btn" [disabled]="loading">
+          <i class="fas fa-sync-alt" [class.rotating]="loading"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  
+    <div *ngIf="loading" class="loader-container">
+      <div class="loader"></div>
+      <p>Loading system settings...</p>
+    </div>
+  
+    <div *ngIf="error" class="error-message">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+  
+    <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
+      <div class="setting-card">
+        <h3>Pricing</h3>
+        <div class="setting-item">
+          <label>Markup Rate:</label>
+          <ng-container *ngIf="!isEditing">
+            <span>{{ settings.markupRate }}%</span>
+          </ng-container>
+          <input *ngIf="isEditing" type="number" formControlName="markupRate" class="form-input">
+        </div>
+        <div class="setting-item">
+          <label>Exchange Rate:</label>
+          <span>{{ settings.exchangeRate }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Transaction Fee:</label>
+          <ng-container *ngIf="!isEditing">
+            <span>${{ settings.transactionFee }}</span>
+          </ng-container>
+          <input *ngIf="isEditing" type="number" formControlName="transactionFee" class="form-input">
+        </div>
+      </div>
+  
+      <div class="setting-card">
+        <h3>Transaction Limits</h3>
+        <div class="setting-item">
+          <label>Minimum Amount:</label>
+          <ng-container *ngIf="!isEditing">
+            <span>${{ settings.minTransactionAmount }}</span>
+          </ng-container>
+          <input *ngIf="isEditing" type="number" formControlName="minTransactionAmount" class="form-input">
+        </div>
+        <div class="setting-item">
+          <label>Maximum Amount:</label>
+          <ng-container *ngIf="!isEditing">
+            <span>${{ settings.maxTransactionAmount }}</span>
+          </ng-container>
+          <input *ngIf="isEditing" type="number" formControlName="maxTransactionAmount" class="form-input">
+        </div>
+      </div>
+  
+      <div class="setting-card">
+        <h3>Features</h3>
+        <div class="setting-item">
+            <label>Dynamic Pricing:</label>
+            <ng-container *ngIf="!isEditing">
+              <span [class.enabled]="settings.dynamicPricingEnabled">
+                {{ settings.dynamicPricingEnabled ? 'Enabled' : 'Disabled' }}
+              </span>
+            </ng-container>
+            <div *ngIf="isEditing" class="toggle-switch">
+              <input type="checkbox" id="dynamicPricing" formControlName="dynamicPricingEnabled">
+              <label for="dynamicPricing"></label>
+            </div>
+          </div>
+        <div class="setting-item">
+          <label>Last Updated:</label>
+          <span>{{ formatDate(settings.lastUpdated) }}</span>
+        </div>
+      </div>
+  
+      <div class="actions" *ngIf="isEditing">
+        <button type="button" class="cancel-btn" (click)="toggleEdit()">Cancel</button>
+        <button type="submit" class="save-btn" (click)="saveSettings()" [disabled]="settingsForm.invalid || loading">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>

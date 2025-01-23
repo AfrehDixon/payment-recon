@@ -9,6 +9,7 @@ import { HubDashboardComponent } from './pages/hub/hub-dashboard.component';
 import { QueueDashboardComponent } from './pages/queues/queue-dashboard.component';
 import { TransactionModalComponent } from './components/transactoin.modal';
 import { TransactionDetailsComponent } from './pages/transactions/transaction-details.component';
+import { SystemSettingsComponent } from './pages/system-settings/system-settings.component';
 
 export const routes: Routes = [
   {
@@ -78,6 +79,10 @@ export const routes: Routes = [
       {
         path: 'transactions',
         component: TransactionDetailsComponent,
+      },
+      {
+        path: 'settings',
+        component: SystemSettingsComponent,
       },
       // Add other child routes here
       { path: '', redirectTo: 'payment-reconciliation', pathMatch: 'full' },
