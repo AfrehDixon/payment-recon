@@ -63,7 +63,7 @@ export class AuthState {
       user: payload.user,
       token: payload.token,
     });
-    dispatch(new Navigate(['payment-reconciliation']));
+    // dispatch(new Navigate(['merchant']));
   }
 
   @Action(Logout)

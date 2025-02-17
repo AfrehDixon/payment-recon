@@ -12,7 +12,6 @@ export interface RouteInfo {
 }
 
 export const Routes: RouteInfo[] = [
-  { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'mechant', title: 'Mechant', class: 'false' },
   { path: 'admins', title: 'Admins', class: 'false'},
   { path: 'reports', title: 'Reports', class: 'false' },
@@ -20,6 +19,9 @@ export const Routes: RouteInfo[] = [
   { path: 'hub', title: "Hub", class: 'false' },
   { path: 'queues', title: "Queues", class: 'false' },
   { path: 'transactions', title: "Transactions Filters", class: 'false' },
+  { path: 'operator-config', title: "Operator Config", class: 'false' },
+  { path: 'charge-config', title: "Charge Config", class: 'false' },
+  { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'settings', title: "System Settings", class: 'false' },
 
 
@@ -100,6 +102,8 @@ export class SidebarComponent implements OnInit {
       'queues': 'bi bi-list',
       'transactions': 'bi bi-cash',
       'settings': 'bi bi-gear',
+      'operator-config': 'bi bi-tools',
+      'charge-config': 'bi bi-calculator',
 
     // 'dashboard': 'bi bi-bar-chart',
     };
