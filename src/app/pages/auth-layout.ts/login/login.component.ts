@@ -20,8 +20,8 @@ import { Router } from '@angular/router';
     CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInputModule
-  ]
+    MatInputModule,
+  ],
 })
 export class LoginComponent implements OnInit {
   formGroup: FormGroup;
@@ -29,6 +29,7 @@ export class LoginComponent implements OnInit {
   triggerOtp: boolean = false;
   validatedEmail: string = '';
   buttonOperation: string = 'Send Otp';
+  showPassword: boolean = false;
 
   constructor(
     private service: AdminService,
@@ -43,19 +44,18 @@ export class LoginComponent implements OnInit {
       otp: [null, Validators.required],
     });
   }
-  ngOnInit() {
-    this.store.select(state => state.auth).subscribe(
-      authState => console.log('Current auth state:', authState)
-    );
+  ngOnInit(): void {
+    // Initialize any necessary data or state here
+    this.formGroup.reset();
   }
 
   login() {
     const form = this.formGroup;
     if (!form.get('email')?.valid || !form.get('password')?.valid) return;
-    
+
     const { email, password } = form.value;
     this.loading = true;
-    
+
     this.service.sendotp({ email }).subscribe({
       next: () => {
         this.validatedEmail = email;
@@ -67,40 +67,65 @@ export class LoginComponent implements OnInit {
       },
       complete: () => {
         this.loading = false;
-      }
+      },
     });
+  }
+
+  togglePasswordVisibility(event: Event): void {
+    // Prevent form submission if button is inside form
+    event.preventDefault();
+
+    // Toggle password visibility
+    this.showPassword = !this.showPassword;
+
+    // Get the password input element
+    const passwordInput = document.getElementById(
+      'password'
+    ) as HTMLInputElement;
+
+    // Maintain focus on the input field for better UX
+    if (passwordInput) {
+      const cursorPosition = passwordInput.selectionStart;
+      passwordInput.focus();
+      // Wait for next tick to set cursor position
+      setTimeout(() => {
+        passwordInput.setSelectionRange(cursorPosition, cursorPosition);
+      }, 0);
+    }
   }
 
   confirmOtp() {
     const form = this.formGroup;
     if (!form.get('otp')?.valid) return;
-    
+
     const { email, password, otp } = form.value;
     this.loading = true;
 
     this.service.login({ email, password, otp }).subscribe({
       next: (response) => {
-        this.store.dispatch(
-          new AdminLogin({
-            user: response.data,
-            token: response.token
-          })
-        ).subscribe(() => {
-          this.router.navigate(['/payment-reconciliation']);
-        });
+        this.store
+          .dispatch(
+            new AdminLogin({
+              user: response.data,
+              token: response.token,
+            })
+          )
+          .subscribe(() => {
+            this.router.navigate(['/mechant']);
+          });
       },
       error: (err) => {
         this.showError('Login failed: ' + err.message);
       },
       complete: () => {
         this.loading = false;
-      }
+      },
     });
   }
 
   private showError(message: string): void {
     this.dialog.open(AlertComponent, {
-      data: { title: 'Error', message }
+      data: { title: 'Error', message },
     });
     this.loading = false;
   }

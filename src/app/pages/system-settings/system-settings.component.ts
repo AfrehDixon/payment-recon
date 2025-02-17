@@ -68,6 +68,13 @@ export class SystemSettingsComponent implements OnInit {
       });
   }
 
+  formatCurrency(value: number): string {
+    return value?.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
     if (!this.isEditing) {

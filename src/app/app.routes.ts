@@ -10,6 +10,8 @@ import { QueueDashboardComponent } from './pages/queues/queue-dashboard.componen
 import { TransactionModalComponent } from './components/transactoin.modal';
 import { TransactionDetailsComponent } from './pages/transactions/transaction-details.component';
 import { SystemSettingsComponent } from './pages/system-settings/system-settings.component';
+import { OperatorConfigComponent } from './pages/operator-config/operator-config.component';
+import { ChargeConfigComponent } from './pages/charge-config/charge-config.component';
 
 export const routes: Routes = [
   {
@@ -84,9 +86,17 @@ export const routes: Routes = [
         path: 'settings',
         component: SystemSettingsComponent,
       },
+      {
+        path: 'operator-config',
+        component: OperatorConfigComponent,
+      },
+      {
+        path: 'charge-config',
+        component: ChargeConfigComponent,
+      },
       // Add other child routes here
-      { path: '', redirectTo: 'payment-reconciliation', pathMatch: 'full' },
+      { path: '', redirectTo: 'mechant', pathMatch: 'full' },
     ],
   },
-  { path: '**', redirectTo: 'payment-reconciliation' },
+  { path: '**', redirectTo: 'mechant' },
 ];

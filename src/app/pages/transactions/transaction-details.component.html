@@ -1,127 +1,302 @@
-<div class="transaction-container">
-    <!-- Search Section -->
-    <div class="search-section">
-      <form [formGroup]="searchForm" (ngSubmit)="searchTransaction()">
-        <div class="search-input">
+<!-- transaction-details.component.html -->
+<div class="min-h-screen py-8 bg-gray-50 transaction-container">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Stats Overview -->
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div
+        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-gray-500">
+              Total Transactions
+            </div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">
+              {{ transactions.length }}
+            </div>
+          </div>
+          <div class="p-3 bg-blue-50 rounded-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 text-blue-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-gray-500">Total Amount</div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">
+              {{ calculateTotal("amount") | currency : "GHS" }}
+            </div>
+          </div>
+          <div class="p-3 bg-green-50 rounded-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 text-green-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-gray-500">Total Charges</div>
+            <div class="text-2xl font-bold text-red-600 mt-1">
+              {{ calculateTotal("charges") | currency : "GHS" }}
+            </div>
+          </div>
+          <div class="p-3 bg-red-50 rounded-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+      <div class="p-4">
+        <form
+          [formGroup]="searchForm"
+          (ngSubmit)="searchTransaction()"
+          class="flex gap-3"
+        >
           <input
             type="text"
             formControlName="transactionId"
-            placeholder="Enter Transaction ID or Phone Number"
-            class="form-input"
+            class="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Search by Transaction ID or Phone Number"
           />
-          <button type="submit" [disabled]="searchForm.invalid || loading" class="search-button">
+          <button
+            type="submit"
+            [disabled]="searchForm.invalid || loading"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
             <span *ngIf="!loading">Search</span>
-            <div *ngIf="loading" class="spinner"></div>
+            <svg
+              *ngIf="loading"
+              class="animate-spin h-5 w-5"
+              viewBox="0 0 24 24"
+            >
+              <!-- Loading spinner path -->
+            </svg>
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  
-    <!-- Error Message -->
-    <div *ngIf="error" class="error-message">
-      {{ error }}
-    </div>
-  
-    <!-- Transaction Details -->
-    <div *ngIf="transaction" class="transaction-details">
-      <!-- Header Section -->
-      <div class="details-header">
-        <div class="header-left">
-          <h2>Transaction Details</h2>
-          <span [class]="'status-badge ' + getStatusClass(transaction.status)">
-            {{ transaction.status }}
-          </span>
+
+    <!-- Transaction List -->
+    <div *ngIf="transactions.length > 0" class="space-y-4">
+      <div
+        *ngFor="let tx of transactions"
+        class="bg-white rounded-lg shadow-sm overflow-hidden"
+      >
+        <!-- Header -->
+        <div
+          class="p-4 border-b border-gray-100 flex justify-between items-center"
+        >
+          <div class="flex items-center space-x-4">
+            <span [class]="getStatusClass(tx.status)">{{ tx.status }}</span>
+            <span class="text-gray-500">{{ tx.transactionRef }}</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-600">{{ formatDate(tx.createdAt) }}</span>
+            <button
+              (click)="toggleDetails(tx)"
+              class="p-2 hover:bg-gray-100 rounded-full"
+            >
+              <i class="material-icons">{{
+                tx.showDetails ? "expand_less" : "expand_more"
+              }}</i>
+            </button>
+          </div>
         </div>
-        <div class="header-right">
-          <span class="transaction-ref">Ref: {{ transaction.transactionRef }}</span>
+
+        <!-- Quick View -->
+        <div class="p-4 bg-gray-50 border-b border-gray-100">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div class="text-sm text-gray-500">Amount</div>
+              <div class="font-medium">{{ formatAmount(tx.amount) }}</div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">From</div>
+              <div class="font-medium">{{ tx.payment_account_name }}</div>
+              <div class="text-sm text-gray-500">
+                {{ tx.payment_account_number }}
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">To</div>
+              <div class="font-medium">{{ tx.recipient_account_name }}</div>
+              <div class="text-sm text-gray-500">
+                {{ tx.recipient_account_number }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed View -->
+        <div *ngIf="tx.showDetails" class="p-4">
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4">
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-medium mb-3">Amount Details</h3>
+                <div class="space-y-2">
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Amount</span>
+                    <span class="font-medium">{{
+                      formatAmount(tx.amount)
+                    }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Charges</span>
+                    <span class="font-medium text-red-600">{{
+                      formatAmount(tx.charges)
+                    }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Net Amount</span>
+                    <span class="font-medium text-green-600">{{
+                      formatAmount(tx.actualAmount)
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-medium mb-3">Payment Details</h3>
+                <div class="space-y-2">
+                  <div class="grid grid-cols-2 gap-2">
+                    <span class="text-gray-500">Name</span>
+                    <span class="font-medium">{{
+                      tx.payment_account_name
+                    }}</span>
+                    <span class="text-gray-500">Number</span>
+                    <span class="font-medium">{{
+                      tx.payment_account_number
+                    }}</span>
+                    <span class="text-gray-500">Type</span>
+                    <span class="font-medium">{{
+                      tx.payment_account_type
+                    }}</span>
+                    <span class="text-gray-500">Issuer</span>
+                    <span class="font-medium">{{
+                      tx.payment_account_issuer
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-4">
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-medium mb-3">Recipient Details</h3>
+                <div class="space-y-2">
+                  <div class="grid grid-cols-2 gap-2">
+                    <span class="text-gray-500">Name</span>
+                    <span class="font-medium">{{
+                      tx.recipient_account_name
+                    }}</span>
+                    <span class="text-gray-500">Number</span>
+                    <span class="font-medium">{{
+                      tx.recipient_account_number
+                    }}</span>
+                    <span class="text-gray-500">Type</span>
+                    <span class="font-medium">{{
+                      tx.recipient_account_type
+                    }}</span>
+                    <span class="text-gray-500">Issuer</span>
+                    <span class="font-medium">{{
+                      tx.recipient_account_issuer
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-medium mb-3">Additional Info</h3>
+                <div class="space-y-2">
+                  <div class="grid grid-cols-2 gap-2">
+                    <span class="text-gray-500">Type</span>
+                    <span class="font-medium">{{ tx.transaction_type }}</span>
+                    <span class="text-gray-500">Channel</span>
+                    <span class="font-medium">{{ tx.channel }}</span>
+                    <span class="text-gray-500">Created</span>
+                    <span class="font-medium">{{
+                      formatDate(tx.createdAt)
+                    }}</span>
+                    <span class="text-gray-500">Updated</span>
+                    <span class="font-medium">{{
+                      formatDate(tx.updatedAt)
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-  
-      <!-- Main Details Grid -->
-      <div class="details-grid">
-        <!-- Amount Section -->
-        <div class="detail-section">
-          <h3>Amount Details</h3>
-          <div class="detail-content">
-            <div class="detail-row">
-              <span class="label">Amount</span>
-              <span class="value">{{ formatAmount(transaction.amount) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Actual Amount</span>
-              <span class="value">{{ formatAmount(transaction.actualAmount) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Charges</span>
-              <span class="value">{{ formatAmount(transaction.charges) }}</span>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Payment Details -->
-        <div class="detail-section">
-          <h3>Payment Details</h3>
-          <div class="detail-content">
-            <div class="detail-row">
-              <span class="label">Account Name</span>
-              <span class="value">{{ transaction.payment_account_name }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Account Number</span>
-              <span class="value">{{ transaction.payment_account_number }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Account Type</span>
-              <span class="value">{{ transaction.payment_account_type }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Issuer</span>
-              <span class="value">{{ transaction.payment_account_issuer }}</span>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Recipient Details -->
-        <div class="detail-section">
-          <h3>Recipient Details</h3>
-          <div class="detail-content">
-            <div class="detail-row">
-              <span class="label">Account Name</span>
-              <span class="value">{{ transaction.recipient_account_name }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Account Number</span>
-              <span class="value">{{ transaction.recipient_account_number }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Account Type</span>
-              <span class="value">{{ transaction.recipient_account_type }}</span>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Transaction Details -->
-        <div class="detail-section">
-          <h3>Transaction Info</h3>
-          <div class="detail-content">
-            <div class="detail-row">
-              <span class="label">Type</span>
-              <span class="value">{{ transaction.transaction_type }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Channel</span>
-              <span class="value">{{ transaction.channel }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Created At</span>
-              <span class="value">{{ formatDate(transaction.createdAt) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Last Updated</span>
-              <span class="value">{{ formatDate(transaction.updatedAt) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    </div>
+
+    <!-- No Results -->
+    <div
+      *ngIf="!transactions.length && !loading"
+      class="text-center py-12 bg-white rounded-lg shadow-sm"
+    >
+      <p class="text-gray-500">
+        No transactions found. Please try a different search.
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center py-12">
+      <div
+        class="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"
+      ></div>
     </div>
   </div>
+</div>

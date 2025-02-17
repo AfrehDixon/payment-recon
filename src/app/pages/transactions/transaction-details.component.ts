@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './transaction.interface';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-transaction-details',
@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 })
 export class TransactionDetailsComponent {
   searchForm: FormGroup;
-  transaction: Transaction | null = null;
+  transactions: (Transaction & { showDetails?: boolean })[] = [];
   loading = false;
   error: string | null = null;
 
@@ -32,14 +32,17 @@ export class TransactionDetailsComponent {
     const id = this.searchForm.get('transactionId')?.value;
     this.loading = true;
     this.error = null;
-    this.transaction = null;
+    this.transactions = [];
 
     this.transactionService.getTransactionById(id).subscribe({
       next: (response) => {
         if (response.data && response.data.length > 0) {
-          this.transaction = response.data[0];
+          this.transactions = response.data.map(tx => ({
+            ...tx,
+            showDetails: false
+          }));
         } else {
-          this.error = 'No transaction found';
+          this.error = 'No transactions found';
         }
         this.loading = false;
       },
@@ -50,17 +53,21 @@ export class TransactionDetailsComponent {
     });
   }
 
+  toggleDetails(transaction: Transaction & { showDetails?: boolean }) {
+    transaction.showDetails = !transaction.showDetails;
+  }
+
   getStatusClass(status: string): string {
-    switch (status.toUpperCase()) {
-      case 'PAID':
-        return 'status-success';
-      case 'PENDING':
-        return 'status-pending';
-      case 'FAILED':
-        return 'status-failed';
-      default:
-        return 'status-default';
-    }
+    const baseClasses = 'px-3 py-1 text-sm font-medium rounded-full';
+    return `${baseClasses} ${
+      status === 'PAID' ? 'bg-green-100 text-green-800' :
+      status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-red-100 text-red-800'
+    }`;
+  }
+
+  calculateTotal(field: keyof Pick<Transaction, 'amount' | 'charges' | 'actualAmount'>): number {
+    return this.transactions.reduce((sum, tx) => sum + (tx[field] || 0), 0);
   }
 
   formatAmount(amount: number): string {

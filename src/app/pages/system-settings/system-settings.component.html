@@ -35,7 +35,7 @@
         </div>
         <div class="setting-item">
           <label>Exchange Rate:</label>
-          <span>{{ settings.exchangeRate }}</span>
+          <span>${{ formatCurrency(settings.exchangeRate) }}</span>
         </div>
         <div class="setting-item">
           <label>Transaction Fee:</label>
@@ -81,6 +81,34 @@
         <div class="setting-item">
           <label>Last Updated:</label>
           <span>{{ formatDate(settings.lastUpdated) }}</span>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Market Rates</h3>
+        <div class="setting-item">
+          <label>Market Price:</label>
+          <span>${{ formatCurrency(settings.marketPrice) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>BTC Network Fee:</label>
+          <span>${{ settings.btcNetworkFee }} USD</span>
+        </div>
+        <div class="setting-item">
+          <label>BTC Exchange Rate:</label>
+          <span>${{ formatCurrency(settings.btcExchangeRate) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>USDT Exchange Rate:</label>
+          <span>${{ settings.usdtExchangeRate }}</span>
+        </div>
+        <div class="setting-item">
+          <label>SOL Exchange Rate:</label>
+          <span>${{ formatCurrency(settings.solExchangeRate) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>GHS Exchange Rate:</label>
+          <span>GHS{{(settings.ghsExchangeRate) }}</span>
         </div>
       </div>
   
