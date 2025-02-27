@@ -52,7 +52,7 @@ export interface TransactionTotals {
 }
 
 export interface ApiTransaction {
-  [x: string]: any;
+  [x: string]: any; // This allows for dynamic properties, but avoid using it if possible
   _id: string;
   actualAmount: number;
   amount: number;
@@ -72,8 +72,22 @@ export interface ApiTransaction {
   description: string;
   recipient_account_issuer_name: string;
   recipient_account_name: string;
+  channel: string;
   recipient_account_number: string;
   recipient_account_type: string;
+  walletType?: string; // Optional property
+  operator?: string; // Optional property
+  callbackUrl?: string; // Optional property
+  callbackResponse?: { // Optional property
+    Message?: string;
+  };
+  payload?: { // Optional property
+    ref?: string;
+    data?: {
+      ServiceName?: string;
+    };
+  };
+  reason?: string; // Optional property
 }
 
 export interface SetAllMerchants{

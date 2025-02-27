@@ -395,7 +395,7 @@ export class MerchantSettlementsComponent implements OnInit {
     this.error = null;
 
     this.http.get<{success: boolean; message: string; data: Settlement[]}>(
-      `${API}/settlements/get/${this.merchantId}`
+      `${API}/settlements/merchant/${this.merchantId}`
     ).pipe(
       take(1),
       catchError(error => {

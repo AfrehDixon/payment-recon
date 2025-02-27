@@ -1,0 +1,637 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" style="margin-left: 180px;">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Monthly Transaction Statistics</h1>
+        <p class="mt-2 text-sm text-gray-600">View transaction performance metrics for a complete month</p>
+      </div>
+      
+      <!-- Error/Success Alerts -->
+      <div *ngIf="error" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700">{{ error }}</p>
+          </div>
+          <button class="ml-auto" (click)="error = null">
+            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Filter Section -->
+      <div class="mb-8 bg-white border rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-medium text-gray-900">Filter Options</h2>
+        </div>
+        <div class="p-6">
+          <form [formGroup]="filterForm" class="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
+            <div>
+              <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+              <input 
+                type="month" 
+                id="date" 
+                formControlName="date"
+                class="block w-full border-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
+              >
+              <p class="mt-1 text-xs text-gray-500">Select any month to view statistics</p>
+            </div>
+            
+            <div>
+              <label for="merchantId" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+              <select 
+                id="merchantId" 
+                formControlName="merchantId"
+                class="block w-full border-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="">All Merchants</option>
+                <option *ngFor="let merchant of merchants" [value]="merchant._id">
+                  {{ merchant.merchant_tradeName }}
+                </option>
+              </select>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Loading Indicator -->
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <svg class="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="ml-3 text-lg text-gray-700">Loading statistics...</span>
+      </div>
+      
+      <!-- Statistics Content -->
+      <div *ngIf="!isLoading && statistics">
+        <!-- Month Info Banner -->
+        <div class="bg-indigo-50 rounded-lg p-4 mb-8 border border-indigo-100">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center">
+              <svg class="h-6 w-6 text-indigo-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <span class="text-indigo-700 font-medium">{{ getMonthName() }}</span>
+                <p class="text-sm text-indigo-600 mt-1">{{ formatDate(statistics.periodStart) }} to {{ formatDate(statistics.periodEnd) }}</p>
+              </div>
+            </div>
+            <span class="mt-2 md:mt-0 px-3 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800">
+              {{ filterForm.value.merchantId ? getMerchantName(filterForm.value.merchantId) : 'All Merchants' }}
+            </span>
+          </div>
+        </div>
+      
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          <!-- Total Transactions Card -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Transactions</dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ statistics.totalTransactions }}
+                      </div>
+                      <div class="ml-2 text-sm text-gray-500">
+                        for the month
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Successful Transactions Card -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Successful</dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ statistics.successfulTransactions }}
+                      </div>
+                      <div class="ml-2 flex items-baseline text-sm font-semibold">
+                        <span class="text-green-600">
+                          {{ statistics.successRate.toFixed(2) }}%
+                        </span>
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Failed Transactions Card -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Failed</dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ statistics.failedTransactions }}
+                      </div>
+                      <div class="ml-2 flex items-baseline text-sm font-semibold">
+                        <span class="text-red-600">
+                          {{ getPercentage(statistics.failedTransactions, statistics.totalTransactions) }}
+                        </span>
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Transaction Volume Card -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Transaction Volume</dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ formatCurrency(statistics.totalAmount) }}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Additional Metrics Cards -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          <!-- Pending Transactions -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Pending Transactions</dt>
+                    <dd class="flex items-baseline">
+                      <div class="text-2xl font-semibold text-gray-900">
+                        {{ statistics.pendingTransactions }}
+                      </div>
+                      <div class="ml-2 flex items-baseline text-sm font-semibold">
+                        <span class="text-blue-600">
+                          {{ getPercentage(statistics.pendingTransactions, statistics.totalTransactions) }}
+                        </span>
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Total Charges -->
+          <div class="bg-white overflow-hidden border rounded-lg">
+            <div class="p-5">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                  <svg class="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Total Charges</dt>
+                  <dd class="flex items-baseline">
+                    <div class="text-2xl font-semibold text-gray-900">
+                      {{ formatCurrency(statistics.totalCharges) }}
+                    </div>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Total Profit -->
+        <div class="bg-white overflow-hidden border rounded-lg">
+          <div class="p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                <svg class="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z" />
+                </svg>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Total Profit</dt>
+                  <dd class="flex items-baseline">
+                    <div class="text-2xl font-semibold text-gray-900">
+                      {{ formatCurrency(statistics.totalProfit) }}
+                    </div>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Monthly Calendar View -->
+      <div *ngIf="calendarWeeks && calendarWeeks.length > 0" class="bg-white border rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Monthly Calendar View
+          </h3>
+          <p class="mt-1 text-sm text-gray-500">Hover over days to see detailed transaction counts</p>
+        </div>
+        <div class="p-6">
+          <!-- Calendar Grid -->
+          <div class="grid grid-cols-7 gap-2 mb-2 text-center">
+            <div class="text-xs font-medium text-gray-500 uppercase">Mon</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Tue</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Wed</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Thu</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Fri</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Sat</div>
+            <div class="text-xs font-medium text-gray-500 uppercase">Sun</div>
+          </div>
+          
+          <div class="border-t border-gray-200 pt-4">
+            <!-- Calendar Weeks -->
+            <div *ngFor="let week of calendarWeeks" class="grid grid-cols-7 gap-2 mb-2">
+              <div *ngFor="let day of week" 
+                   [ngClass]="{'opacity-50': !day.isCurrentMonth, 'hover:bg-gray-50 cursor-pointer': day.isCurrentMonth}" 
+                   class="border rounded-lg relative p-2 h-24 transition-all">
+                <div class="text-right">
+                  <span [ngClass]="{'text-gray-900 font-medium': day.isCurrentMonth, 'text-gray-400': !day.isCurrentMonth}" 
+                        class="text-sm">{{ day.day }}</span>
+                </div>
+                
+                <div *ngIf="day.stats" class="mt-1">
+                  <div class="flex items-center mb-1">
+                    <div [ngClass]="getSuccessRateColor(day.stats.successfulTransactions / day.stats.totalTransactions * 100)" 
+                         class="w-2 h-2 rounded-full mr-1"></div>
+                    <span class="text-xs text-gray-600">{{ day.stats.totalTransactions }} tx</span>
+                  </div>
+                  <div class="text-xs text-gray-500">{{ formatCurrency(day.stats.totalAmount) }}</div>
+                </div>
+                
+                <!-- Hover tooltip -->
+                <div *ngIf="day.stats" class="hidden group-hover:block absolute top-0 left-0 mt-2 ml-2 bg-white border-lg rounded-md p-2 z-10 text-xs">
+                  <div class="font-medium mb-1">{{ formatDate(day.dateString) }}</div>
+                  <div class="grid grid-cols-2 gap-1">
+                    <div>Total:</div><div>{{ day.stats.totalTransactions }}</div>
+                    <div>Success:</div><div>{{ day.stats.successfulTransactions }}</div>
+                    <div>Failed:</div><div>{{ day.stats.failedTransactions }}</div>
+                    <div>Volume:</div><div>{{ formatCurrency(day.stats.totalAmount) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Legend -->
+          <div class="mt-4 border-t border-gray-200 pt-4">
+            <div class="text-xs font-medium text-gray-700 mb-2">Success Rate</div>
+            <div class="flex items-center">
+              <span class="w-4 h-4 bg-red-500 rounded-sm mr-1"></span>
+              <span class="text-xs text-gray-600 mr-3">0-30%</span>
+              
+              <span class="w-4 h-4 bg-red-300 rounded-sm mr-1"></span>
+              <span class="text-xs text-gray-600 mr-3">30-50%</span>
+              
+              <span class="w-4 h-4 bg-yellow-300 rounded-sm mr-1"></span>
+              <span class="text-xs text-gray-600 mr-3">50-70%</span>
+              
+              <span class="w-4 h-4 bg-green-300 rounded-sm mr-1"></span>
+              <span class="text-xs text-gray-600 mr-3">70-90%</span>
+              
+              <span class="w-4 h-4 bg-green-500 rounded-sm mr-1"></span>
+              <span class="text-xs text-gray-600">90-100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top 5 Days -->
+      <div *ngIf="dailyBreakdown" class="bg-white border rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Top 5 Days by Transaction Volume
+          </h3>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div *ngFor="let day of getTopDays(5); let i = index" class="bg-gray-50 rounded-lg p-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="text-lg font-semibold text-gray-900">{{ formatDate(day.date) }}</div>
+                  <div class="text-sm text-gray-500">Day {{ i+1 }}</div>
+                </div>
+                <div class="bg-blue-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                  {{ i+1 }}
+                </div>
+              </div>
+              
+              <div class="mt-4 space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Transactions:</span>
+                  <span class="text-sm font-medium text-gray-900">{{ day.totalTransactions }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Volume:</span>
+                  <span class="text-sm font-medium text-gray-900">{{ formatCurrency(day.totalAmount) }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Success Rate:</span>
+                  <span class="text-sm font-medium" [ngClass]="{'text-green-600': day.successfulTransactions / day.totalTransactions >= 0.7, 'text-yellow-600': day.successfulTransactions / day.totalTransactions >= 0.5 && day.successfulTransactions / day.totalTransactions < 0.7, 'text-red-600': day.successfulTransactions / day.totalTransactions < 0.5}">
+                    {{ (day.successfulTransactions / day.totalTransactions * 100).toFixed(1) }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Weekly Breakdown -->
+      <div *ngIf="weeklyBreakdown" class="bg-white border rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Weekly Breakdown
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Week
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Transactions
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Successful
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Failed
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Volume
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Success Rate
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let weekKey of getSortedKeys(weeklyBreakdown); let i = index">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Week {{ i+1 }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ weeklyBreakdown[weekKey].totalTransactions }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ weeklyBreakdown[weekKey].successfulTransactions }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ weeklyBreakdown[weekKey].failedTransactions }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ formatCurrency(weeklyBreakdown[weekKey].totalAmount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <span [ngClass]="{
+                    'px-2 py-1 text-xs font-medium rounded-full': true,
+                    'bg-green-100 text-green-800': weeklyBreakdown[weekKey].successfulTransactions / weeklyBreakdown[weekKey].totalTransactions >= 0.7,
+                    'bg-yellow-100 text-yellow-800': weeklyBreakdown[weekKey].successfulTransactions / weeklyBreakdown[weekKey].totalTransactions >= 0.5 && weeklyBreakdown[weekKey].successfulTransactions / weeklyBreakdown[weekKey].totalTransactions < 0.7,
+                    'bg-red-100 text-red-800': weeklyBreakdown[weekKey].successfulTransactions / weeklyBreakdown[weekKey].totalTransactions < 0.5
+                  }">
+                    {{ (weeklyBreakdown[weekKey].successfulTransactions / weeklyBreakdown[weekKey].totalTransactions * 100).toFixed(1) }}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Transaction Types -->
+      <div class="bg-white border rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Transaction Types
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Count
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Volume
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Successful
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Failed
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let type of getObjectKeys(transactionTypes)">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ type }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ transactionTypes[type].count }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ formatCurrency(transactionTypes[type].amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ transactionTypes[type].successful }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ transactionTypes[type].failed }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="bg-white border rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Payment Methods
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Method
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Count
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Volume
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Success Rate
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let method of getObjectKeys(paymentMethodStats)">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ method | titlecase }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ paymentMethodStats[method].count }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ formatCurrency(paymentMethodStats[method].amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <span [ngClass]="{
+                    'px-2 py-1 text-xs font-medium rounded-full': true,
+                    'bg-green-100 text-green-800': paymentMethodStats[method].successful / paymentMethodStats[method].count >= 0.7,
+                    'bg-yellow-100 text-yellow-800': paymentMethodStats[method].successful / paymentMethodStats[method].count >= 0.5 && paymentMethodStats[method].successful / paymentMethodStats[method].count < 0.7,
+                    'bg-red-100 text-red-800': paymentMethodStats[method].successful / paymentMethodStats[method].count < 0.5
+                  }">
+                    {{ paymentMethodStats[method].count ? (paymentMethodStats[method].successful / paymentMethodStats[method].count * 100).toFixed(1) + '%' : 'N/A' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Operator Stats -->
+      <div class="bg-white border rounded-lg overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Operators Performance
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Operator
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Count
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Volume
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Successful
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Failed
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Success Rate
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let operator of getObjectKeys(operatorStats)">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ operator }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ operatorStats[operator].count }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ formatCurrency(operatorStats[operator].amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ operatorStats[operator].successful }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                  {{ operatorStats[operator].failed }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <span [ngClass]="{
+                    'px-2 py-1 text-xs font-medium rounded-full': true,
+                    'bg-green-100 text-green-800': operatorStats[operator].successful / operatorStats[operator].count >= 0.7,
+                    'bg-yellow-100 text-yellow-800': operatorStats[operator].successful / operatorStats[operator].count >= 0.5 && operatorStats[operator].successful / operatorStats[operator].count < 0.7,
+                    'bg-red-100 text-red-800': operatorStats[operator].successful / operatorStats[operator].count < 0.5
+                  }">
+                    {{ operatorStats[operator].count ? (operatorStats[operator].successful / operatorStats[operator].count * 100).toFixed(1) + '%' : 'N/A' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- No Data State -->
+    <div *ngIf="!isLoading && !statistics && !error" class="bg-white border rounded-lg p-8 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No statistics available</h3>
+      <p class="mt-1 text-sm text-gray-500">
+        Try selecting a different month or merchant.
+      </p>
+    </div>
+  </div>
+</div>

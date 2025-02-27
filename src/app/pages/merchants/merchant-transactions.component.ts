@@ -68,6 +68,17 @@ interface Filters {
   ref: string;
 }
 
+interface CompleteRequest {
+  id: string;
+  status: string;
+}
+
+interface CompleteResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
 @Component({
   selector: 'app-merchant-transactions',
   standalone: true,
@@ -277,6 +288,14 @@ interface Filters {
                   >
                     <i class="fas fa-sync-alt"></i>
                   </button>
+                  <button
+                    class="icon-btn"
+                    (click)="completeTransaction(transaction)"
+                    title="Complete Transaction"
+                    [disabled]="transaction.status === 'COMPLETED'"
+                  >
+                    <i class="fas fa-check"></i>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -409,6 +428,39 @@ interface Filters {
         padding: 16px;
         margin-bottom: 24px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        background-color: transparent;
+
+        i {
+          font-size: 16px;
+          color: #6b7280;
+          transition: color 0.2s ease;
+        }
+
+        &:hover:not(:disabled) {
+          background-color: #f3f4f6;
+
+          i {
+            color: #10b981; // Green color for the check icon
+          }
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
       }
 
       .filters-grid {
@@ -942,10 +994,10 @@ export class MerchantTransactionsComponent implements OnInit {
         (transaction.recipient_account_number &&
           transaction.recipient_account_number.includes(this.filters.phone));
 
-          // Transaction Ref Filter
-          const matchesRef =
-          !this.filters.ref ||
-          transaction.transactionRef.includes(this.filters.ref);
+      // Transaction Ref Filter
+      const matchesRef =
+        !this.filters.ref ||
+        transaction.transactionRef.includes(this.filters.ref);
 
       // Name Filter - Case insensitive search
       const searchName = this.filters.name.toLowerCase();
@@ -1016,6 +1068,38 @@ export class MerchantTransactionsComponent implements OnInit {
     }
   }
 
+  completeTransaction(transaction: Transaction): void {
+    this.isLoading = true;
+    this.error = null;
+
+    const completeData: CompleteRequest = {
+      id: transaction._id,
+      status: transaction.status, // Assuming 'COMPLETED' is the status you want to set
+    };
+
+    this.http
+      .post<CompleteResponse>(`${API}/transactions/complete`, completeData)
+      .pipe(
+        take(1),
+        catchError((error) => {
+          console.error('Error response:', error);
+          this.error = error.error?.message || 'Failed to complete transaction';
+          return of(null);
+        }),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe((response) => {
+        if (response?.success) {
+          // Refresh the transaction list
+          this.getTransactions();
+        } else if (response) {
+          this.error = response.message || 'Failed to complete transaction';
+        }
+      });
+  }
+
   openStatusModal(transactionId: string): void {
     this.selectedTransactionId = transactionId;
     this.showStatusModal = true;
@@ -1033,7 +1117,7 @@ export class MerchantTransactionsComponent implements OnInit {
       endDate: '',
       phone: '',
       name: '',
-      ref: ''
+      ref: '',
     };
     this.filteredTransactions = [...this.transactions];
     this.currentPage = 1;

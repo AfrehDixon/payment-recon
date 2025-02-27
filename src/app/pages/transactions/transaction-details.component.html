@@ -5,7 +5,7 @@
     <!-- Stats Overview -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div
-        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+        class="bg-white p-6 rounded-xl border-sm hover:border-md transition-border duration-300"
       >
         <div class="flex items-center justify-between">
           <div>
@@ -36,7 +36,7 @@
       </div>
 
       <div
-        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+        class="bg-white p-6 rounded-xl border-sm hover:border-md transition-border duration-300"
       >
         <div class="flex items-center justify-between">
           <div>
@@ -65,7 +65,7 @@
       </div>
 
       <div
-        class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+        class="bg-white p-6 rounded-xl border-sm hover:border-md transition-border duration-300"
       >
         <div class="flex items-center justify-between">
           <div>
@@ -95,7 +95,7 @@
     </div>
 
     <!-- Search -->
-    <div class="bg-white rounded-lg shadow-sm mb-6">
+    <div class="bg-white rounded-lg border-sm mb-6">
       <div class="p-4">
         <form
           [formGroup]="searchForm"
@@ -130,7 +130,7 @@
     <div *ngIf="transactions.length > 0" class="space-y-4">
       <div
         *ngFor="let tx of transactions"
-        class="bg-white rounded-lg shadow-sm overflow-hidden"
+        class="bg-white rounded-lg border-sm overflow-hidden"
       >
         <!-- Header -->
         <div
@@ -285,7 +285,7 @@
     <!-- No Results -->
     <div
       *ngIf="!transactions.length && !loading"
-      class="text-center py-12 bg-white rounded-lg shadow-sm"
+      class="text-center py-12 bg-white rounded-lg border-sm"
     >
       <p class="text-gray-500">
         No transactions found. Please try a different search.

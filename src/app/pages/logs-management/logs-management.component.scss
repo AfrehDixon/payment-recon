@@ -1,0 +1,71 @@
+// Add custom styles for logs management component
+// Most styling is handled by Tailwind CSS classes directly in the HTML
+
+// Animation for expandable rows
+.expandable-row {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  // Fix for pre overflow
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  // Custom scrollbar for code blocks
+  pre::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  pre::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  pre::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+  
+  pre::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+  
+  // Log level badge hover effect
+  .rounded-full {
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  // Pagination button active state
+  .pagination-active {
+    @apply bg-indigo-50 border-indigo-500 text-indigo-600;
+  }
+  
+  // Animations
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  // Log entry hover state
+  tr:hover {
+    .log-actions {
+      opacity: 1;
+    }
+  }
+  
+  .log-actions {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+  }
