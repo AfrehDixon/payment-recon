@@ -12,6 +12,16 @@ import { TransactionDetailsComponent } from './pages/transactions/transaction-de
 import { SystemSettingsComponent } from './pages/system-settings/system-settings.component';
 import { OperatorConfigComponent } from './pages/operator-config/operator-config.component';
 import { ChargeConfigComponent } from './pages/charge-config/charge-config.component';
+import { MerchantTierComponent } from './pages/merchant-tier/merchant-tier.component';
+import { DailyStatisticsComponent } from './pages/daily-analysis/daily-analysis.component';
+import { WeeklyStatisticsComponent } from './pages/weekly-analysis/weekly-analysis.component';
+import { MonthlyStatisticsComponent } from './pages/monthly-analysis/monthly-analysis.component';
+import { ComparativeStatisticsComponent } from './pages/comparative-analysis/comparative-analysis.component';
+import { LogsManagementComponent } from './pages/logs-management/logs-management.component';
+import { LogsSummaryComponent } from './pages/logs-summary/logs-summary.component';
+import { PayoutReconciliationComponent } from './pages/payout-recon/payout-recon.component';
+import { IssuesListComponent } from './pages/issues-list/issues-list.component';
+import { OperatorSwitchComponent } from './pages/operator-switch/operator-switch.component';
 
 export const routes: Routes = [
   {
@@ -53,6 +63,46 @@ export const routes: Routes = [
       {
         path: 'merchants/transactions/:id',
         component: MerchantTransactionsComponent,
+      },
+      {
+        path: 'merchant-tiers', 
+        component: MerchantTierComponent,
+      },
+      {
+        path: 'daily-statistics',
+        component: DailyStatisticsComponent,
+      },
+      {
+        path: 'weekly-statistics',
+        component: WeeklyStatisticsComponent,
+      },
+      {
+        path: 'monthly-statistics',
+        component: MonthlyStatisticsComponent,
+      },
+      {
+        path: 'cummulative-statistics',
+        component: ComparativeStatisticsComponent,
+      },
+      {
+        path: 'logs',
+        component: LogsManagementComponent,
+      },
+      {
+        path: 'logs-summary',
+        component: LogsSummaryComponent,
+      },
+      {
+        path: 'payout-recon',
+        component: PayoutReconciliationComponent,
+      },
+      {
+        path: 'payout-issues',
+        component: IssuesListComponent,
+      },
+      {
+        path: 'operator-switch',
+        component: OperatorSwitchComponent,
       },
       {
         path: 'merchants/details/:id',

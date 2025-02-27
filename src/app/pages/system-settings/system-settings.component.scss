@@ -110,7 +110,7 @@
     background-color: white;
     border-radius: 8px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    // box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   
     h3 {
       margin: 0 0 1rem 0;
@@ -125,7 +125,7 @@
     background-color: white;
     border-radius: 8px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    // box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   
     h3 {
       margin: 0 0 1rem 0;
@@ -173,7 +173,7 @@
       &:focus {
         outline: none;
         border-color: #3498db;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        // box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
       }
   
       &:invalid {

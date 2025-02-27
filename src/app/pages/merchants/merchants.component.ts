@@ -23,6 +23,7 @@ interface Merchant {
   autosettle?: boolean;
   createdAt: string;
   chargeType?: string;
+  tierEnabled?: boolean;
   // Add charge-related fields
   disburse_gip_charge?: number;
   disburse_gip_cap?: number;
@@ -36,6 +37,16 @@ interface Merchant {
   momo_cap?: number;
   momo_min_charge?: number;
   momo_charge_cap?: number;
+  location?: string;
+  contact_person?: string;
+  contactPersonEmail?: string;
+  contactPersonPhone?: string;
+  contactPersonDesignation?: string;
+  tierLevel?: number;
+  operations?: string[];
+    approvedDate?: string;
+  onboardedBy?: string;
+  registrationNumber?: string;
 }
 
 interface MerchantBalanceResponse {
@@ -60,7 +71,7 @@ interface MerchantBalanceResponse {
     updatedAt: string;
     accountNumber: string;
     availableBalance: number;
-  };
+  }[]; // <-- Make data an array
 }
 
 interface DepositRequest {
@@ -170,7 +181,7 @@ export class MerchantComponent implements OnInit {
   itemsPerPage = 10;
   totalPages = 1;
   searchTerm = '';
-  merchantBalance: MerchantBalanceResponse['data'] | null = null;
+  merchantBalance: MerchantBalanceResponse['data'][0] | null = null;
   showBalanceModal = false;
   showStatusModal = false;
   selectedTransactionId: string | null = null;
@@ -180,6 +191,7 @@ export class MerchantComponent implements OnInit {
   showChargesModal = false;
   selectedMerchantForCharges: Merchant | null = null;
   chargesForm: FormGroup;
+  success: string | null = null;
 
   showSettleModal = false;
   selectedMerchantForSettle: Merchant | null = null;
@@ -190,6 +202,9 @@ export class MerchantComponent implements OnInit {
   otpForm: FormGroup;
   pendingDepositData: DepositRequest | null = null;
   userEmail: string = '';
+
+  showActionModal = false;
+  selectedMerchantForAction: Merchant | null = null;
 
   constructor(
     private http: HttpClient,
@@ -283,7 +298,23 @@ export class MerchantComponent implements OnInit {
       });
   }
 
+  openActionModal(merchant: Merchant): void {
+    this.selectedMerchantForAction = merchant;
+    this.showActionModal = true;
+  }
+
+  closeActionModal(): void {
+    this.showActionModal = false;
+    this.selectedMerchantForAction = null;
+  }
+
+  viewDetails(merchant: Merchant): void {
+    this.closeActionModal();
+    this.openDetailsModal(merchant);
+  }
+
   openSettleModal(merchant: Merchant): void {
+    this.closeActionModal();
     this.selectedMerchantForSettle = merchant;
     this.loadBanks();
     this.showSettleModal = true;
@@ -413,6 +444,45 @@ export class MerchantComponent implements OnInit {
     }
   }
 
+  toggleMerchantTier(merchant: Merchant): void {
+    const confirmMessage = merchant.tierEnabled ? 
+      'Are you sure you want to disable merchant-tier?' : 
+      'Are you sure you want to enable merchant-tier?';
+  
+    if (window.confirm(confirmMessage)) {
+      this.isLoading = true;
+      this.error = null;
+      
+      // Create the payload as expected by the backend
+      const payload = {
+        id: merchant._id,
+        data: {
+          tierEnabled: !merchant.tierEnabled
+        }
+      };
+  
+      this.http.put<{success: boolean; message: string}>(
+        `${API}/merchants/update`,
+        payload
+      ).pipe(
+        take(1),
+        catchError(error => {
+          this.error = error.error?.message || 'Failed to toggle merchant-tier';
+          return of(null);
+        }),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      ).subscribe(response => {
+        if (response?.success) {
+          this.success = `Successfully ${merchant.tierEnabled ? 'disabled' : 'enabled'} tier for ${merchant.merchant_tradeName}`;
+          // Update the merchant object locally to reflect the change
+          merchant.tierEnabled = !merchant.tierEnabled;
+        }
+      });
+    }
+  }
+
   private resetLoadingState(): void {
     this.isLoading = false;
     this.error = null;
@@ -503,6 +573,8 @@ export class MerchantComponent implements OnInit {
   
 
   openChargesModal(merchant: Merchant): void {
+    this.closeActionModal();
+
     this.selectedMerchantForCharges = merchant;
     // Pre-fill form with existing values if available
     const formValues = {
@@ -591,6 +663,8 @@ export class MerchantComponent implements OnInit {
   }
 
   openApproveModal(merchant: Merchant): void {
+    this.closeActionModal();
+
     this.selectedMerchantForApproval = merchant;
     this.showApproveModal = true;
   }
@@ -641,6 +715,8 @@ export class MerchantComponent implements OnInit {
   }
 
   openStatusModal(merchantId: string): void {
+    this.closeActionModal();
+
     this.selectedTransactionId = merchantId;
     this.showStatusModal = true;
   }
@@ -703,6 +779,8 @@ export class MerchantComponent implements OnInit {
   }
 
   openDetailsModal(merchant: Merchant): void {
+    this.closeActionModal();
+
     this.selectedMerchant = merchant;
     this.showDetailsModal = true;
   }
@@ -713,6 +791,8 @@ export class MerchantComponent implements OnInit {
   }
 
   openTopUpModal(merchantId: string): void {
+    this.closeActionModal();
+
     this.selectedMerchantId = merchantId;
     this.showTopUpModal = true;
   }
@@ -805,7 +885,7 @@ export class MerchantComponent implements OnInit {
       )
       .subscribe((response) => {
         if (response && response.success) {
-          this.merchantBalance = response.data;
+          this.merchantBalance = response.data[0]; // <-- Assign the first account
           this.showBalanceModal = true;
         } else {
           this.error = 'Failed to fetch balance information';
@@ -815,6 +895,8 @@ export class MerchantComponent implements OnInit {
 
   // Add close method
   closeBalanceModal(): void {
+    this.closeActionModal();
+
     this.showBalanceModal = false;
     this.merchantBalance = null;
   }

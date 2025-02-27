@@ -1,0 +1,854 @@
+<!-- operator-switch.component.html -->
+<div class="container mx-auto p-4" style="margin-left: 180px !important">
+  <div class="bg-white border-md rounded-lg p-6 mb-6">
+    <!-- Header with Actions -->
+    <div
+      class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6"
+    >
+      <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+        Operator Switch Dashboard
+      </h1>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input
+          type="text"
+          [(ngModel)]="merchantId"
+          (change)="onMerchantFilterChange()"
+          placeholder="Filter by Merchant ID"
+          class="border border-gray-300 rounded-md px-3 py-2 w-full sm:w-64"
+        />
+
+        <button
+          (click)="runAnalysis()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 flex items-center"
+          [disabled]="runningAnalysis"
+        >
+          <span *ngIf="!runningAnalysis">Run Analysis</span>
+          <span *ngIf="runningAnalysis">Running...</span>
+        </button>
+
+        <button
+          (click)="toggleSwitchForm()"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          {{ showSwitchForm ? "Cancel" : "Manual Switch" }}
+        </button>
+
+        <button
+          *ngIf="selectedAccountType && !showSwitchForm"
+          (click)="confirmResetStats()"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          Reset Stats
+        </button>
+
+        <button
+          *ngIf="serviceStatus !== 'running'"
+          (click)="startService()"
+          class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          Start Service
+        </button>
+
+        <button
+          *ngIf="serviceStatus === 'running'"
+          (click)="stopService()"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          Stop Service
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="bg-red-100 text-red-800 p-4 rounded-md mb-6">
+      {{ error }}
+    </div>
+
+    <!-- Manual Switch Form -->
+    <div
+      *ngIf="showSwitchForm"
+      class="bg-gray-50 p-4 rounded-md mb-6 border border-gray-200"
+    >
+      <h2 class="text-lg font-semibold mb-4">Manual Operator Switch</h2>
+      <form [formGroup]="switchForm" (ngSubmit)="manualSwitch()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label
+              for="accountType"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Account Type</label
+            >
+            <select
+              id="accountType"
+              formControlName="accountType"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Select Account Type</option>
+              <option *ngFor="let type of accountTypes" [value]="type">
+                {{ getAccountTypeName(type) }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                switchForm.get('accountType')?.invalid &&
+                switchForm.get('accountType')?.touched
+              "
+              class="text-sm text-red-600 mt-1"
+            >
+              Account type is required
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="newOperator"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >New Operator</label
+            >
+            <select
+              id="newOperator"
+              formControlName="newOperator"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Select Operator</option>
+              <option *ngFor="let operator of operators" [value]="operator">
+                {{ getOperatorName(operator) }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                switchForm.get('newOperator')?.invalid &&
+                switchForm.get('newOperator')?.touched
+              "
+              class="text-sm text-red-600 mt-1"
+            >
+              New operator is required
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+          <div>
+            <label
+              for="merchantId"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Merchant ID (Optional)</label
+            >
+            <input
+              type="text"
+              id="merchantId"
+              formControlName="merchantId"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="reason"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Reason for Switch</label
+          >
+          <textarea
+            id="reason"
+            formControlName="reason"
+            rows="3"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+          <div
+            *ngIf="
+              switchForm.get('reason')?.invalid &&
+              switchForm.get('reason')?.touched
+            "
+            class="text-sm text-red-600 mt-1"
+          >
+            <span *ngIf="switchForm.get('reason')?.errors?.['required']"
+              >Reason is required</span
+            >
+            <span *ngIf="switchForm.get('reason')?.errors?.['maxlength']"
+              >Reason cannot exceed 500 characters</span
+            >
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="switchForm.invalid"
+          >
+            Switch Operator
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Reset Stats Confirmation -->
+    <div
+      *ngIf="showResetConfirm"
+      class="bg-red-50 p-4 rounded-md mb-6 border border-red-200"
+    >
+      <h2 class="text-lg font-semibold mb-2 text-red-800">
+        Confirm Reset Stats
+      </h2>
+      <p class="mb-4 text-red-700">
+        Are you sure you want to reset all operator stats for
+        {{
+          selectedAccountType
+            ? getAccountTypeName(selectedAccountType)
+            : "all account types"
+        }}?
+        {{ merchantId ? " (for merchant: " + merchantId + ")" : "" }}
+        This action cannot be undone.
+      </p>
+      <div class="flex justify-end gap-3">
+        <button
+          (click)="showResetConfirm = false"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="resetStats()"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300"
+        >
+          Reset Stats
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="loading" class="flex justify-center items-center py-16">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+      ></div>
+    </div>
+
+    <!-- Account Type Navigation -->
+    <div *ngIf="!loading && !showSwitchForm && !showResetConfirm" class="mb-6">
+      <div class="flex flex-wrap gap-2">
+        <button
+          (click)="selectAccountType(null)"
+          class="px-4 py-2 rounded-md text-sm font-medium transition duration-200"
+          [ngClass]="
+            selectedAccountType === null
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          "
+        >
+          All Types
+        </button>
+
+        <button
+          *ngFor="let type of accountTypes"
+          (click)="selectAccountType(type)"
+          class="px-4 py-2 rounded-md text-sm font-medium transition duration-200"
+          [ngClass]="
+            selectedAccountType === type
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          "
+        >
+          {{ getAccountTypeName(type) }}
+        </button>
+      </div>
+    </div>
+
+    <!-- All Account Types Overview - Update this section -->
+    <div
+      *ngIf="
+        !loading && !showSwitchForm && !showResetConfirm && !selectedAccountType
+      "
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
+      <div
+        *ngFor="let accountType of accountTypes"
+        class="bg-gray-50 rounded-md border border-gray-200 overflow-hidden"
+      >
+        <div class="bg-gray-100 px-4 py-3 border-b border-gray-200">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-700">
+              {{ getAccountTypeName(accountType) }}
+            </h3>
+            <button
+              (click)="selectAccountType(accountType)"
+              class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              View Details
+            </button>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <div *ngIf="stats[accountType]" class="space-y-4">
+            <!-- Current Operator -->
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600 font-medium">Current Operator:</span>
+              <span class="font-bold text-blue-600">{{
+                getOperatorName(stats[accountType].stats.currentOperator)
+              }}</span>
+            </div>
+
+            <!-- Failure Rate -->
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Failure Rate:</span>
+              <span
+                [ngClass]="
+                  getSuccessRateClass(
+                    stats[accountType].stats.failureRate,
+                    stats[accountType].threshold.failureRate
+                  )
+                "
+                class="font-medium"
+              >
+                {{ getDisplayFailureRate(stats[accountType].stats) }}
+              </span>
+            </div>
+
+            <!-- Transaction Count -->
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Transactions:</span>
+              <span class="font-medium">{{
+                getDisplayTransactions(stats[accountType].stats)
+              }}</span>
+            </div>
+
+            <!-- Last Switch -->
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Last Switch:</span>
+              <span
+                *ngIf="stats[accountType].stats.lastSwitched"
+                class="font-medium"
+              >
+                {{ stats[accountType].stats.lastSwitched | date : "short" }}
+              </span>
+              <span
+                *ngIf="!stats[accountType].stats.lastSwitched"
+                class="font-medium text-gray-500"
+              >
+                None
+              </span>
+            </div>
+
+            <!-- Threshold -->
+            <div class="mt-2 pt-2 border-t border-gray-200">
+              <div class="text-sm text-gray-500">
+                Failure Threshold:
+                {{ getDisplayThreshold(stats[accountType].threshold) }} (min
+                {{
+                  getDisplayMinTransactions(stats[accountType].threshold)
+                }}
+                txns)
+              </div>
+            </div>
+          </div>
+
+          <div
+            *ngIf="!stats[accountType]"
+            class="py-4 text-center text-gray-500"
+          >
+            No data available
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Account Type Details - Update this section -->
+    <div
+      *ngIf="
+        !loading &&
+        !showSwitchForm &&
+        !showResetConfirm &&
+        selectedAccountType &&
+        stats[selectedAccountType]
+      "
+      class="mb-6"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Account Type Details -->
+        <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+          <h3 class="text-lg font-semibold mb-3 text-gray-700">
+            Account Details
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Current Operator:</span>
+              <span class="font-bold text-blue-600">{{
+                getOperatorName(
+                  stats[selectedAccountType].stats.currentOperator
+                )
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Failure Rate:</span>
+              <span
+                [ngClass]="
+                  getSuccessRateClass(
+                    stats[selectedAccountType].stats.failureRate,
+                    stats[selectedAccountType].threshold.failureRate
+                  )
+                "
+                class="font-medium"
+              >
+                {{ getDisplayFailureRate(stats[selectedAccountType].stats) }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Failure Threshold:</span>
+              <span class="font-medium">{{
+                getDisplayThreshold(stats[selectedAccountType].threshold)
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Min Transactions Required:</span>
+              <span class="font-medium">{{
+                getDisplayMinTransactions(stats[selectedAccountType].threshold)
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Cooldown Period:</span>
+              <span class="font-medium">{{
+                getDisplayCooldownPeriod(stats[selectedAccountType].threshold)
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Time Window:</span>
+              <span class="font-medium">{{
+                getDisplayTimeWindow(stats[selectedAccountType].threshold)
+              }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Stats -->
+        <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+          <h3 class="text-lg font-semibold mb-3 text-gray-700">
+            Transaction Stats
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Total Transactions:</span>
+              <span class="font-medium">{{
+                getDisplayTransactions(stats[selectedAccountType].stats)
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Failed Transactions:</span>
+              <span class="font-medium text-red-600">{{
+                stats[selectedAccountType].stats.failureCount || 0
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Last Failure:</span>
+              <span
+                *ngIf="stats[selectedAccountType].stats.lastFailure"
+                class="font-medium"
+              >
+                {{
+                  stats[selectedAccountType].stats.lastFailure | date : "medium"
+                }}
+              </span>
+              <span
+                *ngIf="!stats[selectedAccountType].stats.lastFailure"
+                class="font-medium text-gray-500"
+              >
+                None
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Last Switch:</span>
+              <span
+                *ngIf="stats[selectedAccountType].stats.lastSwitched"
+                class="font-medium"
+              >
+                {{
+                  stats[selectedAccountType].stats.lastSwitched
+                    | date : "medium"
+                }}
+              </span>
+              <span
+                *ngIf="!stats[selectedAccountType].stats.lastSwitched"
+                class="font-medium text-gray-500"
+              >
+                None
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Previous Operators - Only show if there are previous operators -->
+      <div
+        *ngIf="hasPreviousOperators(stats[selectedAccountType].stats)"
+        class="mb-8"
+      >
+        <h3 class="text-lg font-semibold mb-3 text-gray-700">
+          Previous Operators
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200 rounded-md">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Operator
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Last Used
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="
+                  let op of stats[selectedAccountType].stats.previousOperators
+                "
+                class="border-b hover:bg-gray-50"
+              >
+                <td class="py-3 px-4 text-sm font-medium">
+                  {{ getOperatorName(op.operator) }}
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  {{ op.lastUsed | date : "medium" }}
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  <span
+                    class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="{ 'bg-gray-100 text-gray-800': true }"
+                  >
+                    Previous
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Account Type Details -->
+    <div
+      *ngIf="
+        !loading &&
+        !showSwitchForm &&
+        !showResetConfirm &&
+        selectedAccountType &&
+        stats[selectedAccountType]
+      "
+      class="mb-6"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Account Type Details -->
+        <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+          <h3 class="text-lg font-semibold mb-3 text-gray-700">
+            Account Details
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Current Operator:</span>
+              <span class="font-bold text-blue-600">{{
+                getOperatorName(
+                  stats[selectedAccountType].stats.currentOperator
+                )
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Success Rate:</span>
+              <span
+                [ngClass]="
+                  getSuccessRateClass(
+                    stats[selectedAccountType].stats.successRate,
+                    stats[selectedAccountType].threshold.successRateThreshold
+                  )
+                "
+                class="font-medium"
+              >
+                {{
+                  stats[selectedAccountType].stats.successRate?.toFixed(1) ||
+                    "N/A"
+                }}%
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Success Threshold:</span>
+              <span class="font-medium"
+                >{{
+                  stats[selectedAccountType].threshold.successRateThreshold
+                }}%</span
+              >
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Min Transactions Required:</span>
+              <span class="font-medium">{{
+                stats[selectedAccountType].threshold.minTransactionsRequired
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Cooldown Period:</span>
+              <span class="font-medium"
+                >{{
+                  stats[selectedAccountType].threshold.cooldownPeriod
+                }}
+                minutes</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Stats -->
+        <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+          <h3 class="text-lg font-semibold mb-3 text-gray-700">
+            Transaction Stats
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Total Transactions (24h):</span>
+              <span class="font-medium">{{
+                stats[selectedAccountType].stats.transactions || 0
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Successful Transactions:</span>
+              <span class="font-medium text-green-600">{{
+                stats[selectedAccountType].stats.successfulTransactions || 0
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Failed Transactions:</span>
+              <span class="font-medium text-red-600">{{
+                stats[selectedAccountType].stats.failedTransactions || 0
+              }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Average Response Time:</span>
+              <span class="font-medium"
+                >{{
+                  stats[selectedAccountType].stats.averageResponseTime?.toFixed(
+                    2
+                  ) || "N/A"
+                }}
+                ms</span
+              >
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Last Switch:</span>
+              <span
+                *ngIf="stats[selectedAccountType].stats.lastSwitch"
+                class="font-medium"
+              >
+                {{
+                  stats[selectedAccountType].stats.lastSwitch | date : "medium"
+                }}
+              </span>
+              <span
+                *ngIf="!stats[selectedAccountType].stats.lastSwitch"
+                class="font-medium text-gray-500"
+              >
+                None
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operator Performance -->
+      <div
+        *ngIf="stats[selectedAccountType]?.stats?.operators?.length > 0"
+        class="mb-8"
+      >
+        <h3 class="text-lg font-semibold mb-3 text-gray-700">
+          Operator Performance
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200 rounded-md">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Operator
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Success Rate
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Total Txns
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Success
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Failed
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Avg Response
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let op of stats[selectedAccountType].stats.operators"
+                class="border-b hover:bg-gray-50"
+              >
+                <td class="py-3 px-4 text-sm font-medium">
+                  {{ getOperatorName(op.operator) }}
+                  <span
+                    *ngIf="
+                      op.operator ===
+                      stats[selectedAccountType].stats.currentOperator
+                    "
+                    class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full"
+                  >
+                    Current
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  <span
+                    [ngClass]="
+                      getSuccessRateClass(
+                        op.successRate,
+                        stats[selectedAccountType].threshold
+                          .successRateThreshold
+                      )
+                    "
+                  >
+                    {{ op.successRate?.toFixed(1) || "N/A" }}%
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  {{ op.totalTransactions || 0 }}
+                </td>
+                <td class="py-3 px-4 text-sm text-green-600">
+                  {{ op.successfulTransactions || 0 }}
+                </td>
+                <td class="py-3 px-4 text-sm text-red-600">
+                  {{ op.failedTransactions || 0 }}
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  {{ op.averageResponseTime?.toFixed(2) || "N/A" }} ms
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  <span
+                    class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800': op.isActive,
+                      'bg-red-100 text-red-800': !op.isActive
+                    }"
+                  >
+                    {{ op.isActive ? "Active" : "Inactive" }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Switch History -->
+      <div *ngIf="history?.length && history.length > 0">
+        <h3 class="text-lg font-semibold mb-3 text-gray-700">Switch History</h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200 rounded-md">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Timestamp
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  From
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  To
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Trigger
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Merchant
+                </th>
+                <th
+                  class="py-3 px-4 text-left text-sm font-semibold text-gray-600 border-b"
+                >
+                  Reason
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let item of history"
+                class="border-b hover:bg-gray-50"
+              >
+                <td class="py-3 px-4 text-sm">
+                  {{ item.timestamp | date : "medium" }}
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  {{ getOperatorName(item.previousOperator) }}
+                </td>
+                <td class="py-3 px-4 text-sm font-medium">
+                  {{ getOperatorName(item.newOperator) }}
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  <span
+                    class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="{
+                      'bg-yellow-100 text-yellow-800':
+                        item.triggeredBy === 'AUTO',
+                      'bg-blue-100 text-blue-800': item.triggeredBy === 'MANUAL'
+                    }"
+                  >
+                    {{ item.triggeredBy }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-sm">
+                  <span *ngIf="item.merchantId">{{ item.merchantId }}</span>
+                  <span *ngIf="!item.merchantId" class="text-gray-500"
+                    >Global</span
+                  >
+                </td>
+                <td class="py-3 px-4 text-sm">{{ item.reason }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="history?.length === 0" class="text-center py-6 text-gray-500">
+        No switch history available
+      </div>
+    </div>
+  </div>
+</div>

@@ -99,7 +99,7 @@ const paymentIssuerImages: { [key: string]: string } = {
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div
-          class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+          class="bg-white rounded-2xl p-6 border-sm hover:border-md transition-border border border-gray-100"
         >
           <p class="text-blue-600 mb-2 text-sm font-medium">
             Total Transactions
@@ -119,7 +119,7 @@ const paymentIssuerImages: { [key: string]: string } = {
         </div>
 
         <div
-          class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+          class="bg-white rounded-2xl p-6 border-sm hover:border-md transition-border border border-gray-100"
         >
           <p class="text-green-600 mb-2 text-sm font-medium">Total Amount</p>
           <p class="text-2xl font-bold text-gray-900">
@@ -136,7 +136,7 @@ const paymentIssuerImages: { [key: string]: string } = {
         </div>
 
         <div
-          class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+          class="bg-white rounded-2xl p-6 border-sm hover:border-md transition-border border border-gray-100"
         >
           <p class="text-indigo-600 mb-2 text-sm font-medium">Net Amount</p>
           <p class="text-2xl font-bold text-gray-900">
@@ -154,7 +154,7 @@ const paymentIssuerImages: { [key: string]: string } = {
         </div>
 
         <div
-          class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+          class="bg-white rounded-2xl p-6 border-sm hover:border-md transition-border border border-gray-100"
         >
           <p class="text-red-600 mb-2 text-sm font-medium">Total Charges</p>
           <p class="text-2xl font-bold text-gray-900">
@@ -171,7 +171,7 @@ const paymentIssuerImages: { [key: string]: string } = {
       </div>
 
       <!-- Search & Filters -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8">
+      <div class="bg-white rounded-2xl border-sm border border-gray-100 mb-8">
         <div class="p-6 border-b border-gray-100">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <!-- Phone Search -->
@@ -774,11 +774,11 @@ export class ReportsComponent implements OnInit {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     // Limit to 7 days to prevent memory issues
-    if (diffDays > 7) {
-      this.error =
-        'Date range cannot exceed 7 days due to data size limitations';
-      return false;
-    }
+    // if (diffDays > 7) {
+    //   this.error =
+    //     'Date range cannot exceed 7 days due to data size limitations';
+    //   return false;
+    // }
 
     return true;
   }
@@ -790,9 +790,9 @@ export class ReportsComponent implements OnInit {
       this.transactions.map((tx) => ({
         Date: this.formatDate(tx.createdAt),
         Merchant:
-          tx.customerId?.merchant_tradeName ||
+          // tx.customerId?.merchant_tradeName ||-
           tx.merchantId?.merchant_tradeName,
-        'Merchant Email': tx.customerId.email,
+        'Merchant Email': tx.customerId?.email || tx.merchantId?.email,
         'Customer Name': tx.payment_account_name,
         'Customer Account': tx.payment_account_number,
         'Payment Method': `${tx.payment_account_issuer} ${tx.payment_account_type}`,

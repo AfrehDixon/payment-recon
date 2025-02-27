@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { FilterChangedEvent } from 'ag-grid-community';
 import { Observable, catchError, of, take, tap } from 'rxjs';
 import API from '../constants/api.constant';
+import { ETierLevel, ETierScope } from '../pages/merchant-tier/merchant-tier.interface';
 
 export interface Admin {
   _id?: string;
@@ -131,5 +132,59 @@ export class AdminService {
         }
       })
     );
+  }
+
+  getMerchants(): Observable<{ success: boolean, message: string, data: any[] }> {
+    return this.http.get<{ success: boolean, message: string, data: any[] }>(`${API}/merchants/get`);
+  }
+
+  // Get merchant tiers with optional filtering
+  getMerchantTiers(filters?: {
+    merchantId?: string;
+    scope?: ETierScope;
+    level?: ETierLevel;
+    feature?: string;
+  }): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/merchants/merchant-tiers`, { params: filters as any });
+  }
+
+  // Create a new tier
+  createTier(merchantId: string, tierData: any): Observable<any> {
+    return this.http.post(`${API}/merchants/merchant-tiers`, {
+      merchantId,
+      tierData
+    });
+  }
+
+  // Update existing tier
+  updateTier(tierId: string, tierData: any): Observable<any> {
+    return this.http.put(`${API}/merchants/merchant-tiers/${tierId}`, tierData);
+  }
+
+  // Assign tier to merchant
+  assignTierToMerchant(merchantId: string, tierData: { 
+    feature?: string; 
+    preferredLevel?: ETierLevel;
+  }): Observable<any> {
+    return this.http.post(`${API}/merchants/merchant-tiers/select`, {
+      merchantId,
+      ...tierData
+    });
+  }
+
+  // Helper method to convert tier level to readable name
+  getTierLevelName(level: ETierLevel): string {
+    switch(level) {
+      case ETierLevel.BASIC: return 'Basic';
+      case ETierLevel.STANDARD: return 'Standard';
+      case ETierLevel.PREMIUM: return 'Premium';
+      case ETierLevel.ENTERPRISE: return 'Enterprise';
+      default: return 'Unknown';
+    }
+  }
+
+  // Helper to format scope
+  formatScope(scope: ETierScope): string {
+    return scope === ETierScope.GLOBAL ? 'Global' : 'Merchant Specific';
   }
 }

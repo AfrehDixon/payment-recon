@@ -21,7 +21,17 @@ export const Routes: RouteInfo[] = [
   { path: 'transactions', title: "Transactions Filters", class: 'false' },
   { path: 'operator-config', title: "Operator Config", class: 'false' },
   { path: 'charge-config', title: "Charge Config", class: 'false' },
-  { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
+  { path: 'merchant-tiers', title: "Merchant Tiers", class: 'false' },
+  { path: 'daily-statistics', title: "Daily Statistics", class: 'false' },
+  { path: 'weekly-statistics', title: "Weekly Statistics", class: 'false' },
+  {  path: 'monthly-statistics', title: "Monthly Statistics", class: 'false' },
+  { path: 'cummulative-statistics', title: "Cummulative Statistics", class: 'false' },
+  { path: 'logs', title: "System Logs", class: 'false' },
+  { path: 'logs-summary', title: "Logs Summary", class: 'false' },
+  { path: 'payout-recon', title: "Payout Reconciliation", class: 'false' },
+  { path: 'payout-issues', title: "Payout Issues", class: 'false' },
+  { path: 'operator-switch', title: "Operator Switch", class: 'false' },
+  // { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'settings', title: "System Settings", class: 'false' },
 
 
@@ -104,8 +114,16 @@ export class SidebarComponent implements OnInit {
       'settings': 'bi bi-gear',
       'operator-config': 'bi bi-tools',
       'charge-config': 'bi bi-calculator',
-
-    // 'dashboard': 'bi bi-bar-chart',
+      'merchant-tiers': 'bi bi-layers',
+      'daily-statistics': 'bi bi-calendar',
+      'weekly-statistics': 'bi bi-calendar',
+      'monthly-statistics': 'bi bi-calendar',
+      'cummulative-statistics': 'bi bi-calendar',
+      'logs': 'bi bi-journal',
+      'logs-summary': 'bi bi-journal',
+      'payout-reconciliation': 'bi bi-calculator',
+      'operator-switch': 'bi bi-arrow-repeat',
+      'payout-issues': 'bi bi-exclamation-circle', 
     };
 
     return iconMap[path] || 'bi bi-circle';

@@ -1,0 +1,102 @@
+// Add custom styles for the weekly statistics component
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  }
+  
+  // Progress bar animations
+  .progress-bar {
+    transition: width 1s ease-in-out;
+  }
+  
+  // Hover animations for daily breakdown cards
+  .bg-gray-50 {
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      background-color: #f3f4f6;
+    }
+  }
+  
+  // Custom scrollbar
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+  
+  // Day card styles
+  .day-card {
+    border-left: 4px solid transparent;
+    
+    &.day-monday {
+      border-left-color: #3b82f6; // Blue
+    }
+    
+    &.day-tuesday {
+      border-left-color: #10b981; // Green
+    }
+    
+    &.day-wednesday {
+      border-left-color: #f59e0b; // Amber
+    }
+    
+    &.day-thursday {
+      border-left-color: #8b5cf6; // Purple
+    }
+    
+    &.day-friday {
+      border-left-color: #ef4444; // Red
+    }
+    
+    &.day-saturday {
+      border-left-color: #ec4899; // Pink
+    }
+    
+    &.day-sunday {
+      border-left-color: #6366f1; // Indigo
+    }
+  }
+  
+  // Animations
+  .fade-in {
+    animation: fadeIn 0.5s;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  // Pulse animation for loading
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }

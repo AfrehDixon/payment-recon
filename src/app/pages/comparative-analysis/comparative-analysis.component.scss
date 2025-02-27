@@ -1,0 +1,111 @@
+// Add custom styles for the comparative statistics component
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  }
+  
+  // Bar chart animations
+  .bar-chart-container {
+    .bar {
+      transition: height 0.3s ease-in-out;
+    }
+  }
+  
+  // Table hover effects
+  tr.hover\:bg-gray-50:hover {
+    background-color: #f9fafb;
+  }
+  
+  // Period selection animation
+  .selected-period {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  // Custom scrollbar
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+  
+  // Animations
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  // Trend indicators
+  .trend-up {
+    color: #10B981;
+  }
+  
+  .trend-down {
+    color: #EF4444;
+  }
+  
+  .trend-neutral {
+    color: #6B7280;
+  }
+  
+  // Chart tooltip
+  .chart-tooltip {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transform: translate(-50%, -100%);
+    max-width: 200px;
+    white-space: nowrap;
+  }
+  
+  // Legend item
+  .legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+  }

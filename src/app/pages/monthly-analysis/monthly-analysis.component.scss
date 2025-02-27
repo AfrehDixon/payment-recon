@@ -1,0 +1,98 @@
+// Add custom styles for the monthly statistics component
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  }
+  
+  // Calendar day hover styles
+  .calendar-day {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      z-index: 10;
+    }
+  }
+  
+  // Progress bar animations
+  .progress-bar {
+    transition: width 1s ease-in-out;
+  }
+  
+  // Table hover effects
+  tr.hover\:bg-gray-50:hover {
+    background-color: #f9fafb;
+  }
+  
+  // Calendar animations
+  .calendar-day {
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  }
+  
+  // Tooltip animations
+  .tooltip {
+    transition: opacity 0.2s ease-in-out;
+  }
+  
+  // Custom scrollbar
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+  
+  // Animations
+  .fade-in {
+    animation: fadeIn 0.5s;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  // Pulse animation for loading
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  // Heat map colors
+  .heat-blue-100 { background-color: #dbeafe; }
+  .heat-blue-200 { background-color: #bfdbfe; }
+  .heat-blue-300 { background-color: #93c5fd; }
+  .heat-blue-400 { background-color: #60a5fa; }
+  .heat-blue-500 { background-color: #3b82f6; }
+  
+  // Success rate colors
+  .success-red-500 { background-color: #ef4444; }
+  .success-red-300 { background-color: #fca5a5; }
+  .success-yellow-300 { background-color: #fcd34d; }
+  .success-green-300 { background-color: #6ee7b7; }
+  .success-green-500 { background-color: #10b981; }

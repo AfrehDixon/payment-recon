@@ -1,0 +1,759 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" style="margin-left: 180px;">
+  <!-- Header -->
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">
+      Merchant Tier Management
+    </h1>
+
+    <!-- Error/Success Alerts -->
+    <div
+      *ngIf="error"
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative"
+    >
+      <span class="block sm:inline">{{ error }}</span>
+      <button
+        class="absolute top-0 bottom-0 right-0 px-4 py-3"
+        (click)="error = null"
+      >
+        <span class="sr-only">Dismiss</span>
+        <svg
+          class="h-6 w-6 text-red-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div
+      *ngIf="success"
+      class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 relative"
+    >
+      <span class="block sm:inline">{{ success }}</span>
+      <button
+        class="absolute top-0 bottom-0 right-0 px-4 py-3"
+        (click)="success = null"
+      >
+        <span class="sr-only">Dismiss</span>
+        <svg
+          class="h-6 w-6 text-green-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <!-- List View -->
+      <div *ngIf="viewMode === 'list'">
+        <!-- Search Form -->
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Search Tiers</h2>
+          <form
+            [formGroup]="searchForm"
+            (ngSubmit)="searchTiers()"
+            class="grid grid-cols-1 gap-6 sm:grid-cols-4"
+          >
+            <!-- Merchant Dropdown -->
+            <div>
+              <label
+                for="merchantId"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Merchant</label
+              >
+              <div class="relative">
+                <select
+                  formControlName="merchantId"
+                  id="merchantId"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 bg-white"
+                >
+                  <option value="">All Merchants</option>
+                  <option
+                    *ngFor="let merchant of merchants"
+                    [value]="merchant._id"
+                  >
+                    {{ merchant.merchant_tradeName || 'N/A'}}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Scope Dropdown -->
+            <div>
+              <label
+                for="scope"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Scope</label
+              >
+              <div class="relative">
+                <select
+                  formControlName="scope"
+                  id="scope"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 bg-white"
+                >
+                  <option value="">All Scopes</option>
+                  <option *ngFor="let scope of tierScopes" [value]="scope">
+                    {{ scope === "global" ? "Global" : "Merchant Specific" }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Level Dropdown -->
+            <div>
+              <label
+                for="level"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Level</label
+              >
+              <div class="relative">
+                <select
+                  formControlName="level"
+                  id="level"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 bg-white"
+                >
+                  <option value="">All Levels</option>
+                  <option *ngFor="let level of tierLevels" [value]="level">
+                    {{ getTierLevelName(level) }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Feature Input -->
+            <div>
+              <label
+                for="feature"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Feature</label
+              >
+              <select
+                  formControlName="feature"
+                  id="feature"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                <option value="">All Levels</option>
+
+                  <option *ngFor="let status of operators" [value]="status">
+                    {{ status | titlecase }}
+                  </option>
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="sm:col-span-4 flex justify-between items-center">
+              <button
+                type="submit"
+                [disabled]="loading"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <svg
+                  *ngIf="loading"
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Search
+              </button>
+
+              <button
+                type="button"
+                (click)="startCreateTier()"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <svg
+                  class="-ml-1 mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Create New Tier
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Results Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Name
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Level
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Scope
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Monthly Fee
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngIf="loading">
+                <td
+                  colspan="6"
+                  class="px-6 py-4 text-center text-sm text-gray-500"
+                >
+                  <div class="flex justify-center items-center">
+                    <svg
+                      class="animate-spin h-5 w-5 text-blue-500 mr-3"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Loading...
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="!loading && merchantTiers.length === 0">
+                <td
+                  colspan="6"
+                  class="px-6 py-4 text-center text-sm text-gray-500"
+                >
+                  No tier data found. Please search using different criteria or
+                  create a new tier.
+                </td>
+              </tr>
+              <tr *ngFor="let tier of merchantTiers" class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                >
+                  {{ tier.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ getTierLevelName(tier.level) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ tier.scope === "global" ? "Global" : "Merchant Specific" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    [ngClass]="{
+                      'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full': true,
+                      'bg-green-100 text-green-800': tier.status === 'active',
+                      'bg-yellow-100 text-yellow-800':
+                        tier.status === 'inactive',
+                      'bg-red-100 text-red-800': tier.status === 'suspended'
+                    }"
+                  >
+                    {{ tier.status | titlecase }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ tier.monthlyFee | currency: 'GHS' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    (click)="editTier(tier)"
+                    class="text-blue-600 hover:text-blue-900 mr-3"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    *ngIf="searchForm.value.merchantId"
+                    (click)="tier._id ? assignTierToMerchant(tier._id) : null"
+                    class="text-green-600 hover:text-green-900"
+                  >
+                    Assign
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Create/Edit Form -->
+      <div *ngIf="viewMode === 'create' || viewMode === 'edit'" class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-medium text-gray-900">
+            {{ viewMode === "create" ? "Create New Tier" : "Edit Tier" }}
+          </h2>
+          <button
+            type="button"
+            (click)="cancelEdit()"
+            class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <form
+          [formGroup]="tierForm"
+          (ngSubmit)="viewMode === 'create' ? createTier() : updateTier()"
+        >
+          <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            <!-- Basic Info -->
+            <div class="sm:col-span-3">
+              <label for="name" class="block text-sm font-medium text-gray-700"
+                >Tier Name</label
+              >
+              <div class="mt-1">
+                <input
+                  type="text"
+                  formControlName="name"
+                  id="name"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+              <p
+                *ngIf="
+                  tierForm.get('name')?.touched &&
+                  tierForm.get('name')?.errors?.['required']
+                "
+                class="mt-1 text-sm text-red-600"
+              >
+                Name is required
+              </p>
+              <p
+                *ngIf="
+                  tierForm.get('name')?.touched &&
+                  (tierForm.get('name')?.errors?.['minlength'] ||
+                    tierForm.get('name')?.errors?.['maxlength'])
+                "
+                class="mt-1 text-sm text-red-600"
+              >
+                Name must be between 3 and 50 characters
+              </p>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label for="level" class="block text-sm font-medium text-gray-700"
+                >Tier Level</label
+              >
+              <div class="mt-1">
+                <select
+                  formControlName="level"
+                  id="level"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option [ngValue]="null" disabled>Select Level</option>
+                  <option *ngFor="let level of tierLevels" [ngValue]="level">
+                    {{ getTierLevelName(level) }}
+                  </option>
+                </select>
+              </div>
+              <p
+                *ngIf="
+                  tierForm.get('level')?.touched &&
+                  tierForm.get('level')?.errors?.['required']
+                "
+                class="mt-1 text-sm text-red-600"
+              >
+                Level is required
+              </p>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label for="scope" class="block text-sm font-medium text-gray-700"
+                >Scope</label
+              >
+              <div class="mt-1">
+                <select
+                  formControlName="scope"
+                  id="scope"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option *ngFor="let scope of tierScopes" [value]="scope">
+                    {{ scope === "global" ? "Global" : "Merchant Specific" }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label
+                for="status"
+                class="block text-sm font-medium text-gray-700"
+                >Status</label
+              >
+              <div class="mt-1">
+                <select
+                  formControlName="status"
+                  id="status"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option *ngFor="let status of tierStatuses" [value]="status">
+                    {{ status | titlecase }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label
+                for="monthlyFee"
+                class="block text-sm font-medium text-gray-700"
+                >Monthly Fee</label
+              >
+              <div class="mt-1">
+                <input
+                  type="number"
+                  formControlName="monthlyFee"
+                  id="monthlyFee"
+                  min="0"
+                  step="0.01"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div class="sm:col-span-3">
+                <label
+                for="monthlyFee"
+                class="block text-sm font-medium text-gray-700"
+                >Select Merchant</label
+              >
+                <select
+                  formControlName="merchantId"
+                  id="merchantId"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 bg-white"
+                >
+                  <option value="">All Merchants</option>
+                  <option
+                    *ngFor="let merchant of merchants"
+                    [value]="merchant._id"
+                  >
+                    {{ merchant.merchant_tradeName || 'N/A'}}
+                  </option>
+                </select>
+            </div>
+
+
+            <div class="sm:col-span-6">
+              <label
+                for="description"
+                class="block text-sm font-medium text-gray-700"
+                >Description</label
+              >
+              <div class="mt-1">
+                <textarea
+                  formControlName="description"
+                  id="description"
+                  rows="3"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Transaction Limits Section -->
+            <div class="sm:col-span-6 border-t border-gray-200 pt-6">
+              <h3 class="text-lg font-medium text-gray-900">
+                Transaction Limits
+              </h3>
+
+              <!-- Debit Limits -->
+              <div formGroupName="transactionLimits" class="mt-4">
+                <h4 class="text-base font-medium text-gray-700 mb-2">
+                  Debit Limits
+                </h4>
+                <div
+                  class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3"
+                  formGroupName="debit"
+                >
+                  <div>
+                    <label
+                      for="debit-daily"
+                      class="block text-sm font-medium text-gray-700"
+                      >Daily Limit</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="dailyLimit"
+                        id="debit-daily"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      for="debit-monthly"
+                      class="block text-sm font-medium text-gray-700"
+                      >Monthly Limit</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="monthlyLimit"
+                        id="debit-monthly"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      for="debit-max"
+                      class="block text-sm font-medium text-gray-700"
+                      >Max Single Transaction</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="maxSingleTransactionAmount"
+                        id="debit-max"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Credit Limits -->
+                <h4 class="text-base font-medium text-gray-700 mb-2 mt-6">
+                  Credit Limits
+                </h4>
+                <div
+                  class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3"
+                  formGroupName="credit"
+                >
+                  <div>
+                    <label
+                      for="credit-daily"
+                      class="block text-sm font-medium text-gray-700"
+                      >Daily Limit</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="dailyLimit"
+                        id="credit-daily"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      for="credit-monthly"
+                      class="block text-sm font-medium text-gray-700"
+                      >Monthly Limit</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="monthlyLimit"
+                        id="credit-monthly"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      for="credit-max"
+                      class="block text-sm font-medium text-gray-700"
+                      >Max Single Transaction</label
+                    >
+                    <div class="mt-1">
+                      <input
+                        type="number"
+                        formControlName="maxSingleTransactionAmount"
+                        id="credit-max"
+                        min="0"
+                        class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="sm:col-span-3 border-t border-gray-200 pt-6">
+              <h3 class="text-lg font-medium text-gray-900">Features</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Add features that are available with this tier
+              </p>
+
+              <div class="mt-4 flex">
+                <!-- <input
+                  type="text"
+                  id="feature-input"
+                  #featureInput
+                  placeholder="Enter feature"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md rounded-r-none"
+                />
+                <button
+                  type="button"
+                  (click)="
+                    addFeature(featureInput.value); featureInput.value = ''
+                  "
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md rounded-l-none shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Add
+                </button> -->
+                <select
+                  formControlName="features"
+                  id="features"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" multiple
+                >
+                  <option *ngFor="let status of operators" [value]="status">
+                    {{ status | titlecase }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <div
+                  *ngFor="let feature of tierForm.get('features')?.value"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                >
+                  {{ feature }}
+                  <button
+                    type="button"
+                    (click)="removeFeature(feature)"
+                    class="ml-1.5 inline-flex text-blue-400 hover:text-blue-600 focus:outline-none"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div
+              class="sm:col-span-6 flex justify-end space-x-3 pt-5 border-t border-gray-200"
+            >
+              <button
+                type="button"
+                (click)="cancelEdit()"
+                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="tierForm.invalid || creating || updating"
+                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <svg
+                  *ngIf="creating || updating"
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                {{ viewMode === "create" ? "Create Tier" : "Update Tier" }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

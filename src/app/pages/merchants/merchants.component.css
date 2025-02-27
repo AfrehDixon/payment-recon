@@ -641,6 +641,77 @@ select.form-input {
   position: relative;
 }
 
+/* Unique styles for the action modal */
+.action-modal .modal-content {
+  position: relative; /* Required for absolute positioning of the close button */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+}
+
+/* Close button at the top right */
+.action-modal .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+
+.action-modal .close-btn:hover {
+  color: #000;
+}
+
+/* Button container */
+.action-modal .modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Button styles */
+.action-modal .modal-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.action-modal .modal-btn:hover {
+  background: #f1f1f1;
+}
+
+/* Icon styles */
+.action-modal .modal-btn i {
+  font-size: 20px; /* Increase icon size */
+  margin-right: 10px;
+  color: #007bff;
+}
+
+/* Button content (title and description) */
+.action-modal .btn-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-modal .btn-title {
+  font-weight: bold;
+  color: #333;
+}
+
+.action-modal .btn-description {
+  font-size: 12px;
+  color: #666;
+}
 .modal-title {
   font-size: 20px;
   font-weight: 600;
@@ -757,4 +828,195 @@ select.form-input {
     margin: 16px;
     padding: 16px;
   }
+}
+
+
+/* Details Modal Specific Styling */
+.details-modal {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background-color: #fff;
+  z-index: 10;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.close-btn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.merchant-details {
+  padding: 0 24px 16px;
+}
+
+.details-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.details-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 16px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .details-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.detail-group {
+  margin-bottom: 12px;
+}
+
+.detail-group h4 {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+
+.detail-group p {
+  font-size: 0.975rem;
+  color: #111827;
+  margin: 0;
+  word-break: break-word;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.toggle-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.toggle-indicator.active {
+  color: #047857;
+}
+
+.toggle-indicator i {
+  font-size: 1.125rem;
+}
+
+.operations-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.operation-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.modal-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.modal-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
 }

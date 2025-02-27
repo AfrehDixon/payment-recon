@@ -11,7 +11,12 @@
   <!-- Search and Filter Section -->
   <div class="search-section">
     <div class="search-container">
-      <input type="text" placeholder="Search merchants..." (input)="onSearch($event)" class="search-input" />
+      <input
+        type="text"
+        placeholder="Search merchants..."
+        (input)="onSearch($event)"
+        class="search-input"
+      />
       <i class="fas fa-search search-icon"></i>
     </div>
   </div>
@@ -55,56 +60,25 @@
             </div>
           </td>
           <td>
-            <span [class]="
+            <span
+              [class]="
                 merchant.active
                   ? 'status-badge active'
                   : 'status-badge inactive'
-              ">
+              "
+            >
               {{ merchant.active ? "Active" : "Inactive" }}
             </span>
           </td>
           <td>{{ merchant.type || "N/A" }}</td>
           <td class="actions">
-            <div class="action-icons">
-              <!-- View Details -->
-              <button class="icon-btn" [routerLink]="['/merchants/details', merchant._id]" title="View Details">
-                <i class="fas fa-eye"></i>
-              </button>
-
-              <!-- Top Up -->
-              <button class="icon-btn" (click)="openTopUpModal(merchant._id)" title="Top Up Account">
-                <i class="fas fa-plus-circle"></i>
-              </button>
-
-              <!-- Check Balance -->
-              <button class="icon-btn" (click)="checkBalance(merchant._id)" title="Check Balance">
-                <i class="fas fa-wallet"></i>
-              </button>
-
-              <!-- Update Transaction -->
-
-              <button class="icon-btn" (click)="openApproveModal(merchant)" title="Approve Merchant">
-                <i class="fas fa-check-circle"></i>
-              </button>
-              <button class="icon-btn" (click)="openChargesModal(merchant)" title="Configure Charges">
-                <i class="fas fa-cog"></i>
-              </button>
-              <button class="icon-btn" [routerLink]="['/merchants/transactions', merchant._id]"
-                title="View Transactions">
-                <i class="fas fa-list"></i>
-              </button>
-              <button class="icon-btn" [routerLink]="['/merchants/settlements', merchant._id]" title="View Settlements">
-                <i class="fas fa-money-check-alt"></i>
-              </button>
-              <button class="icon-btn" (click)="openSettleModal(merchant)" title="Settle Account">
-                <i class="fas fa-money-bill-wave"></i>
-              </button>
-              <button class="icon-btn" (click)="toggleAutosettle(merchant)"
-                [title]="merchant.autosettle ? 'Disable Auto-settlement' : 'Enable Auto-settlement'">
-                <i class="fas" [class.fa-toggle-on]="merchant.autosettle" [class.fa-toggle-off]="!merchant.autosettle"
-                  [style.color]="merchant.autosettle ? '#4CAF50' : '#999'"></i>
-              </button>
-            </div>
+            <button
+              class="icon-btn"
+              (click)="openActionModal(merchant)"
+              title="Actions"
+            >
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
           </td>
         </tr>
       </tbody>
@@ -115,50 +89,359 @@
   <div class="pagination">
     <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
     <div class="pagination-controls">
-      <button class="pagination-btn" [disabled]="currentPage === 1" (click)="prevPage()">
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+      >
         Previous
       </button>
-      <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()"
+      >
         Next
       </button>
     </div>
   </div>
 
-  <!-- Details Modal -->
-  <div class="modal" *ngIf="showDetailsModal">
+  <!-- Action Modal -->
+  <div class="modal action-modal" *ngIf="showActionModal">
     <div class="modal-content">
-      <h2 class="modal-title">Merchant Details</h2>
-      <div class="merchant-details">
-        <div class="detail-group">
-          <h4>Trade Name</h4>
-          <p>{{ selectedMerchant?.merchant_tradeName || "N/A" }}</p>
-        </div>
-        <div class="detail-group">
-          <h4>Line of Business</h4>
-          <p>{{ selectedMerchant?.lineOfBusiness || "N/A" }}</p>
-        </div>
-        <div class="detail-group">
-          <h4>Contact Information</h4>
-          <p>Email: {{ selectedMerchant?.email || "N/A" }}</p>
-          <p>Phone: {{ selectedMerchant?.phone || "N/A" }}</p>
-        </div>
-        <div class="detail-group">
-          <h4>Address</h4>
-          <p>{{ selectedMerchant?.address || "N/A" }}</p>
-        </div>
-        <div class="detail-group">
-          <h4>Account Details</h4>
-          <p>Type: {{ selectedMerchant?.type || "N/A" }}</p>
-          <p>Account Type: {{ selectedMerchant?.accountType || "N/A" }}</p>
-          <p>Auto Settle:
-            {{ selectedMerchant?.autosettle ? "Yes" : "No" }}</p>
-        </div>
-      </div>
+      <!-- Close button at the top right -->
+      <button class="close-btn" (click)="closeActionModal()">
+        <i class="fas fa-times"></i>
+      </button>
+  
+      <h2 class="modal-title">Actions</h2>
       <div class="modal-actions">
-        <button class="modal-btn" (click)="closeDetailsModal()">Close</button>
+        <!-- View Details -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction && viewDetails(selectedMerchantForAction)
+          "
+        >
+          <i class="fas fa-eye"></i>
+          <div class="btn-content">
+            <span class="btn-title">View Details</span>
+            <span class="btn-description">View detailed information about the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- Top Up -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              openTopUpModal(selectedMerchantForAction._id)
+          "
+        >
+          <i class="fas fa-plus-circle"></i>
+          <div class="btn-content">
+            <span class="btn-title">Top Up</span>
+            <span class="btn-description">Add funds to the merchant's account.</span>
+          </div>
+        </button>
+  
+        <!-- Check Balance -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              checkBalance(selectedMerchantForAction._id)
+          "
+        >
+          <i class="fas fa-wallet"></i>
+          <div class="btn-content">
+            <span class="btn-title">Check Balance</span>
+            <span class="btn-description">View the current balance of the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- Approve Merchant -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              openApproveModal(selectedMerchantForAction)
+          "
+        >
+          <i class="fas fa-check-circle"></i>
+          <div class="btn-content">
+            <span class="btn-title">Approve</span>
+            <span class="btn-description">Approve the merchant's account.</span>
+          </div>
+        </button>
+  
+        <!-- Configure Charges -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              openChargesModal(selectedMerchantForAction)
+          "
+        >
+          <i class="fas fa-cog"></i>
+          <div class="btn-content">
+            <span class="btn-title">Configure Charges</span>
+            <span class="btn-description">Set up charges for the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- View Transactions -->
+        <button
+          class="modal-btn"
+          [routerLink]="[
+            '/merchants/transactions',
+            selectedMerchantForAction?._id
+          ]"
+        >
+          <i class="fas fa-list"></i>
+          <div class="btn-content">
+            <span class="btn-title">View Transactions</span>
+            <span class="btn-description">View all transactions for the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- View Settlements -->
+        <button
+          class="modal-btn"
+          [routerLink]="[
+            '/merchants/settlements',
+            selectedMerchantForAction?._id
+          ]"
+        >
+          <i class="fas fa-money-check-alt"></i>
+          <div class="btn-content">
+            <span class="btn-title">View Settlements</span>
+            <span class="btn-description">View settlement details for the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- Settle Account -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              openSettleModal(selectedMerchantForAction)
+          "
+        >
+          <i class="fas fa-money-bill-wave"></i>
+          <div class="btn-content">
+            <span class="btn-title">Settle</span>
+            <span class="btn-description">Initiate a settlement for the merchant.</span>
+          </div>
+        </button>
+  
+        <!-- Toggle Auto-settle -->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              toggleAutosettle(selectedMerchantForAction)
+          "
+        >
+          <i
+            class="fas"
+            [class.fa-toggle-on]="selectedMerchantForAction?.autosettle"
+            [class.fa-toggle-off]="!selectedMerchantForAction?.autosettle"
+            [style.color]="
+              selectedMerchantForAction?.autosettle ? '#4CAF50' : '#999'
+            "
+          ></i>
+          <div class="btn-content">
+            <span class="btn-title">Toggle Auto-settle</span>
+            <span class="btn-description">Enable or disable auto-settlement for the merchant.</span>
+          </div>
+        </button>
+
+        <!--Toggle enable tier-->
+        <button
+          class="modal-btn"
+          (click)="
+            selectedMerchantForAction &&
+              toggleMerchantTier(selectedMerchantForAction)
+          "
+        >
+          <i
+            class="fas"
+            [class.fa-toggle-on]="selectedMerchantForAction?.tierEnabled"
+            [class.fa-toggle-off]="!selectedMerchantForAction?.tierEnabled"
+            [style.color]="
+              selectedMerchantForAction?.tierEnabled ? '#4CAF50' : '#999'
+            "
+          ></i>
+          <div class="btn-content">
+            <span class="btn-title">Toggle Merchant-Tier</span>
+            <span class="btn-description">Enable or disable merchant-tier for the merchant.</span>
+          </div>
+        </button>
       </div>
     </div>
   </div>
+
+  <!-- Details Modal -->
+  <!-- Details Modal -->
+<div class="modal" *ngIf="showDetailsModal">
+  <div class="modal-content details-modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Merchant Details</h2>
+      <button class="close-btn" (click)="closeDetailsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="merchant-details">
+      <!-- Basic Information -->
+      <div class="details-section">
+        <h3 class="section-title">Basic Information</h3>
+        <div class="details-grid">
+          <div class="detail-group">
+            <h4>Trade Name</h4>
+            <p>{{ selectedMerchant?.merchant_tradeName || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Line of Business</h4>
+            <p>{{ selectedMerchant?.lineOfBusiness || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Registration Number</h4>
+            <p>{{ selectedMerchant?.registrationNumber || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Created On</h4>
+            <p>{{ selectedMerchant?.createdAt | date:'medium' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="details-section">
+        <h3 class="section-title">Contact Information</h3>
+        <div class="details-grid">
+          <div class="detail-group">
+            <h4>Email</h4>
+            <p>{{ selectedMerchant?.email || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Phone</h4>
+            <p>{{ selectedMerchant?.phone || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Address/Location</h4>
+            <p>{{ selectedMerchant?.address || selectedMerchant?.location || "N/A" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Person -->
+      <div class="details-section">
+        <h3 class="section-title">Contact Person</h3>
+        <div class="details-grid">
+          <div class="detail-group">
+            <h4>Name</h4>
+            <p>{{ selectedMerchant?.contact_person || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Email</h4>
+            <p>{{ selectedMerchant?.contactPersonEmail || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Phone</h4>
+            <p>{{ selectedMerchant?.contactPersonPhone || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Designation</h4>
+            <p>{{ selectedMerchant?.contactPersonDesignation || "N/A" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Details -->
+      <div class="details-section">
+        <h3 class="section-title">Account Settings</h3>
+        <div class="details-grid">
+          <div class="detail-group">
+            <h4>Status</h4>
+            <p>
+              <span class="status-badge" [class.active]="selectedMerchant?.active">
+                {{ selectedMerchant?.active ? "Active" : "Inactive" }}
+              </span>
+            </p>
+          </div>
+          <div class="detail-group">
+            <h4>Type</h4>
+            <p>{{ selectedMerchant?.type || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Account Type</h4>
+            <p>{{ selectedMerchant?.accountType || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Charge Type</h4>
+            <p>{{ selectedMerchant?.chargeType || "N/A" }}</p>
+          </div>
+          <div class="detail-group">
+            <h4>Auto Settle</h4>
+            <p>
+              <span class="toggle-indicator" [class.active]="selectedMerchant?.autosettle">
+                <i [class]="selectedMerchant?.autosettle ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                {{ selectedMerchant?.autosettle ? "Enabled" : "Disabled" }}
+              </span>
+            </p>
+          </div>
+          <div class="detail-group">
+            <h4>Tier Enabled</h4>
+            <p>
+              <span class="toggle-indicator" [class.active]="selectedMerchant?.tierEnabled">
+                <i [class]="selectedMerchant?.tierEnabled ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                {{ selectedMerchant?.tierEnabled ? "Enabled" : "Disabled" }}
+              </span>
+            </p>
+          </div>
+          <div class="detail-group">
+            <h4>Tier Level</h4>
+            <p>{{ selectedMerchant?.tierLevel || "N/A" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operations -->
+      <div class="details-section" *ngIf="selectedMerchant?.operations?.length">        <h3 class="section-title">Allowed Operations</h3>
+        <div class="operations-list">
+          <span class="operation-badge" *ngFor="let op of selectedMerchant?.operations">
+            {{ op }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Approval Information -->
+      <div class="details-section" *ngIf="selectedMerchant?.approvedDate">
+        <h3 class="section-title">Approval Information</h3>
+        <div class="details-grid">
+          <div class="detail-group">
+            <h4>Approved Date</h4>
+            <p>{{ selectedMerchant?.approvedDate | date:'medium' }}</p>
+          </div>
+          <div class="detail-group" *ngIf="selectedMerchant?.onboardedBy">
+            <h4>Onboarded By</h4>
+            <p>{{ selectedMerchant?.onboardedBy }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="modal-btn" (click)="closeDetailsModal()">Close</button>
+      <!-- <button class="modal-btn edit-btn" *ngIf="selectedMerchant" 
+              (click)="openChargesModal(selectedMerchant)">
+        <i class="fas fa-cog"></i> Configure Charges
+      </button> -->
+    </div>
+  </div>
+</div>
 
   <div class="modal" *ngIf="showSettleModal">
     <div class="modal-content">
@@ -175,12 +458,20 @@
 
         <div class="form-group">
           <label>Account Name</label>
-          <input type="text" formControlName="recipient_account_name" class="form-input" />
+          <input
+            type="text"
+            formControlName="recipient_account_name"
+            class="form-input"
+          />
         </div>
 
         <div class="form-group">
           <label>Account Number</label>
-          <input type="text" formControlName="recipient_account_number" class="form-input" />
+          <input
+            type="text"
+            formControlName="recipient_account_number"
+            class="form-input"
+          />
         </div>
 
         <div class="form-group">
@@ -201,11 +492,19 @@
         <div class="error-message" *ngIf="error">{{ error }}</div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn cancel" (click)="closeSettleModal()">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeSettleModal()"
+          >
             Cancel
           </button>
-          <button type="submit" class="modal-btn confirm" [disabled]="settleForm.invalid || isLoading">
-            {{ isLoading ? 'Processing...' : 'Settle' }}
+          <button
+            type="submit"
+            class="modal-btn confirm"
+            [disabled]="settleForm.invalid || isLoading"
+          >
+            {{ isLoading ? "Processing..." : "Settle" }}
           </button>
         </div>
       </form>
@@ -232,7 +531,8 @@
       </div>
 
       <div class="warning-message info">
-        Are you sure you want to approve this merchant? This will grant them access to the platform.
+        Are you sure you want to approve this merchant? This will grant them
+        access to the platform.
       </div>
 
       <!-- Error Message -->
@@ -241,11 +541,21 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="modal-btn cancel" (click)="closeApproveModal()" [disabled]="isLoading">
+        <button
+          type="button"
+          class="modal-btn cancel"
+          (click)="closeApproveModal()"
+          [disabled]="isLoading"
+        >
           Cancel
         </button>
-        <button type="button" class="modal-btn approve" (click)="approveMerchant()" [disabled]="isLoading">
-          {{ isLoading ? 'Processing...' : 'Confirm Approval' }}
+        <button
+          type="button"
+          class="modal-btn approve"
+          (click)="approveMerchant()"
+          [disabled]="isLoading"
+        >
+          {{ isLoading ? "Processing..." : "Confirm Approval" }}
         </button>
       </div>
     </div>
@@ -259,13 +569,25 @@
       <form [formGroup]="topUpForm" (ngSubmit)="submitTopUp()">
         <div class="form-group">
           <label>Amount (GHS)</label>
-          <input type="number" formControlName="amount" class="form-input" placeholder="Enter amount" />
-          <div class="error-message" *ngIf="
+          <input
+            type="number"
+            formControlName="amount"
+            class="form-input"
+            placeholder="Enter amount"
+          />
+          <div
+            class="error-message"
+            *ngIf="
               topUpForm.get('amount')?.invalid &&
               topUpForm.get('amount')?.touched
-            ">
-            <span *ngIf="topUpForm.get('amount')?.errors?.['required']">Amount is required</span>
-            <span *ngIf="topUpForm.get('amount')?.errors?.['min']">Minimum amount is 1 GHS</span>
+            "
+          >
+            <span *ngIf="topUpForm.get('amount')?.errors?.['required']"
+              >Amount is required</span
+            >
+            <span *ngIf="topUpForm.get('amount')?.errors?.['min']"
+              >Minimum amount is 1 GHS</span
+            >
           </div>
         </div>
 
@@ -278,24 +600,46 @@
 
         <div class="form-group">
           <label>Account Name</label>
-          <input type="text" formControlName="account_name" class="form-input" placeholder="Enter account name" />
-          <div class="error-message" *ngIf="
+          <input
+            type="text"
+            formControlName="account_name"
+            class="form-input"
+            placeholder="Enter account name"
+          />
+          <div
+            class="error-message"
+            *ngIf="
               topUpForm.get('account_name')?.invalid &&
               topUpForm.get('account_name')?.touched
-            ">
-            <span *ngIf="topUpForm.get('account_name')?.errors?.['required']">Account name is required</span>
+            "
+          >
+            <span *ngIf="topUpForm.get('account_name')?.errors?.['required']"
+              >Account name is required</span
+            >
           </div>
         </div>
 
         <div class="form-group">
           <label>Account Number</label>
-          <input type="text" formControlName="account_number" class="form-input" placeholder="Enter mobile number" />
-          <div class="error-message" *ngIf="
+          <input
+            type="text"
+            formControlName="account_number"
+            class="form-input"
+            placeholder="Enter mobile number"
+          />
+          <div
+            class="error-message"
+            *ngIf="
               topUpForm.get('account_number')?.invalid &&
               topUpForm.get('account_number')?.touched
-            ">
-            <span *ngIf="topUpForm.get('account_number')?.errors?.['required']">Account number is required</span>
-            <span *ngIf="topUpForm.get('account_number')?.errors?.['pattern']">Enter a valid 10-digit number</span>
+            "
+          >
+            <span *ngIf="topUpForm.get('account_number')?.errors?.['required']"
+              >Account number is required</span
+            >
+            <span *ngIf="topUpForm.get('account_number')?.errors?.['pattern']"
+              >Enter a valid 10-digit number</span
+            >
           </div>
         </div>
 
@@ -314,31 +658,56 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn cancel" (click)="closeTopUpModal()">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeTopUpModal()"
+          >
             Cancel
           </button>
-          <button type="submit" class="modal-btn submit" [disabled]="topUpForm.invalid || isSubmitting">
+          <button
+            type="submit"
+            class="modal-btn submit"
+            [disabled]="topUpForm.invalid || isSubmitting"
+          >
             {{ isSubmitting ? "Processing..." : "Submit" }}
           </button>
         </div>
       </form>
     </div>
-
   </div>
-  <div class="modal" *ngIf="showOtpModal" style="z-index: 1100;">
+  <div class="modal" *ngIf="showOtpModal" style="z-index: 1100">
     <div class="modal-content">
       <h2 class="modal-title">Verify OTP</h2>
-      <p class="modal-subtitle">Enter the verification code sent to {{ userEmail }}</p>
+      <p class="modal-subtitle">
+        Enter the verification code sent to {{ userEmail }}
+      </p>
 
       <form [formGroup]="otpForm" (ngSubmit)="verifyOtpAndTopUp()">
         <div class="form-group">
           <label>OTP Code</label>
-          <input type="text" formControlName="otp" class="form-input" placeholder="Enter 5-digit OTP" maxlength="5"
+          <input
+            type="text"
+            formControlName="otp"
+            class="form-input"
+            placeholder="Enter 5-digit OTP"
+            maxlength="5"
             pattern="[0-9]*"
-            [class.error-input]="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched || error" />
-          <div class="error-message" *ngIf="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched">
-            <span *ngIf="otpForm.get('otp')?.errors?.['required']">OTP is required</span>
-            <span *ngIf="otpForm.get('otp')?.errors?.['pattern']">Please enter a valid 5-digit OTP</span>
+            [class.error-input]="
+              (otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched) ||
+              error
+            "
+          />
+          <div
+            class="error-message"
+            *ngIf="otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched"
+          >
+            <span *ngIf="otpForm.get('otp')?.errors?.['required']"
+              >OTP is required</span
+            >
+            <span *ngIf="otpForm.get('otp')?.errors?.['pattern']"
+              >Please enter a valid 5-digit OTP</span
+            >
           </div>
         </div>
 
@@ -349,10 +718,19 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn cancel" (click)="closeOtpModal()" [disabled]="isLoading">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeOtpModal()"
+            [disabled]="isLoading"
+          >
             Cancel
           </button>
-          <button type="submit" class="modal-btn submit" [disabled]="otpForm.invalid || isLoading">
+          <button
+            type="submit"
+            class="modal-btn submit"
+            [disabled]="otpForm.invalid || isLoading"
+          >
             {{ isLoading ? "Verifying..." : "Verify & Process" }}
           </button>
         </div>
@@ -363,17 +741,17 @@
   <div class="modal" *ngIf="showBalanceModal">
     <div class="modal-content">
       <h2 class="modal-title">Account Balance Details</h2>
-  
+
       <!-- Loading State -->
       <div *ngIf="isLoading" class="modal-loading">
         <div class="spinner"></div>
       </div>
-  
+
       <!-- Error State -->
       <div *ngIf="error" class="error-message">
         {{ error }}
       </div>
-  
+
       <!-- Balance Data -->
       <div *ngIf="merchantBalance && !isLoading" class="balance-details">
         <div class="balance-grid">
@@ -381,66 +759,81 @@
             <label>Account Number</label>
             <span>{{ merchantBalance.accountNumber }}</span>
           </div>
-  
+
           <div class="balance-item">
             <label>Wallet ID</label>
             <span>{{ merchantBalance.walletId }}</span>
           </div>
-  
+
           <div class="balance-item">
             <label>Account Type</label>
             <span class="capitalize">{{ merchantBalance.accountType }}</span>
           </div>
-  
+
           <div class="balance-item">
             <label>Wallet Type</label>
             <span class="capitalize">{{ merchantBalance.walletType }}</span>
           </div>
-  
+
           <div class="balance-item">
             <label>Currency</label>
             <span>{{ merchantBalance.currency }}</span>
           </div>
-  
+
           <div class="balance-item highlight">
-            <label>Total Balance</label>
-            <span>{{ merchantBalance.currency }} {{ merchantBalance.totalBalance | number : "1.2-2" }}</span>
+            <label>Confirmed Balance</label>
+            <span
+              >{{ merchantBalance.currency }}
+              {{ merchantBalance.confirmedBalance | number : "1.2-2" }}</span
+            >
           </div>
-  
+
           <div class="balance-item">
             <label>Available Balance</label>
-            <span>{{ merchantBalance.currency }} {{ merchantBalance.availableBalance | number : "1.2-2" }}</span>
+            <span
+              >{{ merchantBalance.currency }}
+              {{ merchantBalance.availableBalance | number : "1.2-2" }}</span
+            >
           </div>
-  
+
           <div class="balance-item">
             <label>Unconfirmed Balance</label>
-            <span>{{ merchantBalance.currency }} {{ merchantBalance.unConfirmedBalance | number : "1.2-2" }}</span>
+            <span
+              >{{ merchantBalance.currency }}
+              {{ merchantBalance.unConfirmedBalance | number : "1.2-2" }}</span
+            >
           </div>
-  
+
           <div class="balance-item">
             <label>Blocked Balance</label>
-            <span>{{ merchantBalance.currency }} {{ merchantBalance.blockedBalance | number : "1.2-2" }}</span>
+            <span
+              >{{ merchantBalance.currency }}
+              {{ merchantBalance.blockedBalance | number : "1.2-2" }}</span
+            >
           </div>
-  
+
           <div class="balance-item">
             <label>Last Balance</label>
-            <span>{{ merchantBalance.currency }} {{ merchantBalance.lastBalance | number : "1.2-2" }}</span>
+            <span
+              >{{ merchantBalance.currency }}
+              {{ merchantBalance.lastBalance | number : "1.2-2" }}</span
+            >
           </div>
-  
+
           <div class="balance-item">
             <label>Status</label>
             <span class="status-badge" [class.active]="merchantBalance.active">
               {{ merchantBalance.active ? "Active" : "Inactive" }}
             </span>
           </div>
-  
+
           <div class="balance-item">
             <label>Last Updated</label>
             <span>{{ merchantBalance.updatedAt | date : "medium" }}</span>
           </div>
         </div>
       </div>
-  
+
       <div class="modal-actions">
         <button class="modal-btn" (click)="closeBalanceModal()">Close</button>
       </div>
@@ -473,62 +866,110 @@
 
           <div class="form-group">
             <label>GIP Charge (%)</label>
-            <input type="number" formControlName="disburse_gip_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_gip_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>GIP Cap</label>
-            <input type="number" formControlName="disburse_gip_cap" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_gip_cap"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>NRT Charge (%)</label>
-            <input type="number" formControlName="disburse_nrt_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_nrt_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Charge (%)</label>
-            <input type="number" formControlName="disburse_momo_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_momo_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Cap</label>
-            <input type="number" formControlName="disburse_momo_cap" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_momo_cap"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>Min Cap</label>
-            <input type="number" formControlName="disburse_min_cap" class="form-input">
+            <input
+              type="number"
+              formControlName="disburse_min_cap"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Base Charge (%)</label>
-            <input type="number" formControlName="momo_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="momo_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>Card Charge (%)</label>
-            <input type="number" formControlName="card_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="card_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>BTC Charge (%)</label>
-            <input type="number" formControlName="btc_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="btc_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Base Cap</label>
-            <input type="number" formControlName="momo_cap" class="form-input">
+            <input
+              type="number"
+              formControlName="momo_cap"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Min Charge</label>
-            <input type="number" formControlName="momo_min_charge" class="form-input">
+            <input
+              type="number"
+              formControlName="momo_min_charge"
+              class="form-input"
+            />
           </div>
 
           <div class="form-group">
             <label>MoMo Charge Cap</label>
-            <input type="number" formControlName="momo_charge_cap" class="form-input">
+            <input
+              type="number"
+              formControlName="momo_charge_cap"
+              class="form-input"
+            />
           </div>
         </div>
 
@@ -538,11 +979,20 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn cancel" (click)="closeChargesModal()" [disabled]="isLoading">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeChargesModal()"
+            [disabled]="isLoading"
+          >
             Cancel
           </button>
-          <button type="submit" class="modal-btn save" [disabled]="chargesForm.invalid || isLoading">
-            {{ isLoading ? 'Saving...' : 'Save Changes' }}
+          <button
+            type="submit"
+            class="modal-btn save"
+            [disabled]="chargesForm.invalid || isLoading"
+          >
+            {{ isLoading ? "Saving..." : "Save Changes" }}
           </button>
         </div>
       </form>
@@ -561,11 +1011,16 @@
             <option value="PENDING">Pending</option>
             <option value="FAILED">Failed</option>
           </select>
-          <div class="error-message" *ngIf="
+          <div
+            class="error-message"
+            *ngIf="
               statusForm.get('status')?.invalid &&
               statusForm.get('status')?.touched
-            ">
-            <span *ngIf="statusForm.get('status')?.errors?.['required']">Status is required</span>
+            "
+          >
+            <span *ngIf="statusForm.get('status')?.errors?.['required']"
+              >Status is required</span
+            >
           </div>
         </div>
 
@@ -575,10 +1030,18 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn cancel" (click)="closeStatusModal()">
+          <button
+            type="button"
+            class="modal-btn cancel"
+            (click)="closeStatusModal()"
+          >
             Cancel
           </button>
-          <button type="submit" class="modal-btn submit" [disabled]="statusForm.invalid || isLoading">
+          <button
+            type="submit"
+            class="modal-btn submit"
+            [disabled]="statusForm.invalid || isLoading"
+          >
             {{ isLoading ? "Updating..." : "Update Status" }}
           </button>
         </div>
