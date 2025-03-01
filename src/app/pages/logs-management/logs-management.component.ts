@@ -182,7 +182,7 @@ export class LogsManagementComponent implements OnInit {
     this.isPollingEnabled = !this.isPollingEnabled;
     
     if (this.isPollingEnabled) {
-      this.startPolling();
+      this.startPolling();  
     } else {
       this.stopPolling();
     }

@@ -1,3 +1,4 @@
+// transaction-details.component.ts
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -13,9 +14,18 @@ import { Transaction } from './transaction.interface';
 })
 export class TransactionDetailsComponent {
   searchForm: FormGroup;
+  statusForm: FormGroup;
   transactions: (Transaction & { showDetails?: boolean })[] = [];
   loading = false;
   error: string | null = null;
+  
+  // Modal visibility controls
+  showStatusModal = false;
+  showReverseModal = false;
+  showCompleteModal = false;
+  
+  // Selected transaction for actions
+  selectedTransaction: (Transaction & { showDetails?: boolean }) | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -23,6 +33,10 @@ export class TransactionDetailsComponent {
   ) {
     this.searchForm = this.fb.group({
       transactionId: ['', [Validators.required]]
+    });
+    
+    this.statusForm = this.fb.group({
+      status: ['', Validators.required]
     });
   }
 
@@ -57,6 +71,132 @@ export class TransactionDetailsComponent {
     transaction.showDetails = !transaction.showDetails;
   }
 
+  // MODAL HANDLING
+  openStatusModal(transaction: Transaction & { showDetails?: boolean }) {
+    this.selectedTransaction = transaction;
+    this.statusForm.patchValue({ status: transaction.status });
+    this.showStatusModal = true;
+  }
+
+  closeStatusModal() {
+    this.showStatusModal = false;
+    this.selectedTransaction = null;
+    this.statusForm.reset();
+  }
+
+  openReverseModal(transaction: Transaction & { showDetails?: boolean }) {
+    this.selectedTransaction = transaction;
+    this.showReverseModal = true;
+  }
+
+  closeReverseModal() {
+    this.showReverseModal = false;
+    this.selectedTransaction = null;
+  }
+
+  openCompleteModal(transaction: Transaction & { showDetails?: boolean }) {
+    this.selectedTransaction = transaction;
+    this.showCompleteModal = true;
+  }
+
+  closeCompleteModal() {
+    this.showCompleteModal = false;
+    this.selectedTransaction = null;
+  }
+
+  // ACTION HANDLERS
+  updateTransaction() {
+    if (this.statusForm.invalid || !this.selectedTransaction) return;
+    
+    this.loading = true;
+    this.error = null;
+    
+    const updateData = {
+      id: this.selectedTransaction._id,
+      data: {
+        status: this.statusForm.get('status')?.value
+      }
+    };
+    
+    this.transactionService.updateTransaction(updateData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Update the transaction in the list
+          if (this.selectedTransaction) {
+            this.selectedTransaction.status = updateData.data.status;
+          }
+          this.closeStatusModal();
+        } else {
+          this.error = response.message || 'Failed to update status';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to update transaction status';
+        this.loading = false;
+      }
+    });
+  }
+
+  reverseTransaction() {
+    if (!this.selectedTransaction) return;
+    
+    this.loading = true;
+    this.error = null;
+    
+    const reverseData = {
+      transactionRef: this.selectedTransaction.transactionRef,
+      amount: this.selectedTransaction.amount,
+      description: 'Reversal transaction'
+    };
+    
+    this.transactionService.reverseTransaction(reverseData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Refresh the search to get updated transaction
+          this.searchTransaction();
+          this.closeReverseModal();
+        } else {
+          this.error = response.message || 'Failed to reverse transaction';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to reverse transaction';
+        this.loading = false;
+      }
+    });
+  }
+
+  completeTransaction() {
+    if (!this.selectedTransaction) return;
+    
+    this.loading = true;
+    this.error = null;
+    
+    const completeData = {
+      id: this.selectedTransaction._id,
+      status: this.selectedTransaction.status
+    };
+    
+    this.transactionService.completeTransaction(completeData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Refresh the search to get updated transaction
+          this.searchTransaction();
+          this.closeCompleteModal();
+        } else {
+          this.error = response.message || 'Failed to complete transaction';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to complete transaction';
+        this.loading = false;
+      }
+    });
+  }
+
   getStatusClass(status: string): string {
     const baseClasses = 'px-3 py-1 text-sm font-medium rounded-full';
     return `${baseClasses} ${
@@ -79,5 +219,13 @@ export class TransactionDetailsComponent {
 
   formatDate(date: string): string {
     return new Date(date).toLocaleString();
+  }
+  
+  canReverse(transaction: Transaction): boolean {
+    return transaction.status === 'PAID';
+  }
+  
+  canComplete(transaction: Transaction): boolean {
+    return transaction.status !== 'COMPLETED';
   }
 }

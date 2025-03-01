@@ -53,8 +53,8 @@ export class OperatorConfigComponent implements OnInit {
       merchantId: [null],
       accountTypes: [[], Validators.required],
       operator: ['', Validators.required],
-    //   isActive: [true],
-    //   priority: [0],
+      isActive: [true],
+      priority: [0],
     //   supportedCurrencies: [[]],
     //   transactionLimits: this.fb.group({
     //     minAmount: [null],
