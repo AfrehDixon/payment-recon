@@ -4,7 +4,7 @@ import { QueueItem, QueueStats } from './queue.interface';
 import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 import { QueueService } from './queue.service';
 import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
+import { interval, Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-queue-dashboard',
@@ -31,6 +31,10 @@ export class QueueDashboardComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private destroy$ = new Subject<void>();
 
+    private pollingSubscription: Subscription | null = null;
+    private pollingInterval = 1000; // 1 second in milliseconds
+    isPollingEnabled = true; // Control polling state
+
   constructor(
     private queueService: QueueService,
     private fb: FormBuilder
@@ -53,8 +57,9 @@ export class QueueDashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.setupFilterSubscription();
     this.loadInitialData();
-  }
 
+    this.startPolling();
+  }
   private updateDisplayedItems() {
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
@@ -113,7 +118,86 @@ export class QueueDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.stopPolling();
+
   }
+
+  startPolling(): void {
+    // Only start if not already polling
+    if (!this.pollingSubscription && this.isPollingEnabled) {
+      this.pollingSubscription = interval(this.pollingInterval).subscribe(() => {
+        // Only fetch logs if not currently loading and polling is enabled
+        if (!this.isLoading() && this.isPollingEnabled) {
+          this.loadQueueItemsSilently();
+        }
+      });
+    }
+  }
+
+  loadQueueItemsSilently() {
+    if (this.loading.items) return;
+    
+    // Avoid showing loading indicator for silent refresh
+    // this.loading.items = true;
+    this.error = null;
+  
+    const filters = { ...this.filterForm.value };
+    delete filters.page;
+    delete filters.limit;
+  
+    this.queueService.getQueueItems(filters)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response?.data?.items) {
+            // Log to check if we're getting new data
+            console.log('New data received from poll:', response.data.items.length);
+            
+            // Check if data has actually changed
+            const currentDataStr = JSON.stringify(this.allItems);
+            const newDataStr = JSON.stringify(response.data.items);
+            
+            if (currentDataStr !== newDataStr) {
+              console.log('Data has changed, updating view');
+              this.allItems = response.data.items;
+              this.totalItems = this.allItems.length;
+              this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+              this.updateDisplayedItems();
+            } else {
+              console.log('No data changes detected');
+            }
+          } else {
+            this.resetPaginationState();
+          }
+        },
+        error: (error) => {
+          console.error('Error during silent poll:', error);
+          // Don't show error in UI for silent refresh
+          // this.error = error.message;
+          // this.resetPaginationState();
+        }
+      });
+  }
+    
+    // Stop the polling interval
+    stopPolling(): void {
+      if (this.pollingSubscription) {
+        this.pollingSubscription.unsubscribe();
+        this.pollingSubscription = null;
+      }
+    }
+    
+    // Toggle polling on/off
+    togglePolling(): void {
+      this.isPollingEnabled = !this.isPollingEnabled;
+      
+      if (this.isPollingEnabled) {
+        this.startPolling();  
+      } else {
+        this.stopPolling();
+      }
+    }
+    
 
   private loadInitialData() {
     this.loadQueueStats();
