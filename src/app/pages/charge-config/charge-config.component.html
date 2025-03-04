@@ -101,6 +101,30 @@
               </div>
             </div>
 
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700"
+                >Operator</label
+              >
+              <select
+                formControlName="operator"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Operator</option>
+                <option *ngFor="let op of operators" [value]="op">
+                  {{ op }}
+                </option>
+              </select>
+              <span
+                *ngIf="
+                  configForm.get('operator')?.invalid &&
+                  configForm.get('operator')?.touched
+                "
+                class="text-xs text-red-500"
+              >
+                Operator is required
+              </span>
+            </div>
+
             <!-- Transaction Types -->
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-700">Transaction Types</label>

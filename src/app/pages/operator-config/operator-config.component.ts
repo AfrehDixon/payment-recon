@@ -4,6 +4,7 @@ import { EAccountType, EOperator, OperatorConfig } from './operator-config.inter
 import { OperatorConfigService } from '../../service/operator-config.service';
 import { CommonModule } from '@angular/common';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { EAccountIssuer } from '../charge-config/charge-config.interface';
 
 @Component({
   selector: 'app-operator-config',
@@ -27,6 +28,8 @@ export class OperatorConfigComponent implements OnInit {
   showForm = false;
   filterForm!: FormGroup;
   filteredConfigs: OperatorConfig[] = [];
+  accountIssuers = Object.values(EAccountIssuer);
+  
 
   currentPage = 1;
   pageSize = 10;
@@ -55,6 +58,7 @@ export class OperatorConfigComponent implements OnInit {
       operator: ['', Validators.required],
       isActive: [true],
       priority: [0],
+      accountIssuers: [[], Validators.required],
     //   supportedCurrencies: [[]],
     //   transactionLimits: this.fb.group({
     //     minAmount: [null],
@@ -112,6 +116,21 @@ export class OperatorConfigComponent implements OnInit {
     
       // Apply filters immediately on initialization
       setTimeout(() => this.applyFilters(), 0);
+    }
+
+    toggleAccountIssuer(issuer: string) {
+      const control = this.configForm.get('accountIssuers');
+      const currentValues = control?.value || [];
+      
+      if (currentValues.includes(issuer)) {
+        control?.setValue(currentValues.filter((v: string) => v !== issuer));
+      } else {
+        control?.setValue([...currentValues, issuer]);
+      }
+    }
+
+    isAccountIssuerSelected(issuer: string): boolean {
+      return (this.configForm.get('accountIssuers')?.value || []).includes(issuer);
     }
 
 

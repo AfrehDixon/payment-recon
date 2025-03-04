@@ -10,6 +10,7 @@ import {
 } from './charge-config.interface';
 import { ChargeConfigService } from './charge-config.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { EOperator } from '../operator-config/operator-config.interface';
 
 @Component({
   selector: 'app-charge-config',
@@ -31,6 +32,8 @@ export class ChargeConfigComponent implements OnInit {
   accountIssuers = Object.values(EAccountIssuer);
   transactionTypes = Object.values(ETransactionType);
   calculationMethods = Object.values(EChargeCalculationMethod);
+  operators = Object.values(EOperator);
+  
   
   currentPage = 1;
   pageSize = 10;
@@ -65,7 +68,7 @@ export class ChargeConfigComponent implements OnInit {
       merchantId: [''],
       accountIssuer: [''],
       transactionType: [''],
-      calculationMethod: ['']
+      calculationMethod: [''],
     });
   }
 
@@ -232,6 +235,7 @@ export class ChargeConfigComponent implements OnInit {
       baseRate: [0, [Validators.required, Validators.min(0)]],
       maxCharge: [0, Validators.min(0)],
       minCharge: [0, Validators.min(0)],
+      operator: [[], [Validators.required, Validators.minLength(1)]],
       tiers: this.fb.array([])
     });
   }
@@ -366,7 +370,8 @@ export class ChargeConfigComponent implements OnInit {
       calculationMethod: config.calculationMethod,
       baseRate: config.baseRate,
       maxCharge: config.maxCharge || 0,
-      minCharge: config.minCharge || 0
+      minCharge: config.minCharge || 0,
+      operator: config.operator
     });
   }
 

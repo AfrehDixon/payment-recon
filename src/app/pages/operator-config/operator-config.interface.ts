@@ -14,6 +14,7 @@ export interface TransactionLimits {
     priority: number;
     supportedCurrencies?: string[];
     transactionLimits?: TransactionLimits;
+    accountIssuers: [];
   }
   
   export enum EAccountType {

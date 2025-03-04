@@ -2,7 +2,7 @@
   <!-- Header with Create Button -->
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Operator Configurations</h1>
-    <button 
+    <button
       *ngIf="!showForm && !isEditing"
       (click)="showForm = true"
       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
@@ -17,11 +17,13 @@
     <div class="dialog">
       <!-- Form Card -->
       <div class="bg-white rounded-lg border-md">
-        <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <div
+          class="border-b border-gray-200 px-6 py-4 flex justify-between items-center"
+        >
           <h2 class="text-xl font-semibold text-gray-800">
-            {{ isEditing ? 'Edit' : 'Create' }} Operator Configuration
+            {{ isEditing ? "Edit" : "Create" }} Operator Configuration
           </h2>
-          <button 
+          <button
             (click)="resetForm()"
             class="text-gray-500 hover:text-gray-700"
           >
@@ -30,32 +32,48 @@
         </div>
 
         <div class="p-6">
-          <form [formGroup]="configForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <form
+            [formGroup]="configForm"
+            (ngSubmit)="onSubmit()"
+            class="space-y-6"
+          >
             <!-- Name and Merchant -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Name</label>
-                <input 
-                  type="text" 
+                <label class="block text-sm font-medium text-gray-700"
+                  >Name</label
+                >
+                <input
+                  type="text"
                   formControlName="name"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Configuration Name"
+                />
+                <span
+                  *ngIf="
+                    configForm.get('name')?.invalid &&
+                    configForm.get('name')?.touched
+                  "
+                  class="text-xs text-red-500"
                 >
-                <span *ngIf="configForm.get('name')?.invalid && configForm.get('name')?.touched" 
-                      class="text-xs text-red-500">
                   Name is required
                 </span>
               </div>
 
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Merchant</label>
-                <select 
+                <label class="block text-sm font-medium text-gray-700"
+                  >Merchant</label
+                >
+                <select
                   formControlName="merchantId"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option [ngValue]="null">None (Global)</option>
-                  <option *ngFor="let merchant of merchants" [value]="merchant._id">
-                    {{merchant.merchant_tradeName || 'N/A'}}
+                  <option
+                    *ngFor="let merchant of merchants"
+                    [value]="merchant._id"
+                  >
+                    {{ merchant.merchant_tradeName || "N/A" }}
                   </option>
                 </select>
               </div>
@@ -64,10 +82,17 @@
             <!-- Account Types and Operator -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Account Types</label>
-                <div class="w-full p-3 border border-gray-300 rounded-md border-sm bg-white max-h-48 overflow-y-auto">
+                <label class="block text-sm font-medium text-gray-700"
+                  >Account Types</label
+                >
+                <div
+                  class="w-full p-3 border border-gray-300 rounded-md border-sm bg-white max-h-48 overflow-y-auto"
+                >
                   <div class="space-y-2">
-                    <div *ngFor="let type of accountTypes" class="flex items-center">
+                    <div
+                      *ngFor="let type of accountTypes"
+                      class="flex items-center"
+                    >
                       <input
                         type="checkbox"
                         [id]="'type-' + type"
@@ -75,74 +100,124 @@
                         [checked]="isAccountTypeSelected(type)"
                         (change)="toggleAccountType(type)"
                         class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        [for]="'type-' + type"
+                        class="ml-2 text-sm text-gray-700"
                       >
-                      <label [for]="'type-' + type" class="ml-2 text-sm text-gray-700">
-                        {{type}}
+                        {{ type }}
                       </label>
                     </div>
                   </div>
                 </div>
-                <span *ngIf="configForm.get('accountTypes')?.invalid && configForm.get('accountTypes')?.touched" 
-                      class="text-xs text-red-500">
+                <span
+                  *ngIf="
+                    configForm.get('accountTypes')?.invalid &&
+                    configForm.get('accountTypes')?.touched
+                  "
+                  class="text-xs text-red-500"
+                >
                   At least one account type is required
                 </span>
               </div>
 
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Operator</label>
-                <select 
+                <label class="block text-sm font-medium text-gray-700"
+                  >Operator</label
+                >
+                <select
                   formControlName="operator"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Operator</option>
                   <option *ngFor="let op of operators" [value]="op">
-                    {{op}}
+                    {{ op }}
                   </option>
                 </select>
-                <span *ngIf="configForm.get('operator')?.invalid && configForm.get('operator')?.touched" 
-                      class="text-xs text-red-500">
+                <span
+                  *ngIf="
+                    configForm.get('operator')?.invalid &&
+                    configForm.get('operator')?.touched
+                  "
+                  class="text-xs text-red-500"
+                >
                   Operator is required
                 </span>
-              </div>              
+              </div>
             </div>
 
-                      <!-- Active Status and Priority -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="flex items-center">
-              <input 
-                type="checkbox" 
-                formControlName="isActive"
-                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-              >
-              <label class="ml-2 text-sm font-medium text-gray-700">Active</label>
-            </div>
-  
+            <!-- Account Issuers -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">Priority</label>
-              <input 
-                type="number"
-                formControlName="priority"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              <label class="block text-sm font-medium text-gray-700"
+                >Account Issuers</label
               >
+              <div
+                class="grid grid-cols-2 md:grid-cols-4 gap-4 border border-gray-300 rounded-md p-4"
+              >
+                <div
+                  *ngFor="let issuer of accountIssuers"
+                  class="flex items-center space-x-2"
+                >
+                  <input
+                    type="checkbox"
+                    [id]="'issuer-' + issuer"
+                    [checked]="isAccountIssuerSelected(issuer)"
+                    (change)="toggleAccountIssuer(issuer)"
+                    class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <label
+                    [for]="'issuer-' + issuer"
+                    class="text-sm text-gray-700"
+                  >
+                    {{ issuer }}
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <!-- Active Status and Priority -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  formControlName="isActive"
+                  class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <label class="ml-2 text-sm font-medium text-gray-700"
+                  >Active</label
+                >
+              </div>
+
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700"
+                  >Priority</label
+                >
+                <input
+                  type="number"
+                  formControlName="priority"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md border-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
 
             <!-- Form Actions -->
             <div class="flex justify-end space-x-3">
-              <button 
+              <button
                 type="button"
                 (click)="resetForm()"
                 class="px-4 py-2 border border-gray-300 rounded-md border-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 [disabled]="configForm.invalid || loading"
                 class="px-4 py-2 border border-transparent rounded-md border-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
               >
-                <span *ngIf="loading" class="inline-block animate-spin">⌛</span>
-                <span>{{ isEditing ? 'Update' : 'Create' }}</span>
+                <span *ngIf="loading" class="inline-block animate-spin"
+                  >⌛</span
+                >
+                <span>{{ isEditing ? "Update" : "Create" }}</span>
               </button>
             </div>
           </form>
@@ -151,29 +226,29 @@
     </div>
   </div>
 
-    <div class="bg-white rounded-lg border-md mb-6 p-4">
-      <form [formGroup]="filterForm" class="space-y-4">
-        <!-- Search Bar -->
-        <div class="flex space-x-4">
-          <div class="flex-1">
-            <input
-              type="text"
-              formControlName="search"
-              placeholder="Search configurations..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-          </div>
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Clear Filters
-          </button>
+  <div class="bg-white rounded-lg border-md mb-6 p-4">
+    <form [formGroup]="filterForm" class="space-y-4">
+      <!-- Search Bar -->
+      <div class="flex space-x-4">
+        <div class="flex-1">
+          <input
+            type="text"
+            formControlName="search"
+            placeholder="Search configurations..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
-  
-        <!-- Filter Controls -->
-  <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Filter Controls -->
+      <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <select
       formControlName="merchantId"
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -215,56 +290,94 @@
       </option>
     </select>
   </div> -->
-      </form>
-    </div>
-  
-    <!-- Loading Spinner -->
-    <div *ngIf="loading" class="flex justify-center items-center h-40">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  
-    <!-- Table -->
-    <div *ngIf="!loading" class="bg-white rounded-lg border-md overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Types</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operator</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let config of paginatedConfigs" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap">{{config.name}}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{config.merchantId ? getMerchantName(config.merchantId) : 'Global'}}
-              </td>
-              <td class="px-6 py-4">{{config.accountTypes.join(', ')}}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{{config.operator}}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span [class]="config.isActive ? 
-                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800' : 
-                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800'">
-                  {{config.isActive ? 'Active' : 'Inactive'}}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{config.priority}}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <button 
-                  (click)="editConfig(config)"
-                  class="text-blue-600 hover:text-blue-900"
-                >
-                  <i class="fas fa-edit"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    </form>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="flex justify-center items-center h-40">
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+    ></div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="bg-white rounded-lg border-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Name
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Merchant
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Account Types
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Operator
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Priority
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let config of paginatedConfigs" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">{{ config.name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              {{
+                config.merchantId
+                  ? getMerchantName(config.merchantId)
+                  : "Global"
+              }}
+            </td>
+            <td class="px-6 py-4">{{ config.accountTypes.join(", ") }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ config.operator }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                [class]="
+                  config.isActive
+                    ? 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800'
+                    : 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800'
+                "
+              >
+                {{ config.isActive ? "Active" : "Inactive" }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ config.priority }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <button
+                (click)="editConfig(config)"
+                class="text-blue-600 hover:text-blue-900"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
+</div>

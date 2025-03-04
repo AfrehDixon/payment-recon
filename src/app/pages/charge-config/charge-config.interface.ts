@@ -14,6 +14,7 @@ export interface Tier {
     maxCharge?: number;
     minCharge?: number;
     tiers?: Tier[];
+    operator: string;
   }
   
   export enum ETransactionType {
