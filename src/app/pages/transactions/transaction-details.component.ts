@@ -15,7 +15,7 @@ import { Transaction } from './transaction.interface';
 export class TransactionDetailsComponent {
   searchForm: FormGroup;
   statusForm: FormGroup;
-  transactions: (Transaction & { showDetails?: boolean })[] = [];
+  transactions: (Transaction & { showDetails?: boolean; showJsonData?: boolean })[] = [];
   loading = false;
   error: string | null = null;
   
@@ -25,7 +25,7 @@ export class TransactionDetailsComponent {
   showCompleteModal = false;
   
   // Selected transaction for actions
-  selectedTransaction: (Transaction & { showDetails?: boolean }) | null = null;
+  selectedTransaction: (Transaction & { showDetails?: boolean; showJsonData?: boolean }) | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -53,7 +53,8 @@ export class TransactionDetailsComponent {
         if (response.data && response.data.length > 0) {
           this.transactions = response.data.map(tx => ({
             ...tx,
-            showDetails: false
+            showDetails: false,
+            showJsonData: false
           }));
         } else {
           this.error = 'No transactions found';
@@ -67,12 +68,33 @@ export class TransactionDetailsComponent {
     });
   }
 
-  toggleDetails(transaction: Transaction & { showDetails?: boolean }) {
+  toggleDetails(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
     transaction.showDetails = !transaction.showDetails;
+    // Close JSON view when closing details
+    if (!transaction.showDetails && transaction.showJsonData) {
+      transaction.showJsonData = false;
+    }
+  }
+
+  // JSON data handling
+  toggleJsonView(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
+    transaction.showJsonData = !transaction.showJsonData;
+  }
+
+  getFormattedJsonData(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }): string {
+    // Create a filtered copy of the transaction to display non-UI fields
+    const displayData = { ...transaction };
+    
+    // Remove UI-specific properties
+    delete (displayData as any).showDetails;
+    delete displayData.showJsonData;
+    
+    // Format with indentation for readability
+    return JSON.stringify(displayData, null, 2);
   }
 
   // MODAL HANDLING
-  openStatusModal(transaction: Transaction & { showDetails?: boolean }) {
+  openStatusModal(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
     this.selectedTransaction = transaction;
     this.statusForm.patchValue({ status: transaction.status });
     this.showStatusModal = true;
@@ -84,7 +106,7 @@ export class TransactionDetailsComponent {
     this.statusForm.reset();
   }
 
-  openReverseModal(transaction: Transaction & { showDetails?: boolean }) {
+  openReverseModal(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
     this.selectedTransaction = transaction;
     this.showReverseModal = true;
   }
@@ -94,7 +116,7 @@ export class TransactionDetailsComponent {
     this.selectedTransaction = null;
   }
 
-  openCompleteModal(transaction: Transaction & { showDetails?: boolean }) {
+  openCompleteModal(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
     this.selectedTransaction = transaction;
     this.showCompleteModal = true;
   }

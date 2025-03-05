@@ -2,7 +2,6 @@
 <div class="min-h-screen py-8 bg-gray-50 transaction-container">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Stats Overview -->
-    <!-- Stats Overview -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div
         class="bg-white p-6 rounded-xl border-sm hover:border-md transition-border duration-300"
@@ -251,7 +250,7 @@
                     }}</span>
                     <span class="text-gray-500">Issuer</span>
                     <span class="font-medium">{{
-                      tx.recipient_account_issuer
+                      tx.recipient_account_issuer_name
                     }}</span>
                   </div>
                 </div>
@@ -276,6 +275,24 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <!-- JSON Data View Button -->
+          <div class="mt-6">
+            <button
+              (click)="toggleJsonView(tx)"
+              class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {{ tx.showJsonData ? 'Hide JSON Data' : 'View JSON Data' }}
+            </button>
+            
+            <!-- JSON Data Display -->
+            <div *ngIf="tx.showJsonData" class="mt-4 bg-gray-800 text-white p-4 rounded-lg overflow-auto max-h-96">
+              <pre class="text-sm whitespace-pre-wrap break-words">{{ getFormattedJsonData(tx) }}</pre>
             </div>
           </div>
         </div>

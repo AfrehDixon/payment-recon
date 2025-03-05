@@ -153,6 +153,19 @@
   }
 }
 
+/* JSON data display styles */
+pre {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.json-container {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
 .spinner {
   width: 1.25rem;
   height: 1.25rem;
