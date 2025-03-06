@@ -198,7 +198,7 @@ export class TransactionDetailsComponent {
     
     const completeData = {
       id: this.selectedTransaction._id,
-      status: this.selectedTransaction.status
+      status: 'PAID'
     };
     
     this.transactionService.completeTransaction(completeData).subscribe({
@@ -244,7 +244,7 @@ export class TransactionDetailsComponent {
   }
   
   canReverse(transaction: Transaction): boolean {
-    return transaction.status === 'PAID';
+    return transaction.status === 'FAILED';
   }
   
   canComplete(transaction: Transaction): boolean {
