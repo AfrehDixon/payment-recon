@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { EAccountType, EOperator, OperatorConfig } from './operator-config.interface';
+import { EAccountType, EOperator, OperatorConfig, TransactionLimits } from './operator-config.interface';
 import { OperatorConfigService } from '../../service/operator-config.service';
 import { CommonModule } from '@angular/common';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -22,6 +22,7 @@ export class OperatorConfigComponent implements OnInit {
   merchants: any[] = [];
   accountTypes = Object.values(EAccountType);
   operators = Object.values(EOperator);
+  transactionTypes = ['CREDIT', 'DEBIT']; // Added transaction types
   isEditing = false;
   currentConfigId: string | null = null;
   loading = false;
@@ -29,7 +30,7 @@ export class OperatorConfigComponent implements OnInit {
   filterForm!: FormGroup;
   filteredConfigs: OperatorConfig[] = [];
   accountIssuers = Object.values(EAccountIssuer);
-  
+  Math = Math;
 
   currentPage = 1;
   pageSize = 10;
@@ -58,13 +59,14 @@ export class OperatorConfigComponent implements OnInit {
       operator: ['', Validators.required],
       isActive: [true],
       priority: [0],
-      accountIssuers: [[], Validators.required],
-    //   supportedCurrencies: [[]],
-    //   transactionLimits: this.fb.group({
-    //     minAmount: [null],
-    //     maxAmount: [null],
-    //     dailyLimit: [null]
-    //   })
+      accountIssuers: [[]],
+      transactionTypes: [[]],
+      supportedCurrencies: [[]],
+      transactionLimits: this.fb.group({
+        minAmount: [null],
+        maxAmount: [null],
+        dailyLimit: [null]
+      })
     });
   }
 
@@ -74,7 +76,7 @@ export class OperatorConfigComponent implements OnInit {
       merchantId: [''],
       accountIssuer: [''],
       transactionType: [''],
-      calculationMethod: ['']
+      operator: ['']
     });
   }
 
@@ -89,112 +91,125 @@ export class OperatorConfigComponent implements OnInit {
     
     if (currentTypes.includes(type)) {
       // Remove type if already selected
-    accountTypesControl?.setValue(currentTypes.filter((t: string) => t !== type));
+      accountTypesControl?.setValue(currentTypes.filter((t: string) => t !== type));
     } else {
       // Add type if not selected
       accountTypesControl?.setValue([...currentTypes, type]);
     }
   }
 
-    private setupFilterSubscriptions() {
-      // Subscribe to search input changes with debounce
-      this.filterForm.get('search')?.valueChanges.pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      ).subscribe(() => {
-        console.log("Search filter updated");
+  isTransactionTypeSelected(type: string): boolean {
+    const selectedTypes = this.configForm.get('transactionTypes')?.value || [];
+    return selectedTypes.includes(type);
+  }
+  
+  toggleTransactionType(type: string) {
+    const transactionTypesControl = this.configForm.get('transactionTypes');
+    const currentTypes = transactionTypesControl?.value || [];
+    
+    if (currentTypes.includes(type)) {
+      transactionTypesControl?.setValue(currentTypes.filter((t: string) => t !== type));
+    } else {
+      transactionTypesControl?.setValue([...currentTypes, type]);
+    }
+  }
+
+  private setupFilterSubscriptions() {
+    // Subscribe to search input changes with debounce
+    this.filterForm.get('search')?.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      console.log("Search filter updated");
+      this.applyFilters();
+    });
+  
+    // Subscribe to dropdown changes
+    ['merchantId', 'accountIssuer', 'transactionType', 'operator'].forEach(control => {
+      this.filterForm.get(control)?.valueChanges.subscribe(value => {
+        console.log(`${control} filter updated: `, value);
         this.applyFilters();
       });
-    
-      // Subscribe to dropdown changes
-      ['merchantId', 'accountIssuer', 'transactionType', 'calculationMethod'].forEach(control => {
-        this.filterForm.get(control)?.valueChanges.subscribe(value => {
-          console.log(`${control} filter updated: `, value);
-          this.applyFilters();
-        });
-      });
-    
-      // Apply filters immediately on initialization
-      setTimeout(() => this.applyFilters(), 0);
-    }
+    });
+  
+    // Apply filters immediately on initialization
+    setTimeout(() => this.applyFilters(), 0);
+  }
 
-    toggleAccountIssuer(issuer: string) {
-      const control = this.configForm.get('accountIssuers');
-      const currentValues = control?.value || [];
-      
-      if (currentValues.includes(issuer)) {
-        control?.setValue(currentValues.filter((v: string) => v !== issuer));
-      } else {
-        control?.setValue([...currentValues, issuer]);
+  toggleAccountIssuer(issuer: string) {
+    const control = this.configForm.get('accountIssuers');
+    const currentValues = control?.value || [];
+    
+    if (currentValues.includes(issuer)) {
+      control?.setValue(currentValues.filter((v: string) => v !== issuer));
+    } else {
+      control?.setValue([...currentValues, issuer]);
+    }
+  }
+
+  isAccountIssuerSelected(issuer: string): boolean {
+    return (this.configForm.get('accountIssuers')?.value || []).includes(issuer);
+  }
+
+  private applyFilters() {
+    const filters = this.filterForm.value;
+    console.log("Filters applied: ", filters);
+  
+    this.filteredConfigs = this.operatorConfigs.filter(config => {
+      let matches = true;
+  
+      // Search text
+      if (filters.search && filters.search.trim()) {
+        const searchLower = filters.search.toLowerCase();
+        const merchantName = this.getMerchantName(config.merchantId || '').toLowerCase();
+  
+        matches = matches && (
+          config.name.toLowerCase().includes(searchLower) ||
+          merchantName.includes(searchLower) ||
+          config.operator.toLowerCase().includes(searchLower) ||
+          config.accountTypes.some(type => type.toLowerCase().includes(searchLower)) ||
+          (config.accountIssuers && config.accountIssuers.some((issuer: string) => issuer.toLowerCase().includes(searchLower)))
+        );
       }
-    }
+  
+      // Merchant filter
+      if (filters.merchantId && filters.merchantId !== '') {
+        matches = matches && (config.merchantId === filters.merchantId || (filters.merchantId === 'global' && config.merchantId === null));
+      }
+  
+      // Account issuer filter
+      if (filters.accountIssuer && filters.accountIssuer !== '') {
+        matches = matches && (config.accountIssuers && config.accountIssuers.includes(filters.accountIssuer));
+      }
+  
+      // Transaction type filter
+      if (filters.transactionType && filters.transactionType !== '') {
+        matches = matches && (config.transactionTypes && config.transactionTypes.includes(filters.transactionType));
+      }
+  
+      // Operator filter
+      if (filters.operator && filters.operator !== '') {
+        matches = matches && config.operator === filters.operator;
+      }
+  
+      return matches;
+    });
+  
+    console.log("Filtered results: ", this.filteredConfigs);
+  
+    this.totalItems = this.filteredConfigs.length;
+  }
 
-    isAccountIssuerSelected(issuer: string): boolean {
-      return (this.configForm.get('accountIssuers')?.value || []).includes(issuer);
-    }
-
-
-    private applyFilters() {
-      const filters = this.filterForm.value;
-      console.log("Filters applied: ", filters);
-    
-      setTimeout(() => { // Ensure values are fully updated before filtering
-        this.filteredConfigs = this.operatorConfigs.filter(config => {
-          let matches = true;
-    
-          // Search text
-          if (filters.search && filters.search.trim()) {
-            const searchLower = filters.search.toLowerCase();
-            const merchantName = this.getMerchantName(config.merchantId || '').toLowerCase();
-    
-            matches = matches && (
-              config.name.toLowerCase().includes(searchLower) ||
-              merchantName.includes(searchLower) ||
-              // config.name.some(issuer => issuer.toLowerCase().includes(searchLower)) ||
-              config.accountTypes.some(type => type.toLowerCase().includes(searchLower))
-            );
-          }
-    
-          // Merchant filter
-          if (filters.merchantId && filters.merchantId !== '') {
-            matches = matches && (config.merchantId === filters.merchantId || (filters.merchantId === 'global' && config.merchantId === null));
-          }
-    
-          // Account issuer filter
-          if (filters.accountIssuer && filters.accountIssuer !== '') {
-            matches = matches && config.operator.includes(filters.accountIssuer);
-          }
-    
-          // Transaction type filter
-          if (filters.transactionType && filters.transactionType !== '') {
-            matches = matches && config.accountTypes.includes(filters.transactionType);
-          }
-    
-          // Calculation method filter
-          // if (filters.calculationMethod && filters.calculationMethod !== '') {
-          //   matches = matches && config.calculationMethod === filters.calculationMethod;
-          // }
-    
-          return matches;
-        });
-    
-        console.log("Filtered results: ", this.filteredConfigs);
-    
-        this.totalItems = this.filteredConfigs.length;
-        this.currentPage = 1; // Reset pagination when filters change
-      });
-    }
-
-    clearFilters() {
-      this.filterForm.reset({
-        search: '',
-        merchantId: '',
-        accountIssuer: '',
-        transactionType: '',
-        calculationMethod: ''
-      });
-      this.applyFilters();
-    }
+  clearFilters() {
+    this.filterForm.reset({
+      search: '',
+      merchantId: '',
+      accountIssuer: '',
+      transactionType: '',
+      operator: ''
+    });
+    this.applyFilters();
+  }
 
   loadOperatorConfigs() {
     this.loading = true;
@@ -213,14 +228,38 @@ export class OperatorConfigComponent implements OnInit {
     });
   }
 
-    get paginatedConfigs(): OperatorConfig[] {
-      const startIndex = (this.currentPage - 1) * this.pageSize;
-      return this.filteredConfigs.slice(startIndex, startIndex + this.pageSize);
-    }
+  get paginatedConfigs(): OperatorConfig[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    return this.filteredConfigs.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.pageSize);
+  }
   
-    get totalPages(): number {
-      return Math.ceil(this.totalItems / this.pageSize);
+  // Pagination methods
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
     }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  changePageSize(size: number) {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page when changing page size
+  }
 
   getMerchantName(merchantId: string): string {
     const merchant = this.merchants.find(m => m._id === merchantId);
@@ -262,7 +301,28 @@ export class OperatorConfigComponent implements OnInit {
     this.isEditing = true;
     this.showForm = true;
     this.currentConfigId = config._id ?? null;
-    this.configForm.patchValue(config);
+    
+    // Handle nested transaction limits
+    if (config.transactionLimits) {
+      this.configForm.patchValue({
+        ...config,
+        transactionLimits: {
+          minAmount: config.transactionLimits.minAmount || null,
+          maxAmount: config.transactionLimits.maxAmount || null,
+          dailyLimit: config.transactionLimits.dailyLimit || null
+        }
+      });
+    } else {
+      // If no transaction limits, reset that form group
+      this.configForm.patchValue({
+        ...config,
+        transactionLimits: {
+          minAmount: null,
+          maxAmount: null,
+          dailyLimit: null
+        }
+      });
+    }
   }
 
   resetForm() {
@@ -273,7 +333,22 @@ export class OperatorConfigComponent implements OnInit {
       isActive: true,
       priority: 0,
       supportedCurrencies: [],
-      accountTypes: []
+      accountTypes: [],
+      transactionTypes: [],
+      accountIssuers: [],
+      transactionLimits: {
+        minAmount: null,
+        maxAmount: null,
+        dailyLimit: null
+      }
     });
+  }
+
+  // Format array data for display
+  formatArrayData(data: any[] | undefined): string {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return 'None';
+    }
+    return data.join(', ');
   }
 }

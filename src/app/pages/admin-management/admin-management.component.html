@@ -1,284 +1,365 @@
-<div class="container-fluid py-4" style="margin-left: 200px; width: 90%;">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h1 class="h3 mb-0">Admin Management</h1>
-        <p class="text-muted">Manage system administrators and their permissions</p>
-      </div>
-      <button class="btn btn-primary d-flex align-items-center gap-2" (click)="showForm = !showForm">
-        <i class="bi" [class.bi-plus]="!showForm" [class.bi-x]="showForm"></i>
-        {{ showForm ? 'Cancel' : 'Add Admin' }}
-      </button>
+<div class="container mx-auto px-4 py-6 bg-gray-50 min-h-screen" style="margin-left: 200px !important; width: 90%;">
+  <!-- Header Section -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Admin Management</h1>
+      <p class="text-gray-500">Manage system administrators and their permissions</p>
     </div>
+    <button 
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors duration-200"
+      (click)="openAdminModal()"
+    >
+      <i class="bi bi-plus"></i>
+      Add Admin
+    </button>
+  </div>
   
-    <!-- Admin Form -->
-    <div class="card mb-4" *ngIf="showForm">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">{{ editingAdmin ? 'Edit' : 'Create New' }} Admin</h5>
-        <button class="btn btn-link" (click)="showForm = false">
+  <!-- Admin Form Modal -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" *ngIf="showForm">
+    <div class="bg-white rounded-lg border-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-lg font-medium text-gray-900">{{ editingAdmin ? 'Edit' : 'Create New' }} Admin</h2>
+        <button class="text-gray-500 hover:text-gray-700" (click)="showForm = false; resetForm()">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      <div class="card-body">
+      <div class="p-6">
         <form [formGroup]="adminForm" (ngSubmit)="onSubmit()">
-          <div class="row g-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Name Field -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  formControlName="name" 
-                  placeholder="Enter full name"
-                  [class.is-invalid]="adminForm.get('name')?.invalid && adminForm.get('name')?.touched"
-                >
-                <div class="invalid-feedback" *ngIf="adminForm.get('name')?.errors?.['required']">
-                  Name is required
-                </div>
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input 
+                type="text" 
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('name')?.invalid && adminForm.get('name')?.touched}"
+                formControlName="name" 
+                placeholder="Enter full name"
+              >
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('name')?.invalid && adminForm.get('name')?.touched && adminForm.get('name')?.errors?.['required']">
+                Name is required
+              </p>
             </div>
-  
+    
             <!-- Email Field -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input 
-                  type="email" 
-                  class="form-control" 
-                  formControlName="email" 
-                  placeholder="Enter email address"
-                  [class.is-invalid]="adminForm.get('email')?.invalid && adminForm.get('email')?.touched"
-                >
-                <div class="invalid-feedback" *ngIf="adminForm.get('email')?.errors?.['required']">
-                  Email is required
-                </div>
-                <div class="invalid-feedback" *ngIf="adminForm.get('email')?.errors?.['email']">
-                  Please enter a valid email address
-                </div>
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input 
+                type="email" 
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('email')?.invalid && adminForm.get('email')?.touched}"
+                formControlName="email" 
+                placeholder="Enter email address"
+              >
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['required']">
+                Email is required
+              </p>
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['email']">
+                Please enter a valid email address
+              </p>
             </div>
-  
+    
+            <!-- Phone Field -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input 
+                type="text" 
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('phone')?.invalid && adminForm.get('phone')?.touched}"
+                formControlName="phone" 
+                placeholder="Enter phone number"
+              >
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('phone')?.invalid && adminForm.get('phone')?.touched && adminForm.get('phone')?.errors?.['required']">
+                Phone number is required
+              </p>
+            </div>
+    
             <!-- Password Field -->
-            <div class="col-md-6" *ngIf="!editingAdmin">
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <div class="input-group">
-                  <input 
-                    [type]="hidePassword ? 'password' : 'text'"
-                    class="form-control"
-                    formControlName="password"
-                    placeholder="Enter password"
-                    [class.is-invalid]="adminForm.get('password')?.invalid && adminForm.get('password')?.touched"
-                  >
-                  <button 
-                    class="btn btn-outline-secondary" 
-                    type="button"
-                    (click)="hidePassword = !hidePassword"
-                  >
-                    <i class="bi" [class.bi-eye]="hidePassword" [class.bi-eye-slash]="!hidePassword"></i>
-                  </button>
-                </div>
-                <div class="invalid-feedback" *ngIf="adminForm.get('password')?.errors?.['required']">
-                  Password is required
-                </div>
-              </div>
-            </div>
-  
-            <!-- Role Field -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label class="form-label">Role</label>
-                <select class="form-select" formControlName="role">
-                  <option value="normal">Admin</option>
-                  <option value="super">Super Admin</option>
-                </select>
-                <small class="text-muted">Select the admin's role and permissions level</small>
-              </div>
-            </div>
-  
-            <!-- Account Type Field -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label class="form-label">Account Type</label>
-                <select class="form-select" formControlName="account_type">
-                  <option value="admin">Admin Account</option>
-                  <option value="merchant">Merchant Account</option>
-                </select>
-              </div>
-            </div>
-  
-            <!-- Merchant ID Field -->
-            <div class="col-md-6">
-              <div class="form-group">
-                <label class="form-label">Merchant ID</label>
+            <div *ngIf="!editingAdmin">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div class="relative">
                 <input 
-                  type="text" 
-                  class="form-control" 
-                  formControlName="merchantId" 
-                  placeholder="Optional"
+                  [type]="hidePassword ? 'password' : 'text'"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('password')?.invalid && adminForm.get('password')?.touched}"
+                  formControlName="password"
+                  placeholder="Enter password"
                 >
-                <!-- <small class="text-muted">Required only for merchant accounts</small> -->
+                <button 
+                  type="button"
+                  class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                  (click)="hidePassword = !hidePassword"
+                >
+                  <i class="bi" [ngClass]="hidePassword ? 'bi-eye' : 'bi-eye-slash'"></i>
+                </button>
               </div>
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('password')?.invalid && adminForm.get('password')?.touched && adminForm.get('password')?.errors?.['required']">
+                Password is required
+              </p>
+            </div>
+    
+            <!-- Permissions Field -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Permissions</label>
+              <select 
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('permissions')?.invalid && adminForm.get('permissions')?.touched}"
+                formControlName="permissions"
+                multiple
+              >
+                <option *ngFor="let permission of availablePermissions" [value]="permission.value">
+                  {{ permission.label }}
+                </option>
+              </select>
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('permissions')?.invalid && adminForm.get('permissions')?.touched && adminForm.get('permissions')?.errors?.['required']">
+                At least one permission is required
+              </p>
+              <p class="mt-1 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple permissions</p>
+            </div>
+    
+            <!-- Merchant ID Field -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
+              <input 
+                type="text" 
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('merchantId')?.invalid && adminForm.get('merchantId')?.touched}"
+                formControlName="merchantId" 
+                placeholder="Enter merchant ID"
+              >
+              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('merchantId')?.invalid && adminForm.get('merchantId')?.touched && adminForm.get('merchantId')?.errors?.['required']">
+                Merchant ID is required
+              </p>
             </div>
           </div>
-  
+    
           <!-- Account Status -->
-          <div class="form-check form-switch mt-3">
-            <input 
-              type="checkbox" 
-              class="form-check-input" 
-              id="blocked" 
-              formControlName="blocked"
-            >
-            <label class="form-check-label" for="blocked">Account Blocked</label>
+          <div class="mt-6">
+            <div class="flex items-center">
+              <input 
+                type="checkbox" 
+                id="blocked" 
+                formControlName="blocked"
+                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              >
+              <label for="blocked" class="ml-2 text-sm text-gray-700">
+                Account Blocked
+              </label>
+            </div>
           </div>
-  
+    
           <!-- Form Actions -->
-          <div class="d-flex justify-content-end gap-2 mt-4">
+          <div class="flex justify-end space-x-4 mt-6">
             <button 
               type="button" 
-              class="btn btn-light" 
-              (click)="resetForm()"
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              (click)="showForm = false; resetForm()"
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              class="btn btn-primary" 
+              class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               [disabled]="adminForm.invalid || isLoading"
+              [ngClass]="{'opacity-75 cursor-not-allowed': adminForm.invalid || isLoading}"
             >
-              <span class="spinner-border spinner-border-sm me-2" *ngIf="isLoading"></span>
-              {{ isLoading ? 'Saving...' : (editingAdmin ? 'Update Admin' : 'Create Admin') }}
+              <div class="flex items-center">
+                <div *ngIf="isLoading" class="mr-2">
+                  <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                {{ isLoading ? 'Saving...' : (editingAdmin ? 'Update Admin' : 'Create Admin') }}
+              </div>
             </button>
           </div>
         </form>
       </div>
     </div>
-  
-    <!-- Search Bar -->
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="input-group">
-          <span class="input-group-text">
-            <i class="bi bi-search"></i>
-          </span>
-          <input 
-            type="text" 
-            class="form-control" 
-            placeholder="Search admins..."
-            (keyup)="applyFilter($event)"
-          >
-        </div>
-      </div>
-    </div>
-  
-    <!-- Admin Table -->
-    <div class="card">
-      <!-- Loading State -->
-      <div class="text-center p-5" *ngIf="isLoading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="text-muted mt-2">Loading admins...</p>
-      </div>
-  
-      <!-- Empty State -->
-      <div class="text-center p-5" *ngIf="!isLoading && (!admins || admins.length === 0)">
-        <div class="text-muted">
-          <i class="bi bi-people display-1"></i>
-          <h4 class="mt-3">No Admins Found</h4>
-          <p class="mb-4">There are no administrators in the system yet.</p>
-          <button class="btn btn-primary" (click)="showForm = true">
-            Add Your First Admin
-          </button>
-        </div>
-      </div>
-  
-      <!-- Table -->
-      <div class="table-responsive" *ngIf="!isLoading && admins && admins.length > 0">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Account Type</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let admin of dataSource.data">
-              <td>
-                <div class="d-flex align-items-center">
-                  <!-- <div class="avatar bg-light rounded-circle me-2">
-                    {{ admin.name.charAt(0) }}
-                  </div> -->
-                  {{ admin.name }}
-                </div>
-              </td>
-              <td>{{ admin.email }}</td>
-              <td>
-                <span class="badge" [class.bg-primary]="admin.role === 'super'" [class.bg-info]="admin.role === 'normal'">
-                  {{ admin.role === 'super' ? 'Super Admin' : 'Admin' }}
-                </span>
-              </td>
-              <td class="text-capitalize">{{ admin.account_type }}</td>
-              <td>
-                <span class="badge" [class.bg-success]="!admin.blocked" [class.bg-danger]="admin.blocked">
-                  {{ admin.blocked ? 'Blocked' : 'Active' }}
-                </span>
-              </td>
-              <td>
-                <button class="btn btn-light btn-sm me-2" (click)="editAdmin(admin)">
-                  <i class="bi bi-pencil"></i> Edit
-                </button>
-                <button class="btn btn-light btn-sm me-2" (click)="toggleBlockStatus(admin)">
-                  <i class="bi" [class.bi-lock]="!admin.blocked" [class.bi-unlock]="admin.blocked"></i>
-                  {{ admin.blocked ? 'Unblock' : 'Block' }}
-                </button>
-                <button class="btn btn-danger btn-sm" (click)="deleteAdmin(admin)">
-                  <i class="bi bi-trash"></i> Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-  
-      <!-- Pagination -->
-      <div class="card-footer d-flex justify-content-between align-items-center" *ngIf="!isLoading && admins && admins.length > 0">
-        <div class="text-muted">
-          Showing {{ dataSource.paginator?.pageIndex! * dataSource.paginator?.pageSize! + 1 }} to 
-          {{ Math.min((dataSource.paginator?.pageIndex! + 1) * dataSource.paginator?.pageSize!, dataSource.data.length) }} of 
-          {{ dataSource.data.length }} entries
-        </div>
-        <nav>
-          <ul class="pagination mb-0">
-            <li class="page-item" [class.disabled]="dataSource.paginator?.pageIndex === 0">
-              <a class="page-link" (click)="dataSource.paginator?.previousPage()">Previous</a>
-            </li>
-            <li class="page-item" [class.disabled]="(dataSource.paginator?.pageIndex! + 1) * dataSource.paginator?.pageSize! >= dataSource.data.length">
-              <a class="page-link" (click)="dataSource.paginator?.nextPage()">Next</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-  
-    <!-- Delete Confirmation Modal -->
-    <ng-template #deleteDialog>
-      <div class="modal-header">
-        <h5 class="modal-title">Delete Admin</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete this admin? This action cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" [mat-dialog-close]="true">Delete</button>
-      </div>
-    </ng-template>
   </div>
+
+  <!-- Confirmation Dialog Modal -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" *ngIf="showConfirmation">
+    <div class="bg-white rounded-lg border-lg w-full max-w-md">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">{{ dialogData.title }}</h3>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-gray-500">{{ dialogData.message }}</p>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+        <button 
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          (click)="closeConfirmationDialog()"
+        >
+          Cancel
+        </button>
+        <button 
+          class="px-4 py-2 border border-transparent rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+          [ngClass]="{
+            'bg-red-600 hover:bg-red-700': dialogData.confirmButtonClass === 'btn-danger',
+            'bg-amber-600 hover:bg-amber-700': dialogData.confirmButtonClass === 'btn-warning'
+          }"
+          (click)="confirmAction()"
+        >
+          {{ dialogData.confirmButtonText }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Search Bar -->
+  <div class="bg-white border rounded-lg mb-6 p-4">
+    <div class="relative">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <i class="bi bi-search text-gray-400"></i>
+      </div>
+      <input 
+        type="text" 
+        class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Search admins by name, email, phone..."
+        [value]="searchValue"
+        (keyup)="applyFilter($event)"
+      >
+      <button 
+        *ngIf="searchValue"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+        (click)="clearSearch()"
+      >
+        <i class="bi bi-x-circle"></i>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Admin Table -->
+  <div class="bg-white border rounded-lg overflow-hidden">
+    <!-- Loading State -->
+    <div class="p-10 text-center" *ngIf="isLoading">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600"></div>
+      <p class="mt-3 text-gray-500">Loading admins...</p>
+    </div>
+  
+    <!-- Empty State -->
+    <div class="p-10 text-center" *ngIf="!isLoading && 
+      ((!admins || admins.length === 0) || (dataSource.filteredData.length === 0 && searchValue))">
+      <i class="bi bi-people text-6xl text-gray-300"></i>
+      <h3 class="mt-4 text-xl font-medium text-gray-900">
+        {{ (!admins || admins.length === 0) ? 'No Admins Found' : 'No Matching Admins' }}
+      </h3>
+      <p class="mt-2 text-gray-500 mb-6">
+        {{ (!admins || admins.length === 0) ? 
+            'There are no administrators in the system yet.' : 
+            'No administrators match your search criteria.' }}
+      </p>
+      <button 
+        *ngIf="!admins || admins.length === 0"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md" 
+        (click)="openAdminModal()"
+      >
+        Add Your First Admin
+      </button>
+      <button 
+        *ngIf="admins && admins.length > 0 && dataSource.filteredData.length === 0 && searchValue"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md" 
+        (click)="clearSearch()"
+      >
+        Clear Search
+      </button>
+    </div>
+  
+    <!-- Table -->
+    <div class="overflow-x-auto" *ngIf="!isLoading && admins && admins.length > 0 && dataSource.filteredData.length > 0">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissions</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Seen</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let admin of dataSource.connect() | async" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">{{ admin.name || 'N/A' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">{{ admin.email }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">{{ admin.phone || 'N/A' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-wrap gap-1">
+                <ng-container *ngFor="let permission of admin.permissions">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium" 
+                    [ngClass]="{
+                      'bg-indigo-100 text-indigo-800': permission === 'Super Admin',
+                      'bg-blue-100 text-blue-800': permission === 'Admin',
+                      'bg-yellow-100 text-yellow-800': permission === 'Initiator',
+                      'bg-green-100 text-green-800': permission === 'Approver',
+                      'bg-gray-100 text-gray-800': permission === 'manage_password'
+                    }">
+                    {{ permission }}
+                  </span>
+                </ng-container>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">{{ admin.lastSeen | date: 'medium' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">{{ admin.createdAt | date: 'medium' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium" 
+                [ngClass]="admin.blocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">
+                {{ admin.blocked ? 'Blocked' : 'Active' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex space-x-2">
+                <button 
+                  class="text-indigo-600 hover:text-indigo-900 p-1"
+                  (click)="editAdmin(admin)"
+                  title="Edit"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button 
+                  class="text-amber-600 hover:text-amber-900 p-1"
+                  (click)="openBlockDialog(admin)"
+                  title="{{ admin.blocked ? 'Unblock' : 'Block' }}"
+                >
+                  <i class="bi" [ngClass]="admin.blocked ? 'bi-unlock' : 'bi-lock'"></i>
+                </button>
+                <button 
+                  class="text-red-600 hover:text-red-900 p-1"
+                  (click)="openDeleteDialog(admin)"
+                  title="Delete"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6" *ngIf="!isLoading && admins && admins.length > 0 && dataSource.filteredData.length > 0">
+      <mat-paginator 
+        [pageSize]="10" 
+        [pageSizeOptions]="[5, 10, 25, 100]" 
+        [length]="dataSource.filteredData.length"
+        [showFirstLastButtons]="true" 
+        class="bg-transparent"
+      ></mat-paginator>
+    </div>
+  </div>
+</div>

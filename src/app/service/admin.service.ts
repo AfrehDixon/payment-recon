@@ -9,11 +9,15 @@ export interface Admin {
   _id?: string;
   email: string;
   password?: string;
+  phone?: string;
+  permissions?: string[];
   name: string;
   role: 'super' | 'normal';
   blocked: boolean;
   account_type: 'admin' | 'merchant';
   merchantId?: string;
+  lastSeen?: Date;
+  createdAt?: Date;
 }
 @Injectable({
   providedIn: 'root',
