@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { AdminService } from '../../../service/admin.service';
@@ -10,6 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -23,13 +24,18 @@ import { Router } from '@angular/router';
     MatInputModule,
   ],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   formGroup: FormGroup;
   loading: boolean = false;
+  resendLoading: boolean = false;
   triggerOtp: boolean = false;
   validatedEmail: string = '';
   buttonOperation: string = 'Send Otp';
   showPassword: boolean = false;
+  otpSent: boolean = false;
+  cooldownActive: boolean = false;
+  cooldownTime: number = 60; // seconds
+  private cooldownSubscription?: Subscription;
 
   constructor(
     private service: AdminService,
@@ -44,9 +50,21 @@ export class LoginComponent implements OnInit {
       otp: [null, Validators.required],
     });
   }
+
   ngOnInit(): void {
     // Initialize any necessary data or state here
     this.formGroup.reset();
+    
+    // Set otp control as not required initially
+    this.formGroup.get('otp')?.clearValidators();
+    this.formGroup.get('otp')?.updateValueAndValidity();
+  }
+
+  ngOnDestroy(): void {
+    // Clean up any subscriptions
+    if (this.cooldownSubscription) {
+      this.cooldownSubscription.unsubscribe();
+    }
   }
 
   login() {
@@ -61,6 +79,14 @@ export class LoginComponent implements OnInit {
         this.validatedEmail = email;
         this.buttonOperation = 'Log In';
         this.triggerOtp = true;
+        this.otpSent = true;
+        
+        // Add validators to OTP field when we need it
+        this.formGroup.get('otp')?.setValidators([Validators.required]);
+        this.formGroup.get('otp')?.updateValueAndValidity();
+        
+        // Start cooldown for resend button
+        this.startCooldown();
       },
       error: (err) => {
         this.showError('Failed to send OTP: ' + err.message);
@@ -123,10 +149,61 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  resendOtp() {
+    if (this.cooldownActive || this.resendLoading) return;
+    
+    this.resendLoading = true;
+    const { email } = this.formGroup.value;
+
+    this.service.sendotp({ email }).subscribe({
+      next: () => {
+        this.otpSent = true;
+        // Reset OTP field
+        this.formGroup.get('otp')?.setValue(null);
+        
+        // Start cooldown timer
+        this.startCooldown();
+        
+        // Show success message temporarily
+        setTimeout(() => {
+          this.otpSent = false;
+        }, 3000);
+      },
+      error: (err) => {
+        this.showError('Failed to resend OTP: ' + err.message);
+      },
+      complete: () => {
+        this.resendLoading = false;
+      },
+    });
+  }
+
+  private startCooldown() {
+    // Clean up any existing subscription
+    if (this.cooldownSubscription) {
+      this.cooldownSubscription.unsubscribe();
+    }
+    
+    // Initialize cooldown
+    this.cooldownActive = true;
+    this.cooldownTime = 60;
+    
+    // Create interval to update cooldown timer every second
+    this.cooldownSubscription = interval(1000).subscribe(() => {
+      this.cooldownTime--;
+      
+      if (this.cooldownTime <= 0) {
+        this.cooldownActive = false;
+        this.cooldownSubscription?.unsubscribe();
+      }
+    });
+  }
+
   private showError(message: string): void {
     this.dialog.open(AlertComponent, {
       data: { title: 'Error', message },
     });
     this.loading = false;
+    this.resendLoading = false;
   }
 }

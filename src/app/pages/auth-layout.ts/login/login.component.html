@@ -118,9 +118,23 @@
           <!-- OTP Section -->
           <ng-container *ngIf="triggerOtp">
             <div class="space-y-2">
-              <p class="text-sm text-gray-600 text-center font-medium">
-                Enter the OTP sent to your email and confirm to login
-              </p>
+              <div class="flex justify-between items-center">
+                <p class="text-sm text-gray-600 font-medium">
+                  Enter the OTP sent to your email
+                </p>
+                <button
+                  type="button"
+                  (click)="resendOtp()"
+                  [disabled]="resendLoading || cooldownActive"
+                  class="text-orange-500 hover:text-orange-600 text-sm font-medium focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  <span *ngIf="cooldownActive">Resend in {{ cooldownTime }}s</span>
+                  <span *ngIf="!cooldownActive">
+                    <span *ngIf="resendLoading">Sending...</span>
+                    <span *ngIf="!resendLoading">Resend OTP</span>
+                  </span>
+                </button>
+              </div>
               <div class="relative">
                 <label
                   for="otp"
@@ -136,6 +150,12 @@
                   class="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
                 />
               </div>
+              <div *ngIf="otpSent" class="flex items-center mt-2">
+                <svg class="h-4 w-4 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-xs text-green-600">OTP sent successfully</span>
+              </div>
             </div>
           </ng-container>
 
@@ -144,7 +164,7 @@
             <ng-container [ngSwitch]="buttonOperation">
               <button
                 *ngSwitchCase="'Send Otp'"
-                [disabled]="loading"
+                [disabled]="loading || formGroup.get('email')?.invalid || formGroup.get('password')?.invalid"
                 (click)="login()"
                 class="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
               >
@@ -160,7 +180,7 @@
 
               <button
                 *ngSwitchCase="'Log In'"
-                [disabled]="loading"
+                [disabled]="loading || formGroup.get('otp')?.invalid"
                 (click)="confirmOtp()"
                 class="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
               >
