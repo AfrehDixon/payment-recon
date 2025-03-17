@@ -18,10 +18,28 @@ interface ReportFilters {
   startDate: string;
   endDate: string;
   status: string;
+  merchantId: string;
+  operator: string;
   // merchantId: string;
   transaction_type: string;
   page: number;
   limit: number;
+}
+
+enum EOperator {
+  DORON = 'DORON',
+  PEOPLESPAY = 'PEOPLESPAY',
+  FIDELITY = 'FIDELITY',
+  SOLANA = 'SOLANA',
+  GTCARD = 'GTCARD', // GTBank card payment
+  MOOLRE = 'MOOLRE',
+  PCARD = 'PCARD', // Peoplespay Card payment
+  TRC20 = 'TRC20',
+  ERC20 = 'ERC20',
+  GTB = 'GTB',
+  FAB = 'FAB',
+  BTC = 'BTC',
+  GIP = 'GIP',
 }
 
 interface ReportStats {
@@ -292,6 +310,52 @@ const paymentIssuerImages: { [key: string]: string } = {
                 </div>
               </div>
             </div>
+
+            <!-- Add the new dropdowns for merchants and operators -->
+            <div class="bg-gray-50 p-4 rounded-xl">
+              <label class="block text-sm font-medium text-gray-900 mb-3"
+                >Merchant</label
+              >
+              <div class="relative">
+                <i
+                  class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  >store</i
+                >
+                <select
+                  [(ngModel)]="filters.merchantId"
+                  class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
+                >
+                  <option value="">All Merchants</option>
+                  <option
+                    *ngFor="let merchant of merchants"
+                    [value]="merchant._id"
+                  >
+                    {{ merchant.merchant_tradeName || merchant.email }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl">
+              <label class="block text-sm font-medium text-gray-900 mb-3"
+                >Operator</label
+              >
+              <div class="relative">
+                <i
+                  class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  >settings</i
+                >
+                <select
+                  [(ngModel)]="filters.operator"
+                  class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
+                >
+                  <option value="">All Operators</option>
+                  <option *ngFor="let operator of operators" [value]="operator">
+                    {{ operator }}
+                  </option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <!-- Action Buttons -->
@@ -511,6 +575,9 @@ const paymentIssuerImages: { [key: string]: string } = {
 export class ReportsComponent implements OnInit {
   selectedTransaction: ApiTransaction | null = null;
   showModal = false;
+  merchants: any[] = [];
+  operators = Object.values(EOperator);
+
   // Add to your existing properties
   searchFilters: SearchFilters = {
     phone: '',
@@ -524,7 +591,8 @@ export class ReportsComponent implements OnInit {
     status: '',
     transaction_type: '',
     limit: 100,
-    // merchantId: '',
+    merchantId: '',
+    operator: '',
     page: 1,
   };
 
@@ -573,10 +641,29 @@ export class ReportsComponent implements OnInit {
     this.selectedTransaction = null;
   }
 
+  async fetchMerchants() {
+    try {
+      const response = await this.http
+        .get<any>('https://doronpay.com/api/merchants/get', {
+          headers: this.getHeaders(),
+        })
+        .toPromise();
+
+      if (response?.success) {
+        this.merchants = response.data;
+      } else {
+        console.error('Failed to fetch merchants:', response?.message);
+      }
+    } catch (err) {
+      console.error('Error fetching merchants:', err);
+    }
+  }
+
   ngOnInit() {
     // this.filters.merchantId = this.store.selectSnapshot(
     //   (state) => state.auth.user?.merchantId?._id
     // );
+    this.fetchMerchants();
 
     const today = new Date();
     const sevenDaysAgo = new Date();
@@ -807,10 +894,14 @@ export class ReportsComponent implements OnInit {
         Status: tx.status,
         Reference: tx.transactionRef,
         Description: tx.description,
-        'Balance Before Debit': tx.walletType === 'FIAT' ? tx.balanceBeforeCredit : '',
-        'Balance After Debit': tx.walletType === 'FIAT' ? tx.balanceAfterCredit : '',
-        'Balance Before Credit': tx.walletType === 'FIAT' ? tx.balanceBeforeDebit : '',
-        'Balance After Credit': tx.walletType === 'FIAT' ? tx.balanceAfterDebit : '',	
+        'Balance Before Debit':
+          tx.walletType === 'FIAT' ? tx.balanceBeforeCredit : '',
+        'Balance After Debit':
+          tx.walletType === 'FIAT' ? tx.balanceAfterCredit : '',
+        'Balance Before Credit':
+          tx.walletType === 'FIAT' ? tx.balanceBeforeDebit : '',
+        'Balance After Credit':
+          tx.walletType === 'FIAT' ? tx.balanceAfterDebit : '',
       }))
     );
 
