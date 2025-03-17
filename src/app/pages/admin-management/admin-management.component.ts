@@ -104,15 +104,22 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
   }
 
   private initializeForm(admin?: Admin) {
-    this.adminForm = this.fb.group({
+    // Create the form with required validators
+    const formGroup: FormGroup = this.fb.group({
       email: [admin?.email || '', [Validators.required, Validators.email]],
-      password: [!admin ? '' : null, !admin ? Validators.required : null],
       name: [admin?.name || '', Validators.required],
       phone: [admin?.phone || '', Validators.required],
       permissions: [admin?.permissions || [EAuthorizers.ADMIN], Validators.required],
       blocked: [admin?.blocked || false],
       merchantId: [admin?.merchantId || '', Validators.required]
     });
+
+    // Only add password field for new admins, not when editing
+    if (!admin) {
+      formGroup.addControl('password', this.fb.control('', Validators.required));
+    }
+
+    this.adminForm = formGroup;
   }
 
   ngOnInit() {
@@ -196,6 +203,8 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     const adminData = this.adminForm.value;
 
     if (this.editingAdmin) {
+      // When updating, we send the form data without modifications
+      // (password will not be included since we didn't add that control for editing)
       this.adminService.updateAdmin({ id: this.editingAdmin._id!, data: adminData }).subscribe({
         next: (response) => {
           if (response.success) {
@@ -211,6 +220,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
         }
       });
     } else {
+      // For new admins, the password field is already part of the form
       this.adminService.addAdmin(adminData).subscribe({
         next: (response) => {
           if (response.success) {
@@ -299,8 +309,8 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
   }
 
   toggleBlockStatus(admin: Admin) {
+    // Only send the fields we want to update
     const updatedData = {
-      ...admin,
       blocked: !admin.blocked
     };
 

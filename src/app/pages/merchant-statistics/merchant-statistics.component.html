@@ -1,0 +1,221 @@
+<!-- merchant-statistics.component.html -->
+<div class="p-6 bg-gray-50 min-h-screen" style="margin-left: 200px;">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">Merchant Statistics Dashboard</h1>
+      <p class="text-gray-600">View transaction and balance statistics by merchant</p>
+    </div>
+  
+    <!-- Merchant Selection and Filters -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+      <!-- Loading State for Merchants -->
+      <div *ngIf="loadingMerchants" class="flex justify-center py-4">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
+      </div>
+  
+      <!-- Error State for Merchants -->
+      <div *ngIf="merchantError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <span class="block sm:inline">{{ merchantError }}</span>
+      </div>
+  
+      <div *ngIf="!loadingMerchants" class="flex flex-wrap gap-4">
+        <!-- Merchant Dropdown -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Select Merchant</label>
+          <select 
+            [(ngModel)]="selectedMerchantId" 
+            (change)="onMerchantChange()"
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            <option [value]="">-- Select a merchant --</option>
+            <option *ngFor="let merchant of merchants" [value]="merchant._id">
+              {{ merchant.merchant_tradeName }} {{ merchant.active ? '(Active)' : '(Inactive)' }}
+            </option>
+          </select>
+        </div>
+  
+        <!-- Period Filter -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+          <select 
+            [formControl]="periodControl" 
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+  
+        <!-- Date Filter -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <input 
+            type="date" 
+            [formControl]="dateControl" 
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+        </div>
+      </div>
+    </div>
+  
+    <!-- No Merchant Selected State -->
+    <div *ngIf="!selectedMerchantId && !loading && !loadingMerchants" class="bg-white p-8 rounded-lg shadow text-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h2 class="text-xl font-semibold text-gray-700 mb-2">No Merchant Selected</h2>
+      <p class="text-gray-500">Please select a merchant from the dropdown above to view statistics.</p>
+    </div>
+  
+    <!-- Loading State for Statistics -->
+    <div *ngIf="loading" class="flex justify-center py-10">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
+    </div>
+  
+    <!-- Error State for Statistics -->
+    <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+      <span class="block sm:inline">{{ error }}</span>
+    </div>
+  
+    <!-- Dashboard Content -->
+    <div *ngIf="statistics && !loading" class="space-y-6">
+      <!-- Merchant and Date Range Info -->
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-2">{{ getMerchantName(selectedMerchantId) }} - {{ getPeriodLabel() }}</h2>
+        <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+          <div>Period Start: {{ statistics.periodStart | date:'medium' }}</div>
+          <div>Period End: {{ statistics.periodEnd | date:'medium' }}</div>
+          <div>Calculated At: {{ statistics.calculatedAt | date:'medium' }}</div>
+        </div>
+      </div>
+  
+      <!-- Overview Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Balance Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="text-sm font-medium text-gray-500 mb-1">Current Balance</div>
+          <div class="text-2xl font-bold text-gray-800">{{ formatCurrency(statistics.finalBalance) }}</div>
+          <div class="mt-2 flex items-center text-sm">
+            <span [class]="statistics.netBalanceChange >= 0 ? 'text-green-600' : 'text-red-600'">
+              {{ statistics.netBalanceChange > 0 ? '+' : '' }}{{ formatCurrency(statistics.netBalanceChange) }}
+            </span>
+            <span class="text-gray-500 ml-1">from initial</span>
+          </div>
+        </div>
+  
+        <!-- Transactions Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="text-sm font-medium text-gray-500 mb-1">Total Transactions</div>
+          <div class="text-2xl font-bold text-gray-800">{{ statistics.totalTransactions }}</div>
+          <div class="mt-2 grid grid-cols-3 gap-2 text-sm">
+            <div>
+              <span class="text-green-600 font-medium">{{ statistics.successfulTransactions }}</span>
+              <span class="text-gray-500 block">Successful</span>
+            </div>
+            <div>
+              <span class="text-red-600 font-medium">{{ statistics.failedTransactions }}</span>
+              <span class="text-gray-500 block">Failed</span>
+            </div>
+            <div>
+              <span class="text-yellow-600 font-medium">{{ statistics.pendingTransactions }}</span>
+              <span class="text-gray-500 block">Pending</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Amount Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="text-sm font-medium text-gray-500 mb-1">Total Amount</div>
+          <div class="text-2xl font-bold text-gray-800">{{ formatCurrency(statistics.totalAmount) }}</div>
+          <div class="mt-2 flex items-center text-sm">
+            <span class="text-green-600">{{ formatCurrency(statistics.successfulAmount) }}</span>
+            <span class="text-gray-500 ml-1">processed successfully</span>
+          </div>
+        </div>
+  
+        <!-- Profit Card -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="text-sm font-medium text-gray-500 mb-1">Total Profit</div>
+          <div class="text-2xl font-bold text-gray-800">{{ formatCurrency(statistics.totalProfit) }}</div>
+          <div class="mt-2 flex items-center text-sm">
+            <span class="text-gray-500">From</span>
+            <span class="text-blue-600 ml-1">{{ formatCurrency(statistics.totalCharges) }}</span>
+            <span class="text-gray-500 ml-1">in charges</span>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Transaction Types -->
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-4 border-b">
+          <h2 class="text-lg font-semibold">Transaction Types</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Successful</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Failed</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let type of transactionTypes">
+                <td class="px-6 py-4 whitespace-nowrap font-medium">{{ type }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ statistics.transactionTypes[type].count }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ formatCurrency(statistics.transactionTypes[type].amount) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-green-600">{{ statistics.transactionTypes[type].successful }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-red-600">{{ statistics.transactionTypes[type].failed }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+  
+      <!-- Success Rate Chart -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-lg font-semibold mb-4">Success Rate</h2>
+        <div class="flex items-center">
+          <div class="w-full bg-gray-200 rounded-full h-4">
+            <div 
+              class="bg-green-600 h-4 rounded-full" 
+              [style.width]="formatPercentage(statistics.successRate)">
+            </div>
+          </div>
+          <span class="ml-4 font-medium">{{ formatPercentage(statistics.successRate) }}</span>
+        </div>
+      </div>
+  
+      <!-- Balance Details -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-lg font-semibold mb-4">Balance Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Initial Balance</div>
+            <div class="text-xl font-bold text-gray-800">{{ formatCurrency(statistics.initialBalance) }}</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Final Balance</div>
+            <div class="text-xl font-bold text-gray-800">{{ formatCurrency(statistics.finalBalance) }}</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Expected Balance</div>
+            <div class="text-xl font-bold text-gray-800">{{ formatCurrency(statistics.expectedBalance) }}</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Total Collected</div>
+            <div class="text-xl font-bold text-green-600">{{ formatCurrency(statistics.totalCollected) }}</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Total Paid Out</div>
+            <div class="text-xl font-bold text-red-600">{{ formatCurrency(statistics.totalPaidOut) }}</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500 mb-1">Balance Discrepancy</div>
+            <div [class]="'text-xl font-bold ' + (statistics.balanceDiscrepancy === 0 ? 'text-green-600' : 'text-red-600')">
+              {{ formatCurrency(statistics.balanceDiscrepancy) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

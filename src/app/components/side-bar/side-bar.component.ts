@@ -31,6 +31,9 @@ export const Routes: RouteInfo[] = [
   { path: 'payout-recon', title: "Payout Reconciliation", class: 'false' },
   { path: 'payout-issues', title: "Payout Issues", class: 'false' },
   { path: 'operator-switch', title: "Operator Switch", class: 'false' },
+  { path: 'merchant-statistics', title: "Merchant Statistics", class: 'false' },
+  { path: 'balance-history', title: "Merchant Balance History", class: 'false' },
+  { path: 'balance-summary', title: "Merchant Balance Summary", class: 'false' },
   // { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'settings', title: "System Settings", class: 'false' },
 
@@ -124,6 +127,9 @@ export class SidebarComponent implements OnInit {
       'payout-reconciliation': 'bi bi-calculator',
       'operator-switch': 'bi bi-arrow-repeat',
       'payout-issues': 'bi bi-exclamation-circle', 
+      'merchant-statistics': 'bi bi-bar-chart-line',
+      'balance-history': 'bi bi-graph-up',
+      'balance-summary': 'bi bi-graph-up',
     };
 
     return iconMap[path] || 'bi bi-circle';

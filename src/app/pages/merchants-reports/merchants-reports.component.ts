@@ -48,6 +48,10 @@ interface Transaction {
   merchantId: any;
   customerId: any;
   walletType: string;
+  balanceBeforeCredit: number;
+  balanceAfterCredit: number;
+  balanceBeforeDebit: number;
+  balanceAfterDebit: number;
 }
 
 interface ReportResponse {
@@ -791,7 +795,7 @@ export class ReportsComponent implements OnInit {
         Date: this.formatDate(tx.createdAt),
         Merchant:
           // tx.customerId?.merchant_tradeName ||-
-          tx.merchantId?.merchant_tradeName,
+          tx.merchantId?._id,
         'Merchant Email': tx.customerId?.email || tx.merchantId?.email,
         'Customer Name': tx.payment_account_name,
         'Customer Account': tx.payment_account_number,
@@ -803,6 +807,10 @@ export class ReportsComponent implements OnInit {
         Status: tx.status,
         Reference: tx.transactionRef,
         Description: tx.description,
+        'Balance Before Debit': tx.walletType === 'FIAT' ? tx.balanceBeforeCredit : '',
+        'Balance After Debit': tx.walletType === 'FIAT' ? tx.balanceAfterCredit : '',
+        'Balance Before Credit': tx.walletType === 'FIAT' ? tx.balanceBeforeDebit : '',
+        'Balance After Credit': tx.walletType === 'FIAT' ? tx.balanceAfterDebit : '',	
       }))
     );
 

@@ -22,6 +22,9 @@ import { LogsSummaryComponent } from './pages/logs-summary/logs-summary.componen
 import { PayoutReconciliationComponent } from './pages/payout-recon/payout-recon.component';
 import { IssuesListComponent } from './pages/issues-list/issues-list.component';
 import { OperatorSwitchComponent } from './pages/operator-switch/operator-switch.component';
+import { MerchantStatisticsComponent } from './pages/merchant-statistics/merchant-statistics.component';
+import { MerchantBalanceHistoryComponent } from './pages/merchant-balance-history/merchant-balance-history.component';
+import { MerchantBalanceSummaryComponent } from './pages/merchant-balance-summary/merchant-balance-summary.component';
 
 export const routes: Routes = [
   {
@@ -65,7 +68,7 @@ export const routes: Routes = [
         component: MerchantTransactionsComponent,
       },
       {
-        path: 'merchant-tiers', 
+        path: 'merchant-tiers',
         component: MerchantTierComponent,
       },
       {
@@ -119,6 +122,22 @@ export const routes: Routes = [
       {
         path: 'wallets',
         component: MerchantWalletsComponent,
+      },
+      {
+        path: 'merchant-statistics',
+        component: MerchantStatisticsComponent,
+      },
+      { 
+        path: 'balance-history', 
+        component: MerchantBalanceHistoryComponent 
+      },
+      {
+        path: 'balance-summary',
+        component: MerchantBalanceSummaryComponent,
+      },
+      {
+        path: 'comparative-statistics',
+        component: ComparativeStatisticsComponent,
       },
       {
         path: 'hub',
