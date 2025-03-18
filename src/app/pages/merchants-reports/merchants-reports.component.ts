@@ -416,10 +416,9 @@ const paymentIssuerImages: { [key: string]: string } = {
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{
-                      tx.customerId?.merchant_tradeName ??
-                        tx.merchantId?.merchant_tradeName
-                    }}
+                  {{ tx.customerId?.merchant_tradeName ?? tx.merchantId?.merchant_tradeName ?? 'Unknown' }}
+
+
                   </div>
                   <div class="text-sm text-gray-500">
                     {{ tx.customerId?.email ?? tx.merchantId?.email }}
@@ -795,7 +794,8 @@ export class ReportsComponent implements OnInit {
   }
 
   // Updated formatCurrency method to handle different wallet types
-  formatCurrency(amount: number, walletType: string): string {
+  formatCurrency(amount: number | undefined, walletType: string | undefined): string {
+    if (amount === undefined) return 'N/A';
     const currency = walletType === 'FIAT' ? 'GHS' : 'USD';
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
@@ -829,8 +829,9 @@ export class ReportsComponent implements OnInit {
         .toPromise();
 
       if (response?.success) {
-        this.transactions = response.data.transactions;
-        this.reportStats = {
+        this.transactions = response.data.transactions.filter(tx => 
+          tx && tx.payment_account_name && tx.transactionRef
+        );        this.reportStats = {
           count: response.data.count,
           actualAmount: response.data.actualAmount,
           amount: response.data.amount,
