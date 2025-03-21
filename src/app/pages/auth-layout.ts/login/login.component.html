@@ -4,29 +4,29 @@
 >
   <div class="container mx-auto px-4">
     <div class="flex justify-center items-center">
-      <div class="w-full max-w-md bg-white rounded-lg shadow-xl border p-8">
+      <div class="w-full max-w-md bg-white rounded-lg border-xl border p-6">
         <!-- Logo and Title Section -->
-        <div class="flex flex-col items-center mb-8">
-          <div class="mb-4">
+        <div class="flex flex-col items-center mb-6">
+          <div class="mb-3">
             <div
-              class="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center"
+              class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center"
             >
               <!-- Replace with actual Doron logo -->
               <img
                 src="assets/images/doron.png"
                 alt="Doron Logo"
-                class="w-16 h-16 object-contain"
+                class="w-14 h-14 object-contain"
               />
             </div>
           </div>
-          <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
-          <p class="text-gray-600 mt-2">Sign in to your account</p>
+          <h2 class="text-xl font-bold text-gray-800">Welcome Back</h2>
+          <p class="text-gray-600 text-sm mt-1">Sign in to your account</p>
         </div>
 
         <!-- Form Section -->
-        <form class="space-y-6" [formGroup]="formGroup">
+        <form class="space-y-4" [formGroup]="formGroup">
           <!-- Email Input -->
-          <div class="space-y-2">
+          <div class="space-y-1">
             <label for="email" class="block text-sm font-medium text-gray-700">
               Email
             </label>
@@ -36,11 +36,11 @@
                 type="email"
                 formControlName="email"
                 placeholder="Enter your email"
-                class="block w-full pl-4 pr-10 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
+                class="block w-full pl-3 pr-9 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
               />
               <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-4 w-4 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -57,7 +57,7 @@
           </div>
 
           <!-- Password Input -->
-          <div class="space-y-2">
+          <div class="space-y-1">
             <label
               for="password"
               class="block text-sm font-medium text-gray-700"
@@ -70,7 +70,7 @@
                 [type]="showPassword ? 'text' : 'password'"
                 formControlName="password"
                 placeholder="Enter your password"
-                class="block w-full pl-4 pr-10 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
+                class="block w-full pl-3 pr-9 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
               />
               <button
                 type="button"
@@ -79,7 +79,7 @@
               >
                 <svg
                   *ngIf="!showPassword"
-                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -99,7 +99,7 @@
                 </svg>
                 <svg
                   *ngIf="showPassword"
-                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -117,16 +117,16 @@
 
           <!-- OTP Section -->
           <ng-container *ngIf="triggerOtp">
-            <div class="space-y-2">
+            <div class="space-y-1">
               <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600 font-medium">
+                <p class="text-xs text-gray-600 font-medium">
                   Enter the OTP sent to your email
                 </p>
                 <button
                   type="button"
                   (click)="resendOtp()"
                   [disabled]="resendLoading || cooldownActive"
-                  class="text-orange-500 hover:text-orange-600 text-sm font-medium focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                  class="text-orange-500 hover:text-orange-600 text-xs font-medium focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   <span *ngIf="cooldownActive">Resend in {{ cooldownTime }}s</span>
                   <span *ngIf="!cooldownActive">
@@ -147,11 +147,11 @@
                   type="text"
                   formControlName="otp"
                   placeholder="Enter OTP code"
-                  class="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
+                  class="block w-full pl-3 pr-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-gray-400 text-gray-900 transition-all duration-200"
                 />
               </div>
-              <div *ngIf="otpSent" class="flex items-center mt-2">
-                <svg class="h-4 w-4 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div *ngIf="otpSent" class="flex items-center mt-1">
+                <svg class="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
                 <span class="text-xs text-green-600">OTP sent successfully</span>
@@ -160,18 +160,18 @@
           </ng-container>
 
           <!-- Button Section -->
-          <div class="space-y-4">
+          <div class="space-y-4 mt-6">
             <ng-container [ngSwitch]="buttonOperation">
               <button
                 *ngSwitchCase="'Send Otp'"
                 [disabled]="loading || formGroup.get('email')?.invalid || formGroup.get('password')?.invalid"
                 (click)="login()"
-                class="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
+                class="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
               >
                 <ng-container [ngSwitch]="loading">
                   <div *ngSwitchCase="true" class="flex justify-center">
                     <div
-                      class="w-6 h-6 border-3 border-t-white border-white border-opacity-20 rounded-full animate-spin"
+                      class="w-5 h-5 border-2 border-t-white border-white border-opacity-20 rounded-full animate-spin"
                     ></div>
                   </div>
                   <span *ngSwitchCase="false">Send OTP</span>
@@ -182,12 +182,12 @@
                 *ngSwitchCase="'Log In'"
                 [disabled]="loading || formGroup.get('otp')?.invalid"
                 (click)="confirmOtp()"
-                class="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
+                class="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
               >
                 <ng-container [ngSwitch]="loading">
                   <div *ngSwitchCase="true" class="flex justify-center">
                     <div
-                      class="w-6 h-6 border-3 border-t-white border-white border-opacity-20 rounded-full animate-spin"
+                      class="w-5 h-5 border-2 border-t-white border-white border-opacity-20 rounded-full animate-spin"
                     ></div>
                   </div>
                   <span *ngSwitchCase="false">Log In</span>
@@ -197,8 +197,8 @@
           </div>
 
           <!-- Footer -->
-          <div class="pt-6 mt-8 border-t border-gray-200">
-            <p class="text-center text-gray-500 text-sm">
+          <div class="pt-4 mt-6 border-t border-gray-200">
+            <p class="text-center text-gray-500 text-xs">
               ©
               <a
                 href="/"

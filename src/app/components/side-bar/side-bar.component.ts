@@ -34,6 +34,7 @@ export const Routes: RouteInfo[] = [
   { path: 'merchant-statistics', title: "Merchant Statistics", class: 'false' },
   { path: 'balance-history', title: "Merchant Balance History", class: 'false' },
   { path: 'balance-summary', title: "Merchant Balance Summary", class: 'false' },
+  { path: 'payment-links', title: "Payment Links", class: 'false' },
   // { path: 'payment-reconciliation', title: 'Payment Reconciliation', class: 'red' },
   { path: 'settings', title: "System Settings", class: 'false' },
 
@@ -130,6 +131,7 @@ export class SidebarComponent implements OnInit {
       'merchant-statistics': 'bi bi-bar-chart-line',
       'balance-history': 'bi bi-graph-up',
       'balance-summary': 'bi bi-graph-up',
+      'payment-links': 'bi bi-link-45deg',
     };
 
     return iconMap[path] || 'bi bi-circle';

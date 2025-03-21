@@ -25,6 +25,7 @@ import { OperatorSwitchComponent } from './pages/operator-switch/operator-switch
 import { MerchantStatisticsComponent } from './pages/merchant-statistics/merchant-statistics.component';
 import { MerchantBalanceHistoryComponent } from './pages/merchant-balance-history/merchant-balance-history.component';
 import { MerchantBalanceSummaryComponent } from './pages/merchant-balance-summary/merchant-balance-summary.component';
+import { PaymentLinksComponent } from './pages/payment-links/payment-links.component';
 
 export const routes: Routes = [
   {
@@ -138,6 +139,10 @@ export const routes: Routes = [
       {
         path: 'comparative-statistics',
         component: ComparativeStatisticsComponent,
+      },
+      {
+        path: 'payment-links',
+        component: PaymentLinksComponent,
       },
       {
         path: 'hub',

@@ -791,7 +791,7 @@ export class ReportsComponent implements OnInit {
   getPaymentIssuerImage(issuer: string): string | null {
     const key = issuer.toLowerCase();
     return paymentIssuerImages[key] || null;
-  }
+  } 
 
   // Updated formatCurrency method to handle different wallet types
   formatCurrency(amount: number | undefined, walletType: string | undefined): string {
