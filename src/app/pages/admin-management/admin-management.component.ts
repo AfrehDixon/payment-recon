@@ -21,10 +21,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 
 // Enum to match backend authorization roles
 enum EAuthorizers {
-  SUPER_ADMIN = 'Super Admin',
-  ADMIN = 'Admin',
-  INITIATOR = 'Initiator',
-  APPROVER = 'Approver'
+  APPROVER = "APPROVER",
+  INITIATOR = "INITIATOR",
+  SUPER_ADMIN = "SUPER_ADMIN",
+  ADMIN = "ADMIN",
 }
 
 interface DialogData {
@@ -89,10 +89,10 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
   
   // Add available permissions
   availablePermissions = [
-    { value: EAuthorizers.SUPER_ADMIN, label: 'Super Admin' },
-    { value: EAuthorizers.ADMIN, label: 'Admin' },
-    { value: EAuthorizers.INITIATOR, label: 'Initiator' },
-    { value: EAuthorizers.APPROVER, label: 'Approver' },
+    { value: EAuthorizers.SUPER_ADMIN, label: 'SUPER_ADMIN' },
+    { value: EAuthorizers.ADMIN, label: 'ADMIN' },
+    { value: EAuthorizers.INITIATOR, label: 'INITIATOR' },
+    { value: EAuthorizers.APPROVER, label: 'APPROVER' },
     { value: 'manage_password', label: 'Manage Password' }
   ];
 

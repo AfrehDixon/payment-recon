@@ -416,32 +416,31 @@ const paymentIssuerImages: { [key: string]: string } = {
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">
-                  {{ tx.customerId?.merchant_tradeName ?? tx.merchantId?.merchant_tradeName ?? 'Unknown' }}
-
-
+                    {{
+                      tx.customerId?.merchant_tradeName ??
+                        tx.merchantId?.merchant_tradeName ??
+                        'Unknown'
+                    }}
                   </div>
                   <div class="text-sm text-gray-500">
                     {{ tx.customerId?.email ?? tx.merchantId?.email }}
                   </div>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ tx.payment_account_name }}
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    {{ tx.payment_account_number }}
-                    <span class="text-xs text-gray-400"
-                      >({{ tx.payment_account_issuer }}
-                      {{ tx.payment_account_type }})</span
-                    >
-                    <img
-                      *ngIf="getPaymentIssuerImage(tx.payment_account_issuer)"
-                      [src]="getPaymentIssuerImage(tx.payment_account_issuer)"
-                      alt="{{ tx.payment_account_issuer }}"
-                      class="w-6 h-6 inline-block ml-2"
-                    />
-                  </div>
-                </td>
+      <div class="text-sm font-medium text-gray-900">
+        {{ getSafeValue(tx.payment_account_name) }}
+      </div>
+      <div class="text-sm text-gray-500">
+        {{ getSafeValue(tx.payment_account_number) }}
+        <span *ngIf="tx.payment_account_issuer || tx.payment_account_type" class="text-xs text-gray-400">
+          ({{ getSafeValue(tx.payment_account_issuer) }} {{ getSafeValue(tx.payment_account_type) }})
+        </span>
+        <img *ngIf="getSafeImage(tx.payment_account_issuer)" 
+             [src]="getSafeImage(tx.payment_account_issuer)" 
+             alt="{{ tx.payment_account_issuer }}" 
+             class="w-6 h-6 inline-block ml-2">
+      </div>
+    </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
                   {{ formatCurrency(tx.amount, tx.walletType) }}
                 </td>
@@ -762,6 +761,16 @@ export class ReportsComponent implements OnInit {
     return this.filteredTransactions.slice(this.startIndex, this.endIndex);
   }
 
+  getSafeValue(value: any, fallback: string = 'N/A'): string {
+    return value !== null && value !== undefined ? value.toString() : fallback;
+  }
+  
+  getSafeImage(issuer: string | undefined): string | null {
+    if (!issuer) return null;
+    const key = issuer.toLowerCase();
+    return paymentIssuerImages[key] || null;
+  }
+
   get visiblePages(): number[] {
     const pages: number[] = [];
     let start = Math.max(
@@ -791,10 +800,13 @@ export class ReportsComponent implements OnInit {
   getPaymentIssuerImage(issuer: string): string | null {
     const key = issuer.toLowerCase();
     return paymentIssuerImages[key] || null;
-  } 
+  }
 
   // Updated formatCurrency method to handle different wallet types
-  formatCurrency(amount: number | undefined, walletType: string | undefined): string {
+  formatCurrency(
+    amount: number | undefined,
+    walletType: string | undefined
+  ): string {
     if (amount === undefined) return 'N/A';
     const currency = walletType === 'FIAT' ? 'GHS' : 'USD';
     return new Intl.NumberFormat('en-GH', {
@@ -829,9 +841,10 @@ export class ReportsComponent implements OnInit {
         .toPromise();
 
       if (response?.success) {
-        this.transactions = response.data.transactions.filter(tx => 
-          tx && tx.payment_account_name && tx.transactionRef
-        );        this.reportStats = {
+        this.transactions = response.data.transactions.filter(
+          (tx) => tx && tx.payment_account_name && tx.transactionRef
+        );
+        this.reportStats = {
           count: response.data.count,
           actualAmount: response.data.actualAmount,
           amount: response.data.amount,
