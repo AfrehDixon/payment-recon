@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { AdminService } from '../../../service/admin.service';
-import { AdminLogin } from '../../../auth/auth.action';
 import { MatDialog } from '@angular/material/dialog';
 import { AlertComponent } from '../../../components/alert/alert.component';
 import { CommonModule } from '@angular/common';
@@ -11,6 +10,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
+import { PermissionService } from '../../../service/permissions.service';
+import { AdminLogin } from '../../../state/apps/app.actions';
 
 @Component({
   selector: 'app-login',
@@ -42,7 +43,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     private store: Store,
     private fb: FormBuilder,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private permissionService: PermissionService
   ) {
     this.formGroup = this.fb.group({
       email: [null, [Validators.required, Validators.email]],
@@ -58,6 +60,20 @@ export class LoginComponent implements OnInit, OnDestroy {
     // Set otp control as not required initially
     this.formGroup.get('otp')?.clearValidators();
     this.formGroup.get('otp')?.updateValueAndValidity();
+    
+    // Check if already logged in
+    const loginData = localStorage.getItem('PLOGIN');
+    if (loginData) {
+      try {
+        const parsedData = JSON.parse(loginData);
+        if (parsedData.token) {
+          // Already logged in, redirect
+          this.router.navigate(['/mechant']);
+        }
+      } catch (error) {
+        console.error('Error parsing login data:', error);
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -120,32 +136,86 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
+  // In login.component.ts, modify the confirmOtp method:
   confirmOtp() {
     const form = this.formGroup;
     if (!form.get('otp')?.valid) return;
-
+  
     const { email, password, otp } = form.value;
     this.loading = true;
-
+  
     this.service.login({ email, password, otp }).subscribe({
       next: (response) => {
-        this.store
-          .dispatch(
-            new AdminLogin({
+        console.log('Login successful:', response);
+        
+        // Extract permission names if they are objects
+        let permissions = response.data.permissions;
+        if (permissions && Array.isArray(permissions)) {
+          // Check if permissions are objects with a name property
+          if (permissions.length > 0 && typeof permissions[0] === 'object' && permissions[0].name) {
+            // Map objects to just their name strings
+            const permissionNames = permissions.map(p => p.name);
+            
+            // Create a copy of the response with the simplified permissions
+            const modifiedResponse = {
+              ...response,
+              data: {
+                ...response.data,
+                permissions: permissionNames
+              }
+            };
+            
+            // Store the modified data in localStorage
+            const loginData = {
+              user: modifiedResponse.data,
+              token: response.token,
+              refreshToken: response.refreshToken
+            };
+            localStorage.setItem('PLOGIN', JSON.stringify(loginData));
+            
+            // Update permissions in permission service
+            this.permissionService.setPermissions(permissionNames);
+          } else {
+            // If permissions are already strings, store as is
+            const loginData = {
               user: response.data,
               token: response.token,
-            })
-          )
-          .subscribe(() => {
-            this.router.navigate(['/mechant']);
-          });
+              refreshToken: response.refreshToken
+            };
+            localStorage.setItem('PLOGIN', JSON.stringify(loginData));
+            
+            // Update permissions in permission service
+            this.permissionService.setPermissions(permissions);
+          }
+        }
+        
+        // Dispatch login action to NGXS store
+        // Note: You might need to update the AdminLogin action to handle the modified data
+        const loginData = {
+          user: response.data,
+          token: response.token,
+          refreshToken: response.refreshToken
+        };
+        
+        this.store.dispatch(new AdminLogin(loginData)).subscribe(() => {
+          console.log('Login action dispatched successfully');
+          
+          // Force navigation directly here after action completes
+          // Using a slight delay to ensure state updates complete
+          setTimeout(() => {
+            console.log('Forced navigation to /mechant route');
+            // Use direct hash navigation to avoid any routing issues
+            window.location.hash = '#/mechant';
+          }, 100);
+        });
       },
       error: (err) => {
         this.showError('Login failed: ' + err.message);
+        this.loading = false;
       },
       complete: () => {
         this.loading = false;
-      },
+      }
     });
   }
 

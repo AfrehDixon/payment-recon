@@ -1,0 +1,864 @@
+<!-- admin-ticket-management.component.html -->
+<div class="container mx-auto px-4 py-6 bg-gray-50 min-h-screen" style="margin-left: 200px !important;">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Support Ticket Management</h1>
+        <p class="text-gray-500">Manage and respond to customer support tickets</p>
+      </div>
+    </div>
+  
+    <!-- Search and Filter Section -->
+    <div class="bg-white border rounded-lg mb-6 p-4">
+      <div class="flex flex-col space-y-4">
+        <!-- Search Input -->
+        <div class="relative w-full md:w-1/3">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="bi bi-search text-gray-400"></i>
+          </div>
+          <input
+            type="text"
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Search tickets by subject, description, reference..."
+            [value]="searchQuery"
+            (input)="onSearch($event)"
+          />
+          <button
+            *ngIf="searchQuery"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            (click)="clearSearch()"
+          >
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+  
+        <!-- Filters Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select
+              class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              [value]="statusFilter"
+              (change)="applyFilter('status', $event)"
+            >
+              <option value="all">All Statuses</option>
+              <option *ngFor="let status of ticketStatuses" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+  
+          <!-- Priority Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <select
+              class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              [value]="priorityFilter"
+              (change)="applyFilter('priority', $event)"
+            >
+              <option value="all">All Priorities</option>
+              <option *ngFor="let priority of ticketPriorities" [value]="priority">{{ priority }}</option>
+            </select>
+          </div>
+  
+          <!-- Category Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              [value]="categoryFilter"
+              (change)="applyFilter('category', $event)"
+            >
+              <option value="all">All Categories</option>
+              <option *ngFor="let category of ticketCategories" [value]="category">{{ category }}</option>
+            </select>
+          </div>
+  
+          <!-- Merchant Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+            <select
+              class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              [value]="merchantFilter"
+              (change)="applyFilter('merchant', $event)"
+            >
+              <option value="all">All Merchants</option>
+              <option *ngFor="let merchant of merchants" [value]="merchant._id">{{ merchant.merchant_tradeName }}</option>
+            </select>
+          </div>
+        </div>
+  
+        <!-- Filter Actions -->
+        <div class="flex justify-end">
+          <button
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md focus:outline-none"
+            (click)="clearFilters()"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Tickets Content -->
+    <div class="bg-white border rounded-lg overflow-hidden">
+      <!-- Loading State -->
+      <div class="p-10 text-center" *ngIf="isLoading">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600"></div>
+        <p class="mt-3 text-gray-500">Loading tickets...</p>
+      </div>
+  
+      <!-- Error State -->
+      <div class="p-10 text-center" *ngIf="error && !isLoading">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500">
+          <i class="bi bi-exclamation-triangle text-2xl"></i>
+        </div>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">Error Loading Tickets</h3>
+        <p class="mt-2 text-gray-500">{{ error }}</p>
+        <button
+          class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+          (click)="loadTickets()"
+        >
+          Try Again
+        </button>
+      </div>
+  
+      <!-- Empty State -->
+      <div class="p-10 text-center" *ngIf="!isLoading && !error && tickets.length === 0">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-500">
+          <i class="bi bi-ticket-perforated text-2xl"></i>
+        </div>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">No Tickets Found</h3>
+        <p class="mt-2 text-gray-500">
+          {{ searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== 'all' || merchantFilter !== 'all' ? 
+             "No tickets match your search criteria." : 
+             "There are no support tickets in the system yet." }}
+        </p>
+      </div>
+  
+      <!-- Tickets Table -->
+      <div class="overflow-x-auto" *ngIf="!isLoading && !error && tickets.length > 0">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Subject
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Merchant
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Priority
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let ticket of tickets" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">{{ ticket._id }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900 truncate max-w-xs cursor-pointer" (click)="openTicketDetail(ticket)">
+                  {{ ticket.subject }}
+                </div>
+                <div *ngIf="ticket.transactionRef" class="text-xs text-gray-500 mt-1">
+                  Ref: {{ ticket.transactionRef }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">{{ getMerchantName(ticket.merchantId) }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getCategoryClass(ticket.category)"
+                >
+                  {{ ticket.category }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <span
+                    class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="getStatusClass(ticket.status)"
+                  >
+                    {{ ticket.status }}
+                  </span>
+                  <!-- <div class="ml-2">
+                    <button 
+                      class="text-gray-400 hover:text-gray-600"
+                      [matMenuTriggerFor]="statusMenu"
+                    >
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <mat-menu #statusMenu="matMenu">
+                      <button 
+                        mat-menu-item
+                        *ngFor="let status of ticketStatuses"
+                        [disabled]="ticket.status === status"
+                        (click)="updateTicketStatus(ticket, status)"
+                      >
+                        {{ status }}
+                      </button>
+                    </mat-menu>
+                  </div> -->
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getPriorityClass(ticket.priority)"
+                >
+                  {{ ticket.priority }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">
+                  {{ formatDate(ticket.createdAt) }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <div class="flex space-x-2">
+                  <button
+                    class="text-indigo-600 hover:text-indigo-900 p-1"
+                    (click)="openTicketDetail(ticket)"
+                    matTooltip="View Details"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button
+                    class="text-blue-600 hover:text-blue-900 p-1"
+                    (click)="openEditTicketModal(ticket)"
+                    matTooltip="Edit Ticket"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    class="text-amber-600 hover:text-amber-900 p-1"
+                    (click)="openAssignTicketModal(ticket)"
+                    matTooltip="Assign Ticket"
+                  >
+                    <i class="bi bi-person-check"></i>
+                  </button>
+                  <button
+                    class="text-red-600 hover:text-red-900 p-1"
+                    (click)="openDeleteConfirmModal(ticket)"
+                    matTooltip="Delete Ticket"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Pagination -->
+      <div class="py-3 px-6 bg-white border-t border-gray-200" *ngIf="!isLoading && !error && tickets.length > 0">
+        <mat-paginator
+          [length]="totalTickets"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="currentPage"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+        ></mat-paginator>
+      </div>
+    </div>
+  
+    <!-- Success Notification -->
+    <div
+      *ngIf="success"
+      class="fixed bottom-4 right-4 bg-green-50 border-l-4 border-green-500 p-4 shadow-md rounded z-50 max-w-md"
+    >
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <i class="bi bi-check-circle text-green-500"></i>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-green-800">{{ success }}</p>
+        </div>
+        <div class="ml-auto pl-3">
+          <button class="text-green-500 hover:text-green-700 focus:outline-none" (click)="success = null">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Ticket Detail Modal -->
+    <div
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
+      *ngIf="showTicketDetailModal && selectedTicket"
+    >
+      <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h2 class="text-lg font-medium text-gray-900 truncate max-w-lg">
+            Ticket: {{ selectedTicket?.subject }}
+          </h2>
+          <button class="text-gray-500 hover:text-gray-700 focus:outline-none" (click)="closeTicketDetailModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+  
+        <div class="p-6">
+          <!-- Error alert -->
+          <div
+            *ngIf="error"
+            class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded"
+          >
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <i class="bi bi-exclamation-triangle text-red-500"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-800">{{ error }}</p>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Ticket Info -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <!-- Merchant Info -->
+            <div class="mb-4 pb-4 border-b border-gray-200">
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Merchant Information</h3>
+              <div class="flex flex-wrap gap-3">
+                <div>
+                  <span class="text-xs text-gray-500">Merchant Name</span>
+                  <div class="text-sm font-medium">{{ getMerchantName(selectedTicket?.merchantId) }}</div>
+                </div>
+                <div *ngIf="selectedTicket?.transactionRef">
+                  <span class="text-xs text-gray-500">Transaction Ref</span>
+                  <div class="text-sm font-medium">{{ selectedTicket?.transactionRef }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Ticket Details -->
+            <div class="flex flex-wrap gap-4 mb-4">
+              <div>
+                <span class="text-xs text-gray-500">Status</span>
+                <span
+                  class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getStatusClass(selectedTicket?.status)"
+                >
+                  {{ selectedTicket?.status }}
+                </span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-500">Priority</span>
+                <span
+                  class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getPriorityClass(selectedTicket?.priority)"
+                >
+                  {{ selectedTicket?.priority }}
+                </span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-500">Category</span>
+                <span
+                  class="ml-2 inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getCategoryClass(selectedTicket?.category)"
+                >
+                  {{ selectedTicket?.category }}
+                </span>
+              </div>
+              <div *ngIf="selectedTicket?.assignedTo">
+                <span class="text-xs text-gray-500">Assigned To</span>
+                <span class="ml-2 text-xs font-medium">
+                  {{ selectedTicket.assignedTo ? getAdminName(selectedTicket.assignedTo) : 'Unassigned' }}
+                </span>
+              </div>
+            </div>
+  
+            <div class="flex justify-between text-xs text-gray-500 mb-4">
+              <div>Created: {{ formatDate(selectedTicket?.createdAt) }}</div>
+              <div>Updated: {{ formatDate(selectedTicket?.updatedAt) }}</div>
+            </div>
+  
+            <div>
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Description</h3>
+              <p class="text-sm text-gray-600 whitespace-pre-line bg-white p-3 rounded border border-gray-200">
+                {{ selectedTicket?.description }}
+              </p>
+            </div>
+          </div>
+  
+          <!-- Action Buttons -->
+          <div class="flex justify-between mb-6">
+            <div class="flex space-x-2">
+              <button 
+                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm"
+                (click)="openEditTicketModal(selectedTicket!)"
+              >
+                <i class="bi bi-pencil mr-1"></i> Edit
+              </button>
+              <button 
+                class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+                (click)="openAssignTicketModal(selectedTicket!)"
+              >
+                <i class="bi bi-person-check mr-1"></i> Assign
+              </button>
+            </div>
+            <div class="flex space-x-2">
+              <button 
+                *ngFor="let status of ticketStatuses"
+                [disabled]="selectedTicket?.status === status"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed': selectedTicket?.status === status,
+                  'bg-blue-600 hover:bg-blue-700': status === 'Open',
+                  'bg-yellow-600 hover:bg-yellow-700': status === 'In Progress',
+                  'bg-green-600 hover:bg-green-700': status === 'Resolved',
+                  'bg-gray-600 hover:bg-gray-700': status === 'Closed'
+                }"
+                class="px-3 py-1 text-white rounded-md text-sm"
+                (click)="updateTicketStatus(selectedTicket!, status)"
+              >
+                <i class="bi bi-arrow-right mr-1"></i> {{ status }}
+              </button>
+            </div>
+          </div>
+  
+          <!-- Comments Section -->
+          <div>
+            <h3 class="text-md font-medium text-gray-700 mb-4">Conversation</h3>
+  
+            <!-- No comments -->
+            <div
+              *ngIf="!selectedTicket?.comments || selectedTicket?.comments?.length === 0"
+              class="text-center py-8"
+            >
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 text-gray-400">
+                <i class="bi bi-chat text-xl"></i>
+              </div>
+              <p class="mt-2 text-sm text-gray-500">No comments yet</p>
+            </div>
+  
+            <!-- Comments list -->
+            <div
+              *ngIf="(selectedTicket?.comments ?? []).length > 0"
+              class="space-y-4 mb-6"
+            >
+              <div *ngFor="let comment of selectedTicket?.comments" class="flex">
+                <div class="flex-shrink-0 mr-3">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-white"
+                    [ngClass]="comment.creatorType === 'merchants' ? 'bg-indigo-500' : 'bg-purple-500'"
+                  >
+                    <i class="bi" [ngClass]="comment.creatorType === 'merchants' ? 'bi-person' : 'bi-headset'"></i>
+                  </div>
+                </div>
+                <div class="flex-grow">
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-1">
+                      <div class="text-sm font-medium text-gray-900">
+                        {{ comment.creatorType === "merchants" ? "Customer" : "Support Agent" }}
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ formatDate(comment.createdAt) }}
+                      </div>
+                    </div>
+                    <p class="text-sm text-gray-600 whitespace-pre-line">{{ comment.text }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Add comment form -->
+            <form [formGroup]="commentForm" (ngSubmit)="addComment()">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Add Comment
+                </label>
+                <textarea
+                  formControlName="text"
+                  rows="3"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  [ngClass]="{
+                    'border-red-500 focus:ring-red-500 focus:border-red-500':
+                      commentForm.get('text')?.invalid && commentForm.get('text')?.touched
+                  }"
+                  placeholder="Enter your comment here..."
+                ></textarea>
+                <div
+                  *ngIf="commentForm.get('text')?.invalid && commentForm.get('text')?.touched"
+                  class="mt-1 text-sm text-red-600"
+                >
+                  Comment text is required
+                </div>
+              </div>
+  
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  [disabled]="commentForm.invalid || isSubmitting"
+                  [ngClass]="{'opacity-75 cursor-not-allowed': commentForm.invalid || isSubmitting}"
+                >
+                  <div class="flex items-center">
+                    <div *ngIf="isSubmitting" class="mr-2">
+                      <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    </div>
+                    {{ isSubmitting ? "Sending..." : "Send Comment" }}
+                  </div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Edit Ticket Modal -->
+    <div
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
+      *ngIf="showEditTicketModal && selectedTicket"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-auto">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-medium text-gray-900">Edit Ticket</h2>
+          <button class="text-gray-500 hover:text-gray-700 focus:outline-none" (click)="closeEditTicketModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form [formGroup]="ticketForm" (ngSubmit)="updateTicket()">
+            <!-- Error alert -->
+            <div
+              *ngIf="error"
+              class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded"
+            >
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <i class="bi bi-exclamation-triangle text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-red-800">{{ error }}</p>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Status -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Status <span class="text-red-500">*</span>
+              </label>
+              <select
+                formControlName="status"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option *ngFor="let status of ticketStatuses" [value]="status">{{ status }}</option>
+              </select>
+            </div>
+  
+            <!-- Priority -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Priority <span class="text-red-500">*</span>
+              </label>
+              <select
+                formControlName="priority"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option *ngFor="let priority of ticketPriorities" [value]="priority">{{ priority }}</option>
+              </select>
+            </div>
+  
+            <!-- Category -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Category <span class="text-red-500">*</span>
+              </label>
+              <select
+                formControlName="category"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option *ngFor="let category of ticketCategories" [value]="category">{{ category }}</option>
+              </select>
+            </div>
+  
+            <!-- Subject -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Subject <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                formControlName="subject"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{
+                  'border-red-500 focus:ring-red-500 focus:border-red-500':
+                    ticketForm.get('subject')?.invalid && ticketForm.get('subject')?.touched
+                }"
+              />
+              <div
+                *ngIf="ticketForm.get('subject')?.invalid && ticketForm.get('subject')?.touched"
+                class="mt-1 text-sm text-red-600"
+              >
+                <span *ngIf="ticketForm.get('subject')?.errors?.['required']">Subject is required</span>
+                <span *ngIf="ticketForm.get('subject')?.errors?.['minlength']">Subject must be at least 5 characters</span>
+                <span *ngIf="ticketForm.get('subject')?.errors?.['maxlength']">Subject cannot exceed 100 characters</span>
+              </div>
+            </div>
+  
+            <!-- Description -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Description <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                formControlName="description"
+                rows="5"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                [ngClass]="{
+                  'border-red-500 focus:ring-red-500 focus:border-red-500':
+                    ticketForm.get('description')?.invalid && ticketForm.get('description')?.touched
+                }"
+              ></textarea>
+              <div
+                *ngIf="ticketForm.get('description')?.invalid && ticketForm.get('description')?.touched"
+                class="mt-1 text-sm text-red-600"
+              >
+                <span *ngIf="ticketForm.get('description')?.errors?.['required']">Description is required</span>
+                <span *ngIf="ticketForm.get('description')?.errors?.['minlength']">Description must be at least 10 characters</span>
+              </div>
+            </div>
+  
+            <!-- Assign To -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Assign To
+                </label>
+                <select
+                  formControlName="assignedTo"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Unassigned</option>
+                  <option *ngFor="let admin of admins" [value]="admin._id">{{ admin.name }} ({{ admin.email }})</option>
+                </select>
+              </div>
+  
+            <div class="flex justify-end space-x-4 mt-6">
+              <button
+                type="button"
+                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                (click)="closeEditTicketModal()"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                [disabled]="ticketForm.invalid || isSubmitting"
+                [ngClass]="{'opacity-75 cursor-not-allowed': ticketForm.invalid || isSubmitting}"
+              >
+                <div class="flex items-center">
+                  <div *ngIf="isSubmitting" class="mr-2">
+                    <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  </div>
+                  {{ isSubmitting ? "Saving..." : "Save Changes" }}
+                </div>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Assign Ticket Modal -->
+    <div
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
+      *ngIf="showAssignTicketModal && selectedTicket"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-medium text-gray-900">Assign Ticket</h2>
+          <button class="text-gray-500 hover:text-gray-700 focus:outline-none" (click)="closeAssignTicketModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <form [formGroup]="ticketForm" (ngSubmit)="assignTicket()">
+          <!-- Error alert -->
+          <div
+            *ngIf="error"
+            class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded"
+          >
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <i class="bi bi-exclamation-triangle text-red-500"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-800">{{ error }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Ticket Information
+            </label>
+            <div class="bg-gray-50 p-3 rounded-md mb-4">
+              <div class="text-sm font-medium">{{ selectedTicket?.subject }}</div>
+              <div class="text-xs text-gray-500 mt-1">ID: {{ selectedTicket?._id }}</div>
+              <div class="flex items-center mt-2">
+                <span class="text-xs text-gray-500 mr-2">Status:</span>
+                <span
+                  class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getStatusClass(selectedTicket?.status)"
+                >
+                  {{ selectedTicket?.status }}
+                </span>
+              </div>
+              <div class="flex items-center mt-1">
+                <span class="text-xs text-gray-500 mr-2">Priority:</span>
+                <span
+                  class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getPriorityClass(selectedTicket?.priority)"
+                >
+                  {{ selectedTicket?.priority }}
+                </span>
+              </div>
+            </div>
+
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Assign To <span class="text-red-500">*</span>
+            </label>
+            <select
+  formControlName="assignedTo"
+  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+>
+  <option value="">Unassigned</option>
+  <option *ngFor="let admin of admins" [value]="admin._id">{{ admin.name }} ({{ admin.email }})</option>
+</select>
+            <div class="mt-2 text-xs text-gray-500">
+              The ticket status will be changed to "In Progress" when assigned.
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-4 mt-6">
+            <button
+              type="button"
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              (click)="closeAssignTicketModal()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              [disabled]="!ticketForm.get('assignedTo')?.value || isSubmitting"
+              [ngClass]="{'opacity-75 cursor-not-allowed': !ticketForm.get('assignedTo')?.value || isSubmitting}"
+            >
+              <div class="flex items-center">
+                <div *ngIf="isSubmitting" class="mr-2">
+                  <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                </div>
+                {{ isSubmitting ? "Assigning..." : "Assign Ticket" }}
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
+    *ngIf="showDeleteConfirmModal && selectedTicket"
+  >
+    <div class="bg-white rounded-lg max-w-md w-full">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-medium text-gray-900">Delete Ticket</h2>
+        <button class="text-gray-500 hover:text-gray-700 focus:outline-none" (click)="closeDeleteConfirmModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <!-- Error alert -->
+        <div
+          *ngIf="error"
+          class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded"
+        >
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <i class="bi bi-exclamation-triangle text-red-500"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-red-800">{{ error }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center justify-center">
+            <div class="bg-red-100 text-red-600 p-3 rounded-full">
+              <i class="bi bi-exclamation-triangle text-2xl"></i>
+            </div>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 text-center mt-4">Confirm Deletion</h3>
+          <p class="mt-2 text-sm text-gray-500 text-center">
+            Are you sure you want to delete this ticket? This action cannot be undone.
+          </p>
+        </div>
+
+        <div class="bg-gray-50 p-3 rounded-md mb-6">
+          <div class="text-sm font-medium">{{ selectedTicket?.subject }}</div>
+          <div class="text-xs text-gray-500 mt-1">ID: {{ selectedTicket?._id }}</div>
+          <div class="text-xs text-gray-500 mt-1">
+            Merchant: {{ getMerchantName(selectedTicket?.merchantId) }}
+          </div>
+          <div class="flex items-center mt-2">
+            <span class="text-xs text-gray-500 mr-2">Status:</span>
+            <span
+              class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+              [ngClass]="getStatusClass(selectedTicket?.status)"
+            >
+              {{ selectedTicket?.status }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            (click)="closeDeleteConfirmModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 bg-red-600 border border-transparent rounded-md text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            [disabled]="isSubmitting"
+            [ngClass]="{'opacity-75 cursor-not-allowed': isSubmitting}"
+            (click)="deleteTicket()"
+          >
+            <div class="flex items-center">
+              <div *ngIf="isSubmitting" class="mr-2">
+                <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+              </div>
+              {{ isSubmitting ? "Deleting..." : "Delete Ticket" }}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

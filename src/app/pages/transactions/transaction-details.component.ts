@@ -1,6 +1,5 @@
-// transaction-details.component.ts
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './transaction.interface';
@@ -8,7 +7,7 @@ import { Transaction } from './transaction.interface';
 @Component({
   selector: 'app-transaction-details',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './transaction-details.component.html',
   styleUrls: ['./transaction-details.component.scss']
 })
@@ -16,8 +15,14 @@ export class TransactionDetailsComponent {
   searchForm: FormGroup;
   statusForm: FormGroup;
   transactions: (Transaction & { showDetails?: boolean; showJsonData?: boolean })[] = [];
+  filteredTransactions: (Transaction & { showDetails?: boolean; showJsonData?: boolean })[] = [];
   loading = false;
   error: string | null = null;
+  
+  // Date filter properties
+  dateFilterEnabled = false;
+  startDate: string = '';
+  endDate: string = '';
   
   // Modal visibility controls
   showStatusModal = false;
@@ -38,6 +43,14 @@ export class TransactionDetailsComponent {
     this.statusForm = this.fb.group({
       status: ['', Validators.required]
     });
+    
+    // Initialize with today's date and 7 days ago
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = sevenDaysAgo.toISOString().split('T')[0];
   }
 
   searchTransaction() {
@@ -47,6 +60,7 @@ export class TransactionDetailsComponent {
     this.loading = true;
     this.error = null;
     this.transactions = [];
+    this.filteredTransactions = [];
 
     this.transactionService.getTransactionById(id).subscribe({
       next: (response) => {
@@ -56,6 +70,9 @@ export class TransactionDetailsComponent {
             showDetails: false,
             showJsonData: false
           }));
+          
+          // Apply date filters if enabled
+          this.applyDateFilter();
         } else {
           this.error = 'No transactions found';
         }
@@ -66,6 +83,46 @@ export class TransactionDetailsComponent {
         this.loading = false;
       }
     });
+  }
+  
+  toggleDateFilter() {
+    this.dateFilterEnabled = !this.dateFilterEnabled;
+    this.applyDateFilter();
+  }
+  
+  applyDateFilter() {
+    if (!this.dateFilterEnabled || !this.transactions.length) {
+      this.filteredTransactions = [...this.transactions];
+      return;
+    }
+    
+    const start = this.startDate ? new Date(this.startDate) : null;
+    const end = this.endDate ? new Date(this.endDate) : null;
+    
+    // Add one day to end date to include the full day
+    if (end) {
+      end.setDate(end.getDate() + 1);
+    }
+    
+    this.filteredTransactions = this.transactions.filter(tx => {
+      const txDate = new Date(tx.createdAt);
+      return (!start || txDate >= start) && (!end || txDate < end);
+    });
+  }
+  
+  onDateFilterChange() {
+    this.applyDateFilter();
+  }
+  
+  resetFilters() {
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = sevenDaysAgo.toISOString().split('T')[0];
+    
+    this.applyDateFilter();
   }
 
   toggleDetails(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
@@ -229,7 +286,8 @@ export class TransactionDetailsComponent {
   }
 
   calculateTotal(field: keyof Pick<Transaction, 'amount' | 'charges' | 'actualAmount'>): number {
-    return this.transactions.reduce((sum, tx) => sum + (tx[field] || 0), 0);
+    // Use filtered transactions for calculations
+    return this.filteredTransactions.reduce((sum, tx) => sum + (tx[field] || 0), 0);
   }
 
   formatAmount(amount: number): string {

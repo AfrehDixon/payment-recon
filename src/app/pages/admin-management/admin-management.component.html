@@ -1,11 +1,17 @@
-<div class="container mx-auto px-4 py-6 bg-gray-50 min-h-screen" style="margin-left: 200px !important; width: 90%;">
-  <!-- Header Section -->
+<!-- Main Component HTML -->
+<div
+  class="container mx-auto px-4 py-6 bg-gray-50 min-h-screen"
+  style="margin-left: 200px !important; width: 90%"
+>
+  <!-- Header Section (Unchanged) -->
   <div class="flex justify-between items-center mb-6">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Admin Management</h1>
-      <p class="text-gray-500">Manage system administrators and their permissions</p>
+      <p class="text-gray-500">
+        Manage system administrators and their permissions
+      </p>
     </div>
-    <button 
+    <button
       class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors duration-200"
       (click)="openAdminModal()"
     >
@@ -13,216 +19,23 @@
       Add Admin
     </button>
   </div>
-  
-  <!-- Admin Form Modal -->
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" *ngIf="showForm">
-    <div class="bg-white rounded-lg border-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
-      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-        <h2 class="text-lg font-medium text-gray-900">{{ editingAdmin ? 'Edit' : 'Create New' }} Admin</h2>
-        <button class="text-gray-500 hover:text-gray-700" (click)="showForm = false; resetForm()">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-      <div class="p-6">
-        <form [formGroup]="adminForm" (ngSubmit)="onSubmit()">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Name Field -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input 
-                type="text" 
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('name')?.invalid && adminForm.get('name')?.touched}"
-                formControlName="name" 
-                placeholder="Enter full name"
-              >
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('name')?.invalid && adminForm.get('name')?.touched && adminForm.get('name')?.errors?.['required']">
-                Name is required
-              </p>
-            </div>
-    
-            <!-- Email Field -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input 
-                type="email" 
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('email')?.invalid && adminForm.get('email')?.touched}"
-                formControlName="email" 
-                placeholder="Enter email address"
-              >
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['required']">
-                Email is required
-              </p>
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['email']">
-                Please enter a valid email address
-              </p>
-            </div>
-    
-            <!-- Phone Field -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-              <input 
-                type="text" 
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('phone')?.invalid && adminForm.get('phone')?.touched}"
-                formControlName="phone" 
-                placeholder="Enter phone number"
-              >
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('phone')?.invalid && adminForm.get('phone')?.touched && adminForm.get('phone')?.errors?.['required']">
-                Phone number is required
-              </p>
-            </div>
-    
-            <!-- Password Field -->
-            <div *ngIf="!editingAdmin">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div class="relative">
-                <input 
-                  [type]="hidePassword ? 'password' : 'text'"
-                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('password')?.invalid && adminForm.get('password')?.touched}"
-                  formControlName="password"
-                  placeholder="Enter password"
-                >
-                <button 
-                  type="button"
-                  class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
-                  (click)="hidePassword = !hidePassword"
-                >
-                  <i class="bi" [ngClass]="hidePassword ? 'bi-eye' : 'bi-eye-slash'"></i>
-                </button>
-              </div>
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('password')?.invalid && adminForm.get('password')?.touched && adminForm.get('password')?.errors?.['required']">
-                Password is required
-              </p>
-            </div>
-    
-            <!-- Permissions Field -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Permissions</label>
-              <select 
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('permissions')?.invalid && adminForm.get('permissions')?.touched}"
-                formControlName="permissions"
-                multiple
-              >
-                <option *ngFor="let permission of availablePermissions" [value]="permission.value">
-                  {{ permission.label }}
-                </option>
-              </select>
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('permissions')?.invalid && adminForm.get('permissions')?.touched && adminForm.get('permissions')?.errors?.['required']">
-                At least one permission is required
-              </p>
-              <p class="mt-1 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple permissions</p>
-            </div>
-    
-            <!-- Merchant ID Field -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
-              <input 
-                type="text" 
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': adminForm.get('merchantId')?.invalid && adminForm.get('merchantId')?.touched}"
-                formControlName="merchantId" 
-                placeholder="Enter merchant ID"
-              >
-              <p class="mt-1 text-sm text-red-600" *ngIf="adminForm.get('merchantId')?.invalid && adminForm.get('merchantId')?.touched && adminForm.get('merchantId')?.errors?.['required']">
-                Merchant ID is required
-              </p>
-            </div>
-          </div>
-    
-          <!-- Account Status -->
-          <div class="mt-6">
-            <div class="flex items-center">
-              <input 
-                type="checkbox" 
-                id="blocked" 
-                formControlName="blocked"
-                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              >
-              <label for="blocked" class="ml-2 text-sm text-gray-700">
-                Account Blocked
-              </label>
-            </div>
-          </div>
-    
-          <!-- Form Actions -->
-          <div class="flex justify-end space-x-4 mt-6">
-            <button 
-              type="button" 
-              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              (click)="showForm = false; resetForm()"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              [disabled]="adminForm.invalid || isLoading"
-              [ngClass]="{'opacity-75 cursor-not-allowed': adminForm.invalid || isLoading}"
-            >
-              <div class="flex items-center">
-                <div *ngIf="isLoading" class="mr-2">
-                  <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-                {{ isLoading ? 'Saving...' : (editingAdmin ? 'Update Admin' : 'Create Admin') }}
-              </div>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 
-  <!-- Confirmation Dialog Modal -->
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" *ngIf="showConfirmation">
-    <div class="bg-white rounded-lg border-lg w-full max-w-md">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">{{ dialogData.title }}</h3>
-      </div>
-      <div class="p-6">
-        <p class="text-sm text-gray-500">{{ dialogData.message }}</p>
-      </div>
-      <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-        <button 
-          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          (click)="closeConfirmationDialog()"
-        >
-          Cancel
-        </button>
-        <button 
-          class="px-4 py-2 border border-transparent rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
-          [ngClass]="{
-            'bg-red-600 hover:bg-red-700': dialogData.confirmButtonClass === 'btn-danger',
-            'bg-amber-600 hover:bg-amber-700': dialogData.confirmButtonClass === 'btn-warning'
-          }"
-          (click)="confirmAction()"
-        >
-          {{ dialogData.confirmButtonText }}
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Search Bar -->
+  <!-- Search Bar (Unchanged) -->
   <div class="bg-white border rounded-lg mb-6 p-4">
     <div class="relative">
-      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div
+        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+      >
         <i class="bi bi-search text-gray-400"></i>
       </div>
-      <input 
-        type="text" 
+      <input
+        type="text"
         class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         placeholder="Search admins by name, email, phone..."
         [value]="searchValue"
         (keyup)="applyFilter($event)"
-      >
-      <button 
+      />
+      <button
         *ngIf="searchValue"
         class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
         (click)="clearSearch()"
@@ -231,114 +44,251 @@
       </button>
     </div>
   </div>
-  
+
   <!-- Admin Table -->
   <div class="bg-white border rounded-lg overflow-hidden">
-    <!-- Loading State -->
+    <!-- Loading State (Unchanged) -->
     <div class="p-10 text-center" *ngIf="isLoading">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600"
+      ></div>
       <p class="mt-3 text-gray-500">Loading admins...</p>
     </div>
-  
-    <!-- Empty State -->
-    <div class="p-10 text-center" *ngIf="!isLoading && 
-      ((!admins || admins.length === 0) || (dataSource.filteredData.length === 0 && searchValue))">
+
+    <!-- Empty State (Unchanged) -->
+    <div
+      class="p-10 text-center"
+      *ngIf="
+        !isLoading &&
+        (!admins ||
+          admins.length === 0 ||
+          (dataSource.filteredData.length === 0 && searchValue))
+      "
+    >
       <i class="bi bi-people text-6xl text-gray-300"></i>
       <h3 class="mt-4 text-xl font-medium text-gray-900">
-        {{ (!admins || admins.length === 0) ? 'No Admins Found' : 'No Matching Admins' }}
+        {{
+          !admins || admins.length === 0
+            ? "No Admins Found"
+            : "No Matching Admins"
+        }}
       </h3>
       <p class="mt-2 text-gray-500 mb-6">
-        {{ (!admins || admins.length === 0) ? 
-            'There are no administrators in the system yet.' : 
-            'No administrators match your search criteria.' }}
+        {{
+          !admins || admins.length === 0
+            ? "There are no administrators in the system yet."
+            : "No administrators match your search criteria."
+        }}
       </p>
-      <button 
+      <button
         *ngIf="!admins || admins.length === 0"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md" 
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
         (click)="openAdminModal()"
       >
         Add Your First Admin
       </button>
-      <button 
-        *ngIf="admins && admins.length > 0 && dataSource.filteredData.length === 0 && searchValue"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md" 
+      <button
+        *ngIf="
+          admins &&
+          admins.length > 0 &&
+          dataSource.filteredData.length === 0 &&
+          searchValue
+        "
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
         (click)="clearSearch()"
       >
         Clear Search
       </button>
     </div>
-  
-    <!-- Table -->
-    <div class="overflow-x-auto" *ngIf="!isLoading && admins && admins.length > 0 && dataSource.filteredData.length > 0">
+
+    <!-- Table - IMPROVED PERMISSIONS DISPLAY -->
+    <div
+      class="overflow-x-auto"
+      *ngIf="
+        !isLoading &&
+        admins &&
+        admins.length > 0 &&
+        dataSource.filteredData.length > 0
+      "
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissions</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Seen</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Name
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Email
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Phone
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Permissions
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Last Seen
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Created Date
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let admin of dataSource.connect() | async" class="hover:bg-gray-50">
+          <tr
+            *ngFor="let admin of dataSource.connect() | async"
+            class="hover:bg-gray-50"
+          >
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ admin.name || 'N/A' }}</div>
+              <div class="text-sm font-medium text-gray-900">
+                {{ admin.name || "N/A" }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm text-gray-500">{{ admin.email }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-500">{{ admin.phone || 'N/A' }}</div>
+              <div class="text-sm text-gray-500">
+                {{ admin.phone || "N/A" }}
+              </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex flex-wrap gap-1">
-                <ng-container *ngFor="let permission of admin.permissions">
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium" 
-                    [ngClass]="{
-                      'bg-indigo-100 text-indigo-800': permission === 'SUPER_ADMIN',
-                      'bg-blue-100 text-blue-800': permission === 'ADMIN',
-                      'bg-yellow-100 text-yellow-800': permission === 'INITIATOR',
-                      'bg-green-100 text-green-800': permission === 'APPROVER',
-                      'bg-gray-100 text-gray-800': permission === 'manage_password'
-                    }">
-                    {{ permission }}
+
+            <!-- IMPROVED PERMISSIONS DISPLAY -->
+            <td class="px-6 py-4">
+              <div class="flex flex-col space-y-1">
+                <!-- Permission Summary -->
+                <div
+                  class="text-sm text-gray-700 font-medium flex items-center"
+                >
+                  <span
+                    class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs"
+                  >
+                    {{ admin.permissions?.length || 0 }} Permissions
                   </span>
-                </ng-container>
+
+                  <!-- Toggle Button - Fixed to ensure proper toggling -->
+                  <button
+                    class="ml-2 text-gray-500 hover:text-indigo-600 focus:outline-none"
+                    (click)="togglePermissionDetails(admin._id ?? '')"
+                    type="button"
+                  >
+                    <i
+                      class="bi"
+                      [ngClass]="
+                        expandedPermissions[admin._id ?? '']
+                          ? 'bi-chevron-up'
+                          : 'bi-chevron-down'
+                      "
+                    ></i>
+                  </button>
+                </div>
+
+                <!-- Expandable Permission Categories - Fixed to ensure proper display -->
+                <div
+                  class="text-xs space-y-1"
+                  *ngIf="expandedPermissions[admin._id ?? '']"
+                >
+                  <!-- Group permissions by category -->
+                  <ng-container
+                    *ngFor="
+                      let category of getPermissionCategories(
+                        admin.permissions || []
+                      )
+                    "
+                  >
+                    <div class="font-medium text-gray-700 mt-2">
+                      {{ category.name }} ({{ category.permissions.length }})
+                    </div>
+                    <span
+                      *ngFor="
+                        let permission of category.permissions.slice(0, 5)
+                      "
+                      class="inline-flex px-2 py-0.5 rounded-full text-xs"
+                      [ngClass]="getPermissionBadgeClass(permission)"
+                    >
+                      {{ findPermissionName(permission) }}
+                    </span>
+                  </ng-container>
+
+                  <!-- Show this if no categories were found or processed -->
+                  <div
+                    *ngIf="
+                      getPermissionCategories(admin.permissions || [])
+                        .length === 0
+                    "
+                    class="text-gray-500"
+                  >
+                    No permissions found
+                  </div>
+                </div>
+              </div>
+            </td>
+            <!-- END IMPROVED PERMISSIONS DISPLAY -->
+
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-500">
+                {{ admin.lastSeen | date : "medium" }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-500">{{ admin.lastSeen | date: 'medium' }}</div>
+              <div class="text-sm text-gray-500">
+                {{ admin.createdAt | date : "medium" }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-500">{{ admin.createdAt | date: 'medium' }}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium" 
-                [ngClass]="admin.blocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">
-                {{ admin.blocked ? 'Blocked' : 'Active' }}
+              <span
+                class="inline-flex px-2 py-1 rounded-full text-xs font-medium"
+                [ngClass]="
+                  admin.blocked
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-green-100 text-green-800'
+                "
+              >
+                {{ admin.blocked ? "Blocked" : "Active" }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <div class="flex space-x-2">
-                <button 
+                <button
                   class="text-indigo-600 hover:text-indigo-900 p-1"
                   (click)="editAdmin(admin)"
                   title="Edit"
                 >
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button 
+                <button
                   class="text-amber-600 hover:text-amber-900 p-1"
                   (click)="openBlockDialog(admin)"
                   title="{{ admin.blocked ? 'Unblock' : 'Block' }}"
                 >
-                  <i class="bi" [ngClass]="admin.blocked ? 'bi-unlock' : 'bi-lock'"></i>
+                  <i
+                    class="bi"
+                    [ngClass]="admin.blocked ? 'bi-unlock' : 'bi-lock'"
+                  ></i>
                 </button>
-                <button 
+                <button
                   class="text-red-600 hover:text-red-900 p-1"
                   (click)="openDeleteDialog(admin)"
                   title="Delete"
@@ -351,15 +301,428 @@
         </tbody>
       </table>
     </div>
-    
-    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6" *ngIf="!isLoading && admins && admins.length > 0 && dataSource.filteredData.length > 0">
-      <mat-paginator 
-        [pageSize]="10" 
-        [pageSizeOptions]="[5, 10, 25, 100]" 
+
+    <div
+      class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6"
+      *ngIf="
+        !isLoading &&
+        admins &&
+        admins.length > 0 &&
+        dataSource.filteredData.length > 0
+      "
+    >
+      <mat-paginator
+        [pageSize]="10"
+        [pageSizeOptions]="[5, 10, 25, 100]"
         [length]="dataSource.filteredData.length"
-        [showFirstLastButtons]="true" 
+        [showFirstLastButtons]="true"
         class="bg-transparent"
       ></mat-paginator>
+    </div>
+  </div>
+
+  <!-- IMPROVED ADMIN FORM MODAL -->
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    *ngIf="showForm"
+  >
+    <div
+      class="bg-white rounded-lg border-lg w-full max-w-4xl max-h-[90vh] overflow-auto"
+    >
+      <div
+        class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10"
+      >
+        <h2 class="text-lg font-medium text-gray-900">
+          {{ editingAdmin ? "Edit" : "Create New" }} Admin
+        </h2>
+        <button
+          class="text-gray-500 hover:text-gray-700"
+          (click)="showForm = false; resetForm()"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <form [formGroup]="adminForm" (ngSubmit)="onSubmit()">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Basic Information -->
+            <div class="md:col-span-2">
+              <h3 class="text-md font-medium text-gray-700 mb-2">
+                Basic Information
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Name Field -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Full Name</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    [ngClass]="{
+                      'border-red-500 focus:ring-red-500 focus:border-red-500':
+                        adminForm.get('name')?.invalid &&
+                        adminForm.get('name')?.touched
+                    }"
+                    formControlName="name"
+                    placeholder="Enter full name"
+                  />
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('name')?.invalid && adminForm.get('name')?.touched && adminForm.get('name')?.errors?.['required']"
+                  >
+                    Name is required
+                  </p>
+                </div>
+
+                <!-- Email Field -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Email Address</label
+                  >
+                  <input
+                    type="email"
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    [ngClass]="{
+                      'border-red-500 focus:ring-red-500 focus:border-red-500':
+                        adminForm.get('email')?.invalid &&
+                        adminForm.get('email')?.touched
+                    }"
+                    formControlName="email"
+                    placeholder="Enter email address"
+                  />
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['required']"
+                  >
+                    Email is required
+                  </p>
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('email')?.invalid && adminForm.get('email')?.touched && adminForm.get('email')?.errors?.['email']"
+                  >
+                    Please enter a valid email address
+                  </p>
+                </div>
+
+                <!-- Phone Field -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Phone Number</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    [ngClass]="{
+                      'border-red-500 focus:ring-red-500 focus:border-red-500':
+                        adminForm.get('phone')?.invalid &&
+                        adminForm.get('phone')?.touched
+                    }"
+                    formControlName="phone"
+                    placeholder="Enter phone number"
+                  />
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('phone')?.invalid && adminForm.get('phone')?.touched && adminForm.get('phone')?.errors?.['required']"
+                  >
+                    Phone number is required
+                  </p>
+                </div>
+
+                <!-- Password Field -->
+                <div *ngIf="!editingAdmin">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Password</label
+                  >
+                  <div class="relative">
+                    <input
+                      [type]="hidePassword ? 'password' : 'text'"
+                      class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      [ngClass]="{
+                        'border-red-500 focus:ring-red-500 focus:border-red-500':
+                          adminForm.get('password')?.invalid &&
+                          adminForm.get('password')?.touched
+                      }"
+                      formControlName="password"
+                      placeholder="Enter password"
+                    />
+                    <button
+                      type="button"
+                      class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                      (click)="hidePassword = !hidePassword"
+                    >
+                      <i
+                        class="bi"
+                        [ngClass]="hidePassword ? 'bi-eye' : 'bi-eye-slash'"
+                      ></i>
+                    </button>
+                  </div>
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('password')?.invalid && adminForm.get('password')?.touched && adminForm.get('password')?.errors?.['required']"
+                  >
+                    Password is required
+                  </p>
+                </div>
+
+                <!-- Merchant ID Field as Dropdown -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Merchant</label
+                  >
+                  <select
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    [ngClass]="{
+                      'border-red-500 focus:ring-red-500 focus:border-red-500':
+                        adminForm.get('merchantId')?.invalid &&
+                        adminForm.get('merchantId')?.touched
+                    }"
+                    formControlName="merchantId"
+                  >
+                    <option value="" disabled>Select a merchant</option>
+                    <option
+                      *ngFor="let merchant of availableMerchants"
+                      [value]="merchant._id"
+                    >
+                      {{ merchant.merchant_tradeName }} ({{ merchant.email }})
+                    </option>
+                  </select>
+                  <p
+                    class="mt-1 text-sm text-red-600"
+                    *ngIf="adminForm.get('merchantId')?.invalid && adminForm.get('merchantId')?.touched && adminForm.get('merchantId')?.errors?.['required']"
+                  >
+                    Merchant is required
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IMPROVED PERMISSIONS SECTION -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-md font-medium text-gray-700">Permissions</h3>
+
+              <!-- Permission Search -->
+              <div class="relative w-64">
+                <input
+                  type="text"
+                  class="w-full rounded-md border border-gray-300 px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Search permissions"
+                  [(ngModel)]="permissionSearchQuery"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <button
+                  *ngIf="permissionSearchQuery"
+                  class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600"
+                  (click)="permissionSearchQuery = ''"
+                  type="button"
+                >
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Permission Categories -->
+            <div class="border border-gray-200 rounded-md">
+              <!-- Permission Groups Tabs -->
+              <div
+                class="flex border-b border-gray-200 bg-gray-50 rounded-t-md overflow-x-auto"
+              >
+                <button
+                  *ngFor="let category of permissionCategories"
+                  class="px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200"
+                  [ngClass]="{
+                    'text-indigo-700 border-b-2 border-indigo-500':
+                      activePermissionTab === category.id,
+                    'text-gray-500 hover:text-gray-700':
+                      activePermissionTab !== category.id
+                  }"
+                  (click)="activePermissionTab = category.id"
+                  type="button"
+                >
+                  {{ category.name }} ({{
+                    getFilteredPermissionsByCategory(category.id).length
+                  }})
+                </button>
+              </div>
+
+              <!-- Permissions List -->
+              <div class="p-4 max-h-64 overflow-y-auto">
+                <div
+                  *ngIf="
+                    getFilteredPermissionsByCategory(activePermissionTab)
+                      .length === 0
+                  "
+                  class="text-center py-4 text-gray-500"
+                >
+                  No permissions found matching "{{ permissionSearchQuery }}"
+                </div>
+
+                <div
+                  *ngIf="
+                    getFilteredPermissionsByCategory(activePermissionTab)
+                      .length > 0
+                  "
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
+                >
+                  <div
+                    *ngFor="
+                      let permission of getFilteredPermissionsByCategory(
+                        activePermissionTab
+                      )
+                    "
+                    class="flex items-center"
+                  >
+                    <input
+                      type="checkbox"
+                      [id]="'perm-' + permission._id"
+                      [checked]="isPermissionSelected(permission._id)"
+                      (change)="togglePermission(permission._id)"
+                      class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label
+                      [for]="'perm-' + permission._id"
+                      class="ml-2 text-sm text-gray-700 truncate"
+                    >
+                      {{ permission.name }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Debug info to verify form values -->
+              <div
+                class="px-3 py-2 bg-gray-50 text-xs text-gray-500"
+                *ngIf="false"
+              >
+                Selected permissions:
+                {{ adminForm.get("permissions")?.value | json }}
+              </div>
+
+              <!-- Selected Permissions Summary -->
+              <div class="bg-gray-50 p-3 border-t border-gray-200 rounded-b-md">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-700">
+                    <span class="font-medium">{{
+                      getSelectedPermissions().length
+                    }}</span>
+                    permission(s) selected
+                  </span>
+                  <div>
+                    <button
+                      type="button"
+                      class="text-xs text-indigo-600 hover:text-indigo-800"
+                      (click)="selectAllPermissions()"
+                    >
+                      Select All
+                    </button>
+                    <span class="mx-2 text-gray-300">|</span>
+                    <button
+                      type="button"
+                      class="text-xs text-indigo-600 hover:text-indigo-800"
+                      (click)="clearPermissions()"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- END IMPROVED PERMISSIONS SECTION -->
+
+          <!-- Form Actions -->
+          <div class="flex justify-end space-x-4 mt-6">
+            <button
+              type="button"
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              (click)="showForm = false; resetForm()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              [disabled]="adminForm.invalid || isLoading"
+              [ngClass]="{
+                'opacity-75 cursor-not-allowed': adminForm.invalid || isLoading
+              }"
+            >
+              <div class="flex items-center">
+                <div *ngIf="isLoading" class="mr-2">
+                  <svg
+                    class="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+                {{
+                  isLoading
+                    ? "Saving..."
+                    : editingAdmin
+                    ? "Update Admin"
+                    : "Create Admin"
+                }}
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog Modal (Unchanged) -->
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    *ngIf="showConfirmation"
+  >
+    <div class="bg-white rounded-lg border-lg w-full max-w-md">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">
+          {{ dialogData.title }}
+        </h3>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-gray-500">{{ dialogData.message }}</p>
+      </div>
+      <div
+        class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3"
+      >
+        <button
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          (click)="closeConfirmationDialog()"
+        >
+          Cancel
+        </button>
+        <button
+          class="px-4 py-2 border border-transparent rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+          [ngClass]="{
+            'bg-red-600 hover:bg-red-700':
+              dialogData.confirmButtonClass === 'btn-danger',
+            'bg-amber-600 hover:bg-amber-700':
+              dialogData.confirmButtonClass === 'btn-warning'
+          }"
+          (click)="confirmAction()"
+        >
+          {{ dialogData.confirmButtonText }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

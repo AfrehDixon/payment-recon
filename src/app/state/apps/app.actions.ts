@@ -1,18 +1,23 @@
+import { User } from "../../models/user.model";
+
 export class AdminLogin {
-    static readonly type = '[auth] AdminLogin]';
-    constructor(public readonly payload:any) {}
+    static readonly type = '[Auth] Admin Login';
+    constructor(public payload: { 
+      user: User; 
+      token: string; 
+      refreshToken: string;
+    }) {}
 }
 
 export class CreateAdmin {
-    static readonly type = '[auth] CreateAdmin]';
-    constructor(public readonly payload:any) {}
+    static readonly type = '[Auth] CreateAdmin';
+    constructor(public readonly payload: any) {}
 }
 
 export class Logout {
-    static readonly type = '[auth] Logout]';
+    static readonly type = '[Auth] Logout';
 }
 
 export class AutoLogin {
-    static readonly type = '[auth] AutoLogin]';
+    static readonly type = '[Auth] AutoLogin';
 }
-

@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { LoginComponent } from "./pages/auth-layout.ts/login/login.component";
 import { PaymentReconciliationComponent } from "./pages/payment-reconcilation/payment-reconciliation.component";
 import { Store } from '@ngxs/store';
-import { AutoLogin } from './auth/auth.action';
+import { AutoLogin } from './state/apps/app.actions';
 
 @Component({
   selector: 'app-root',

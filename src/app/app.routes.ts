@@ -26,6 +26,14 @@ import { MerchantStatisticsComponent } from './pages/merchant-statistics/merchan
 import { MerchantBalanceHistoryComponent } from './pages/merchant-balance-history/merchant-balance-history.component';
 import { MerchantBalanceSummaryComponent } from './pages/merchant-balance-summary/merchant-balance-summary.component';
 import { PaymentLinksComponent } from './pages/payment-links/payment-links.component';
+import { AccountBlacklistComponent } from './pages/account-blacklist/account-blacklist.component';
+import { SettlementsComponent } from './pages/settlements/settlements.component';
+import { CreditDebitComponent } from './pages/credit/debit/transaction.component';
+import { VelocityRulesComponent } from './pages/velocity-management/velocity-rules.component';
+import { PaymentTerminalsComponent } from './pages/payment-terminals/payment-terminals.component';
+import { PermissionManagementComponent } from './pages/permission-management/permission-management.component';
+import { PermissionGuard } from './guard/permissions.guard';
+import { AdminTicketManagementComponent } from './pages/admin-ticket/admin-ticket-management.component';
 
 export const routes: Routes = [
   {
@@ -56,6 +64,8 @@ export const routes: Routes = [
           import('./pages/merchants/merchants.component').then(
             (m) => m.MerchantComponent
           ),
+          canActivate: [AuthGuard, PermissionGuard],
+          data: { requiredPermission: 'can view merchants module' }
       },
       {
         path: 'admins',
@@ -71,6 +81,10 @@ export const routes: Routes = [
       {
         path: 'merchant-tiers',
         component: MerchantTierComponent,
+      },
+      {
+        path: 'tickets',
+        component: AdminTicketManagementComponent,
       },
       {
         path: 'daily-statistics',
@@ -139,6 +153,30 @@ export const routes: Routes = [
       {
         path: 'comparative-statistics',
         component: ComparativeStatisticsComponent,
+      },
+      {
+        path: 'velocity-rules',
+        component: VelocityRulesComponent,
+      },
+      {
+        path: 'terminals',
+        component: PaymentTerminalsComponent,
+      },
+      {
+        path: 'settlements',
+        component: SettlementsComponent,
+      },
+      {
+        path: 'permission-management',
+        component: PermissionManagementComponent,
+      },
+      {
+        path: 'credit-debit',
+        component: CreditDebitComponent
+      },
+      {
+        path: 'account-blacklist',
+        component: AccountBlacklistComponent,
       },
       {
         path: 'payment-links',

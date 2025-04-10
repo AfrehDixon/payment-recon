@@ -1,5 +1,5 @@
 // merchants.component.ts
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -8,6 +8,8 @@ import { HttpClient } from '@angular/common/http';
 import { Store } from '@ngxs/store';
 import { catchError, finalize, take, of } from 'rxjs';
 import { RouterModule } from '@angular/router';
+import { HasPermissionDirective } from '../../directives/permission.directive';
+import { PermissionService } from '../../service/permissions.service';
 
 interface Merchant {
   _id: string;
@@ -161,7 +163,7 @@ interface OtpValidateRequest {
 @Component({
   selector: 'app-merchants',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, HasPermissionDirective],
   templateUrl: './merchants.component.html',
   styleUrls: ['./merchants.component.css'],
 })
@@ -209,7 +211,9 @@ export class MerchantComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private store: Store,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private permissionService: PermissionService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
     this.topUpForm = this.fb.group({
       amount: ['', [Validators.required, Validators.min(1)]],
@@ -259,6 +263,10 @@ export class MerchantComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.permissionService.getPermissions().subscribe(() => {
+      // Now that permissions are loaded, trigger change detection
+      this.changeDetectorRef.detectChanges();
+    });
     this.getAllMerchants();
   }
 

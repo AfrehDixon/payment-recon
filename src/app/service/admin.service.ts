@@ -5,6 +5,13 @@ import { Observable, catchError, of, take, tap } from 'rxjs';
 import API from '../constants/api.constant';
 import { ETierLevel, ETierScope } from '../pages/merchant-tier/merchant-tier.interface';
 
+export interface Permission {
+  _id: string;
+  scope: string;
+  name: string;
+  createdAt: string;
+  __v: number;
+}
 export interface Admin {
   _id?: string;
   email: string;
@@ -16,8 +23,24 @@ export interface Admin {
   blocked: boolean;
   account_type: 'admin' | 'merchant';
   merchantId?: string;
+  structuredPermissions?: string[];
   lastSeen?: Date;
   createdAt?: Date;
+}
+
+export interface Merchant {
+  _id: string;
+  merchant_tradeName: string;
+  email: string;
+  phone: string;
+  location: string;
+  active: boolean;
+  tierEnabled?: boolean;
+  tierLevel?: number;
+  operations?: string[];
+  contact_person?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 @Injectable({
   providedIn: 'root',
@@ -86,6 +109,28 @@ export class AdminService {
         if (!res.success) {
           throw Error(res.message);
         }
+      })
+    );
+  }
+
+  getPermissions(): Observable<any> {
+    return this.http.get<any>(`${API}/merchants/permissions/get`).pipe(
+      take(1),
+      catchError((err) => of(err)),
+      tap((res) => {
+        if (!res.success) {
+          throw Error(res.message);
+        }
+      })
+    );
+  }
+
+  getMerchantsNew(): Observable<{ success: boolean, message: string, data: Merchant[] }> {
+    return this.http.get<{ success: boolean, message: string, data: Merchant[] }>(`${API}/merchants/get`).pipe(
+      take(1),
+      catchError((err) => {
+        console.error('Error fetching merchants:', err);
+        return of({ success: false, message: 'Failed to fetch merchants', data: [] });
       })
     );
   }

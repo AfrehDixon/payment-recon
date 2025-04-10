@@ -79,12 +79,12 @@
               formatCurrency(wallet.availableBalance)
             }}</span>
           </div>
-          <div class="balance-item">
+          <!-- <div class="balance-item">
             <label>Total Balance</label>
             <span class="amount">{{
               formatCurrency(wallet.totalBalance ?? 0)
             }}</span>
-          </div>
+          </div> -->
           <div class="balance-item">
             <label>Blocked Balance</label>
             <span class="amount">{{
@@ -107,7 +107,7 @@
 
         <div class="wallet-actions">
           <button class="update-btn" (click)="openUpdateWalletModal(wallet)">
-            Update Wallet
+            View Wallet
           </button>
         </div>
       </div>
@@ -301,7 +301,7 @@
           </div>
         </div>
 
-        <div class="form-footer">
+        <!-- <div class="form-footer">
           <p class="warning-text">
             * Please ensure all balance updates are accurate before submitting
           </p>
@@ -322,7 +322,7 @@
               Update Wallet
             </button>
           </div>
-        </div>
+        </div> -->
       </form>
     </div>
   </div>

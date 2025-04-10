@@ -73,6 +73,7 @@
           <td>{{ merchant.type || "N/A" }}</td>
           <td class="actions">
             <button
+            *appHasPermission="'can access action button in merchant module'"
               class="icon-btn"
               (click)="openActionModal(merchant)"
               title="Actions"
@@ -118,6 +119,7 @@
       <div class="modal-actions">
         <!-- View Details -->
         <button
+        *appHasPermission="'can view merchant details'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction && viewDetails(selectedMerchantForAction)
@@ -132,6 +134,7 @@
   
         <!-- Top Up -->
         <button
+        *appHasPermission="'can top up merchant'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -147,6 +150,7 @@
   
         <!-- Check Balance -->
         <button
+        *appHasPermission="'can check check merchant'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -162,6 +166,7 @@
   
         <!-- Approve Merchant -->
         <button
+        *appHasPermission="'can approve merchant'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -176,7 +181,7 @@
         </button>
   
         <!-- Configure Charges -->
-        <button
+        <!-- <button
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -188,10 +193,11 @@
             <span class="btn-title">Configure Charges</span>
             <span class="btn-description">Set up charges for the merchant.</span>
           </div>
-        </button>
+        </button> -->
   
         <!-- View Transactions -->
         <button
+          *appHasPermission="'can view merchant transactions'"
           class="modal-btn"
           [routerLink]="[
             '/merchants/transactions',
@@ -207,6 +213,7 @@
   
         <!-- View Settlements -->
         <button
+          *appHasPermission="'can view merchant settlements'"
           class="modal-btn"
           [routerLink]="[
             '/merchants/settlements',
@@ -222,6 +229,7 @@
   
         <!-- Settle Account -->
         <button
+          *appHasPermission="'can settle merchant'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -237,6 +245,7 @@
   
         <!-- Toggle Auto-settle -->
         <button
+          *appHasPermission="'can toggle merchant auto settle'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -259,6 +268,7 @@
 
         <!--Toggle enable tier-->
         <button
+          *appHasPermission="'can toggle merchant tiers'"
           class="modal-btn"
           (click)="
             selectedMerchantForAction &&
@@ -282,7 +292,6 @@
     </div>
   </div>
 
-  <!-- Details Modal -->
   <!-- Details Modal -->
 <div class="modal" *ngIf="showDetailsModal">
   <div class="modal-content details-modal">

@@ -77,6 +77,11 @@ export class MerchantBalanceHistoryComponent implements OnInit, AfterViewInit {
   loadingMerchants = false;
   merchantError = '';
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50, 100];
+
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
@@ -160,6 +165,7 @@ export class MerchantBalanceHistoryComponent implements OnInit, AfterViewInit {
 
   onMerchantChange(): void {
     this.loadBalanceHistory();
+    this.resetPagination();
   }
 
   loadBalanceHistory(): void {
@@ -181,6 +187,7 @@ export class MerchantBalanceHistoryComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.balanceHistory = data;
         this.loading = false;
+        this.resetPagination();
         
         // Render chart after data is loaded
         setTimeout(() => this.renderBalanceChart(), 0);
@@ -191,6 +198,36 @@ export class MerchantBalanceHistoryComponent implements OnInit, AfterViewInit {
         console.error('Error loading balance history:', err);
       },
     });
+  }
+
+  resetPagination(): void {
+    this.currentPage = 1;
+  }
+
+  get totalPages(): number {
+    if (!this.balanceHistory) return 0;
+    return Math.ceil(this.balanceHistory.movements.length / this.pageSize);
+  }
+
+  get paginatedMovements(): BalanceMovement[] {
+    if (!this.balanceHistory) return [];
+    
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = Math.min(startIndex + this.pageSize, this.balanceHistory.movements.length);
+    
+    return this.balanceHistory.movements.slice(startIndex, endIndex);
+  }
+
+  changePage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onPageSizeChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.pageSize = parseInt(target.value, 10);
+    this.resetPagination();
   }
 
   renderBalanceChart(): void {
@@ -306,4 +343,60 @@ export class MerchantBalanceHistoryComponent implements OnInit, AfterViewInit {
       ? merchant.merchant_tradeName || 'Unnamed Merchant'
       : 'Unknown Merchant';
   }
+
+getPageNumber(index: number): number {
+  if (this.totalPages <= 5) {
+    // If we have 5 or fewer pages, just return the index + 1
+    return index + 1;
+  }
+  
+  if (this.currentPage <= 3) {
+    // If we're near the start, show pages 1-5
+    return index + 1;
+  }
+  
+  if (this.currentPage >= this.totalPages - 2) {
+    // If we're near the end, show the last 5 pages
+    return this.totalPages - 4 + index;
+  }
+  
+  // Otherwise, show current page in the middle
+  return this.currentPage - 2 + index;
+}
+
+shouldShowPageButton(pageNumber: number): boolean {
+  // For smaller page counts, show all pages
+  if (this.totalPages <= 5) {
+    return true;
+  }
+  
+  // Always show the first page
+  if (pageNumber === 1) {
+    return true;
+  }
+  
+  // Always show the last page
+  if (pageNumber === this.totalPages) {
+    return true;
+  }
+  
+  // For larger page counts, implement a window approach
+  if (this.currentPage <= 3) {
+    // Near the start, show pages 1-5
+    return pageNumber <= 5;
+  }
+  
+  if (this.currentPage >= this.totalPages - 2) {
+    // Near the end, show the last 5 pages
+    return pageNumber >= this.totalPages - 4;
+  }
+  
+  // Otherwise, show a window of 5 pages around the current page
+  return pageNumber >= this.currentPage - 2 && pageNumber <= this.currentPage + 2;
+}
+
+// Ensure Math is available in the template
+get Math(): any {
+  return Math;
+}
 }

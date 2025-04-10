@@ -1,0 +1,89 @@
+/* admin-ticket-management.component.css */
+/* Custom scrollbar for better UX in modals */
+::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #c5c5c5;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a3a3a3;
+  }
+  
+  /* Fade out animation for notifications */
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  .fade-out {
+    animation: fadeOut 0.5s ease-in-out forwards;
+  }
+  
+  /* Responsive tables */
+  @media (max-width: 768px) {
+    .table-responsive {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  
+  /* Custom styling for Material UI components */
+  ::ng-deep .mat-paginator {
+    background: transparent;
+  }
+  
+  ::ng-deep .mat-paginator-page-size {
+    margin-right: 8px;
+  }
+  
+  ::ng-deep .mat-paginator-range-label {
+    margin: 0 24px 0 24px;
+  }
+  
+  /* Status colors */
+  .status-open {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: rgba(30, 64, 175, 1);
+  }
+  
+  .status-in-progress {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: rgba(180, 83, 9, 1);
+  }
+  
+  .status-resolved {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: rgba(22, 101, 52, 1);
+  }
+  
+  .status-closed {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: rgba(55, 65, 81, 1);
+  }
+  
+  /* Priority colors */
+  .priority-high {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: rgba(185, 28, 28, 1);
+  }
+  
+  .priority-medium {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: rgba(180, 83, 9, 1);
+  }
+  
+  .priority-low {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: rgba(22, 101, 52, 1);
+  }

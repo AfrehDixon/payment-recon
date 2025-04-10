@@ -1,6 +1,16 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Admin, AdminService } from '../../service/admin.service';
+import { Component, OnInit, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  Admin,
+  AdminService,
+  Merchant,
+  Permission,
+} from '../../service/admin.service';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -18,14 +28,9 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-
-// Enum to match backend authorization roles
-enum EAuthorizers {
-  APPROVER = "APPROVER",
-  INITIATOR = "INITIATOR",
-  SUPER_ADMIN = "SUPER_ADMIN",
-  ADMIN = "ADMIN",
-}
+import { forkJoin } from 'rxjs';
+import { PermissionService } from '../../service/permissions.service';
+import { FormsModule } from '@angular/forms';
 
 interface DialogData {
   title: string;
@@ -36,12 +41,19 @@ interface DialogData {
   admin?: Admin;
 }
 
+interface PermissionCategory {
+  id: string;
+  name: string;
+  permissions: Permission[];
+}
+
 @Component({
   selector: 'app-admin-management',
   standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
@@ -57,23 +69,33 @@ interface DialogData {
     MatMenuModule,
   ],
   templateUrl: './admin-management.component.html',
-  styleUrls: ['./admin-management.component.css']
+  styleUrls: ['./admin-management.component.css'],
 })
 export class AdminManagementComponent implements OnInit, AfterViewInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  
+
   Math = Math;
-  displayedColumns: string[] = ['name', 'email', 'phone', 'permissions', 'last_seen', 'created_at', 'status', 'actions'];
+  displayedColumns: string[] = [
+    'name',
+    'email',
+    'phone',
+    'permissions',
+    'last_seen',
+    'created_at',
+    'status',
+    'actions',
+  ];
   dataSource = new MatTableDataSource<Admin>([]);
   adminForm!: FormGroup;
+  // Component properties
   admins: Admin[] = [];
   isLoading = false;
   showForm = false;
   editingAdmin: Admin | null = null;
   hidePassword = true;
   searchValue: string = '';
-  
+
   // For confirmation dialogs
   showConfirmation = false;
   dialogData: DialogData = {
@@ -81,50 +103,70 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     message: '',
     confirmButtonText: '',
     confirmButtonClass: '',
-    action: ''
+    action: '',
   };
-  
+
   // Currently selected admin for action
   selectedAdmin: Admin | null = null;
-  
-  // Add available permissions
-  availablePermissions = [
-    { value: EAuthorizers.SUPER_ADMIN, label: 'SUPER_ADMIN' },
-    { value: EAuthorizers.ADMIN, label: 'ADMIN' },
-    { value: EAuthorizers.INITIATOR, label: 'INITIATOR' },
-    { value: EAuthorizers.APPROVER, label: 'APPROVER' },
-    { value: 'manage_password', label: 'Manage Password' }
+
+  // Available permissions and merchants from the backend
+  availablePermissions: Permission[] = [];
+  availableMerchants: Merchant[] = [];
+
+  // New properties for improved UI
+  expandedPermissions: { [key: string]: boolean } = {};
+  permissionSearchQuery: string = '';
+  activePermissionTab: string = 'all';
+
+  // Permission categories
+  permissionCategories: PermissionCategory[] = [
+    { id: 'all', name: 'All', permissions: [] },
+    { id: 'admin', name: 'Admin', permissions: [] },
+    { id: 'merchant', name: 'Merchant', permissions: [] },
+    { id: 'account', name: 'Account', permissions: [] },
+    { id: 'system', name: 'System', permissions: [] },
+    { id: 'view', name: 'View Access', permissions: [] },
+    { id: 'edit', name: 'Edit Access', permissions: [] },
   ];
 
   constructor(
     private adminService: AdminService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private permissionService: PermissionService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
     this.initializeForm();
   }
 
   private initializeForm(admin?: Admin) {
-    // Create the form with required validators
+    // Create the form with required validators, ensuring permissions is an array
     const formGroup: FormGroup = this.fb.group({
       email: [admin?.email || '', [Validators.required, Validators.email]],
       name: [admin?.name || '', Validators.required],
       phone: [admin?.phone || '', Validators.required],
-      permissions: [admin?.permissions || [EAuthorizers.ADMIN], Validators.required],
-      blocked: [admin?.blocked || false],
-      merchantId: [admin?.merchantId || '', Validators.required]
+      // Ensure permissions is initialized as an array
+      permissions: [admin?.permissions || [], Validators.required],
+      merchantId: [admin?.merchantId || '', Validators.required],
     });
 
     // Only add password field for new admins, not when editing
     if (!admin) {
-      formGroup.addControl('password', this.fb.control('', Validators.required));
+      formGroup.addControl(
+        'password',
+        this.fb.control('', Validators.required)
+      );
     }
 
     this.adminForm = formGroup;
   }
 
   ngOnInit() {
+    this.permissionService.getPermissions().subscribe(() => {
+      // Now that permissions are loaded, trigger change detection
+      this.changeDetectorRef.detectChanges();
+    });
     this.setupDataSourceFiltering();
-    this.loadAdmins();
+    this.loadInitialData();
   }
 
   ngAfterViewInit() {
@@ -138,13 +180,15 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     // Custom filter predicate for case-insensitive search across multiple fields
     this.dataSource.filterPredicate = (data: Admin, filter: string) => {
       const searchTerm = filter.toLowerCase().trim();
-      
+
       // Search in multiple fields
       return (
         (data.name || '').toLowerCase().includes(searchTerm) ||
         (data.email || '').toLowerCase().includes(searchTerm) ||
         (data.phone || '').toLowerCase().includes(searchTerm) ||
-        (data.permissions || []).some(p => p.toLowerCase().includes(searchTerm))
+        (data.permissions || []).some((p) =>
+          this.findPermissionName(p).toLowerCase().includes(searchTerm)
+        )
       );
     };
   }
@@ -155,6 +199,87 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
+  loadInitialData() {
+    this.isLoading = true;
+
+    // Use forkJoin to make parallel requests for admins, permissions, and merchants
+    forkJoin({
+      admins: this.adminService.getAdmins(),
+      permissions: this.adminService.getPermissions(),
+      merchants: this.adminService.getMerchantsNew(),
+    }).subscribe({
+      next: (results) => {
+        if (results.admins.success) {
+          this.admins = results.admins.data;
+          this.dataSource.data = this.admins;
+
+          // Re-connect paginator and sort after data is loaded
+          setTimeout(() => this.connectPaginatorAndSort());
+        }
+
+        if (results.permissions.success) {
+          this.availablePermissions = results.permissions.data;
+          this.categorizePermissions();
+        }
+
+        if (results.merchants.success) {
+          this.availableMerchants = results.merchants.data;
+        }
+
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading initial data:', error);
+        this.isLoading = false;
+      },
+    });
+  }
+
+  // Group permissions into categories
+  categorizePermissions() {
+    // Reset categories first
+    this.permissionCategories.forEach((category) => {
+      category.permissions = [];
+    });
+
+    // All permissions category
+    this.permissionCategories[0].permissions = [...this.availablePermissions];
+
+    // Categorize by scope
+    this.availablePermissions.forEach((permission) => {
+      // Add to scope-based categories (admin, merchant)
+      if (permission.scope) {
+        const scopeCategory = this.permissionCategories.find(
+          (c) => c.id === permission.scope
+        );
+        if (scopeCategory) {
+          scopeCategory.permissions.push(permission);
+        }
+      }
+
+      // Add to functional categories (view, edit, account, system)
+      if (permission.name.includes('view')) {
+        this.permissionCategories
+          .find((c) => c.id === 'view')
+          ?.permissions.push(permission);
+      } else if (permission.name.includes('edit')) {
+        this.permissionCategories
+          .find((c) => c.id === 'edit')
+          ?.permissions.push(permission);
+      }
+
+      if (permission.name.includes('account')) {
+        this.permissionCategories
+          .find((c) => c.id === 'account')
+          ?.permissions.push(permission);
+      } else if (permission.name.includes('system')) {
+        this.permissionCategories
+          .find((c) => c.id === 'system')
+          ?.permissions.push(permission);
+      }
+    });
+  }
+
   loadAdmins() {
     this.isLoading = true;
     this.adminService.getAdmins().subscribe({
@@ -162,7 +287,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
         if (response.success) {
           this.admins = response.data;
           this.dataSource.data = this.admins;
-          
+
           // Re-connect paginator and sort after data is loaded
           setTimeout(() => this.connectPaginatorAndSort());
         }
@@ -171,14 +296,14 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
       error: (error) => {
         console.error('Error loading admins:', error);
         this.isLoading = false;
-      }
+      },
     });
   }
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.searchValue = filterValue;
-    
+
     // Apply the filter to the data source
     this.dataSource.filter = filterValue.trim().toLowerCase();
 
@@ -205,20 +330,22 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     if (this.editingAdmin) {
       // When updating, we send the form data without modifications
       // (password will not be included since we didn't add that control for editing)
-      this.adminService.updateAdmin({ id: this.editingAdmin._id!, data: adminData }).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadAdmins();
-            this.showForm = false;
-            this.resetForm();
-          }
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error updating admin:', error);
-          this.isLoading = false;
-        }
-      });
+      this.adminService
+        .updateAdmin({ id: this.editingAdmin._id!, data: adminData })
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.loadAdmins();
+              this.showForm = false;
+              this.resetForm();
+            }
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error updating admin:', error);
+            this.isLoading = false;
+          },
+        });
     } else {
       // For new admins, the password field is already part of the form
       this.adminService.addAdmin(adminData).subscribe({
@@ -233,7 +360,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
         error: (error) => {
           console.error('Error adding admin:', error);
           this.isLoading = false;
-        }
+        },
       });
     }
   }
@@ -245,8 +372,60 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
 
   editAdmin(admin: Admin) {
     this.editingAdmin = admin;
-    this.initializeForm(admin);
+    console.log('Editing admin with raw permissions:', admin.permissions);
+    
+    // Map the permission objects/strings to permission IDs
+    const permissionIds = [];
+    
+    if (admin.permissions && Array.isArray(admin.permissions)) {
+      for (const perm of admin.permissions as (Permission | string)[]) {
+        if (typeof perm === 'object' && perm !== null && 'name' in perm) {
+          // It's a permission object, find matching permission in availablePermissions
+          const matchingPerm = this.availablePermissions.find(p => p.name === (perm as Permission).name);
+          if (matchingPerm) {
+            permissionIds.push(matchingPerm._id);
+            console.log(`Mapped permission ${perm.name} to ID ${matchingPerm._id}`);
+          } else {
+            console.log(`Could not find matching permission for: ${perm.name}`);
+          }
+        } else if (typeof perm === 'string') {
+          // It could be either a permission name or an ID
+          // First try to find by ID
+          const matchById = this.availablePermissions.find(p => p._id === perm);
+          if (matchById) {
+            permissionIds.push(matchById._id);
+          } else {
+            // Then try by name
+            const matchByName = this.availablePermissions.find(p => p.name === perm);
+            if (matchByName) {
+              permissionIds.push(matchByName._id);
+            } else {
+              // If all else fails, just use the string
+              console.log(`Using permission string directly: ${perm}`);
+              permissionIds.push(perm);
+            }
+          }
+        }
+      }
+    }
+  
+    console.log('Mapped permission IDs:', permissionIds);
+    
+    // Initialize form with mapped permission IDs
+    this.initializeForm({
+      ...admin,
+      permissions: permissionIds
+    });
+    
+    // Log the form values after initialization for debugging
+    console.log('Form permissions after initialization:', this.adminForm.get('permissions')?.value);
+    
     this.showForm = true;
+  }
+
+  isPermissionSelected(permissionId: string): boolean {
+    const formPermissions = this.adminForm.get('permissions')?.value || [];
+    return formPermissions.includes(permissionId);
   }
 
   openDeleteDialog(admin: Admin) {
@@ -256,7 +435,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
       message: `Are you sure you want to delete ${admin.name}? This action cannot be undone.`,
       confirmButtonText: 'Delete',
       confirmButtonClass: 'btn-danger',
-      action: 'delete'
+      action: 'delete',
     };
     this.showConfirmation = true;
   }
@@ -264,26 +443,26 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
   openBlockDialog(admin: Admin) {
     this.selectedAdmin = admin;
     const action = admin.blocked ? 'unblock' : 'block';
-    
+
     this.dialogData = {
       title: `${action.charAt(0).toUpperCase() + action.slice(1)} Admin`,
       message: `Are you sure you want to ${action} ${admin.name}?`,
       confirmButtonText: action.charAt(0).toUpperCase() + action.slice(1),
       confirmButtonClass: 'btn-warning',
-      action: 'block'
+      action: 'block',
     };
     this.showConfirmation = true;
   }
 
   confirmAction() {
     if (!this.selectedAdmin) return;
-    
+
     if (this.dialogData.action === 'delete') {
       this.deleteAdmin(this.selectedAdmin);
     } else if (this.dialogData.action === 'block') {
       this.toggleBlockStatus(this.selectedAdmin);
     }
-    
+
     this.closeConfirmationDialog();
   }
 
@@ -304,52 +483,236 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
       error: (error) => {
         console.error('Error deleting admin:', error);
         this.isLoading = false;
-      }
+      },
     });
   }
 
   toggleBlockStatus(admin: Admin) {
     // Only send the fields we want to update
     const updatedData = {
-      blocked: !admin.blocked
+      blocked: !admin.blocked,
     };
 
-    this.adminService.updateAdmin({ id: admin._id!, data: updatedData }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.loadAdmins();
-        }
-      },
-      error: (error) => console.error(`Error ${admin.blocked ? 'unblocking' : 'blocking'} admin:`, error)
-    });
+    this.adminService
+      .updateAdmin({ id: admin._id!, data: updatedData })
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.loadAdmins();
+          }
+        },
+        error: (error) =>
+          console.error(
+            `Error ${admin.blocked ? 'unblocking' : 'blocking'} admin:`,
+            error
+          ),
+      });
   }
 
   resetForm() {
     this.editingAdmin = null;
     this.initializeForm();
     this.hidePassword = true;
+    this.permissionSearchQuery = '';
+    this.activePermissionTab = 'all';
   }
 
-  // Helper method to check if a permission is selected
-  hasPermission(admin: Admin, permission: string): boolean {
-    return admin.permissions?.includes(permission) || false;
+  // Helper method to get permission name from ID
+  findPermissionName(permission: any): string {
+    // If it's already a permission object with a name property
+    if (
+      typeof permission === 'object' &&
+      permission !== null &&
+      permission.name
+    ) {
+      return permission.name;
+    }
+
+    // If it's an ID, look it up
+    const permissionObj = this.availablePermissions.find(
+      (p) => p._id === permission
+    );
+    return permissionObj
+      ? permissionObj.name
+      : typeof permission === 'string'
+      ? permission
+      : 'Unknown';
+  }
+
+  // Helper method to get merchant name from ID
+  findMerchantName(merchantId: string): string {
+    const merchant = this.availableMerchants.find((m) => m._id === merchantId);
+    return merchant ? merchant.merchant_tradeName : merchantId;
   }
 
   // Helper method to get badge class for a permission
-  getPermissionBadgeClass(permission: string): string {
-    switch(permission) {
-      case EAuthorizers.SUPER_ADMIN:
-        return 'badge-super-admin';
-      case EAuthorizers.ADMIN:
-        return 'badge-admin';
-      case EAuthorizers.INITIATOR:
-        return 'badge-initiator';
-      case EAuthorizers.APPROVER:
-        return 'badge-approver';
-      case 'manage_password':
-        return 'badge-password';
-      default:
-        return 'badge-secondary';
+  getPermissionBadgeClass(permission: any): string {
+    let scope = '';
+
+    if (typeof permission === 'object' && permission !== null) {
+      // It's a permission object
+      scope = permission.scope;
+    } else if (typeof permission === 'string') {
+      // It's a permission ID, look it up
+      const foundPermission = this.availablePermissions.find(
+        (p) => p._id === permission
+      );
+      if (foundPermission) {
+        scope = foundPermission.scope;
+      }
     }
+
+    switch (scope) {
+      case 'admin':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'user':
+        return 'bg-blue-100 text-blue-800';
+      case 'merchant':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  // New methods for improved UI
+
+  // Toggle permission details in admin list
+  togglePermissionDetails(adminId: string) {
+    // If this admin's permissions are already expanded, collapse them
+    if (this.expandedPermissions[adminId]) {
+      this.expandedPermissions[adminId] = false;
+    } else {
+      // Otherwise expand them
+      this.expandedPermissions[adminId] = true;
+    }
+  }
+
+  // Get permission categories for an admin
+  getPermissionCategories(permissions: any[]) {
+    const categories = [
+      { name: 'System', permissions: [] as any[] },
+      { name: 'Merchant', permissions: [] as any[] },
+      { name: 'Account', permissions: [] as any[] },
+      { name: 'Other', permissions: [] as any[] },
+    ];
+
+    // Make sure we have valid permissions before processing
+    if (!permissions || !permissions.length) {
+      return [];
+    }
+
+    // Process each permission (object or string)
+    permissions.forEach((perm) => {
+      // Get permission name - handle both object and string formats
+      let permName = '';
+      let permObj = null;
+
+      if (typeof perm === 'object' && perm !== null && perm.name) {
+        // It's a permission object
+        permName = perm.name;
+        permObj = perm;
+      } else if (typeof perm === 'string') {
+        // It's a permission ID or name
+        permObj = this.availablePermissions.find(
+          (p) => p._id === perm || p.name === perm
+        );
+        permName = permObj ? permObj.name : perm;
+      }
+
+      // Categorize based on name
+      if (permName.includes('system')) {
+        categories[0].permissions.push(permObj || perm);
+      } else if (permName.includes('merchant')) {
+        categories[1].permissions.push(permObj || perm);
+      } else if (permName.includes('account')) {
+        categories[2].permissions.push(permObj || perm);
+      } else {
+        categories[3].permissions.push(permObj || perm);
+      }
+    });
+
+    // Only return categories with permissions
+    return categories.filter((cat) => cat.permissions.length > 0);
+  }
+
+  // Filter permissions based on search and category
+  getFilteredPermissionsByCategory(categoryId: string): Permission[] {
+    let filteredPermissions: Permission[] = [];
+
+    // First get permissions for the selected category
+    if (categoryId === 'all') {
+      filteredPermissions = [...this.availablePermissions];
+    } else {
+      const category = this.permissionCategories.find(
+        (c) => c.id === categoryId
+      );
+      if (category) {
+        filteredPermissions = [...category.permissions];
+      }
+    }
+
+    // Then apply search filter if exists
+    if (this.permissionSearchQuery) {
+      const searchTerm = this.permissionSearchQuery.toLowerCase();
+      filteredPermissions = filteredPermissions.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return filteredPermissions;
+  }
+
+  // Check if permission is selected
+  // isPermissionSelected(permissionId: string): boolean {
+  //   return this.adminForm.value.permissions.includes(permissionId);
+  // }
+
+  // Toggle a permission selection
+  togglePermission(permissionId: string) {
+    const currentPermissions = [...this.adminForm.value.permissions];
+    const index = currentPermissions.indexOf(permissionId);
+
+    if (index === -1) {
+      // Add permission
+      currentPermissions.push(permissionId);
+    } else {
+      // Remove permission
+      currentPermissions.splice(index, 1);
+    }
+
+    this.adminForm.patchValue({ permissions: currentPermissions });
+  }
+
+  // Get selected permissions
+  getSelectedPermissions(): string[] {
+    return this.adminForm.value.permissions || [];
+  }
+
+  // Select all permissions in the current filtered view
+  selectAllPermissions() {
+    const currentPermissions = new Set([...this.adminForm.value.permissions]);
+    const filteredPermissions = this.getFilteredPermissionsByCategory(
+      this.activePermissionTab
+    );
+
+    filteredPermissions.forEach((permission) => {
+      currentPermissions.add(permission._id);
+    });
+
+    this.adminForm.patchValue({ permissions: Array.from(currentPermissions) });
+  }
+
+  // Clear all permissions in the current filtered view
+  clearPermissions() {
+    const currentPermissions = new Set([...this.adminForm.value.permissions]);
+    const filteredPermissions = this.getFilteredPermissionsByCategory(
+      this.activePermissionTab
+    );
+
+    filteredPermissions.forEach((permission) => {
+      currentPermissions.delete(permission._id);
+    });
+
+    this.adminForm.patchValue({ permissions: Array.from(currentPermissions) });
   }
 }

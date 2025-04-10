@@ -12,7 +12,16 @@
               Total Transactions
             </div>
             <div class="text-2xl font-bold text-gray-900 mt-1">
-              {{ transactions.length }}
+              {{ filteredTransactions.length }}
+            </div>
+            <div
+              *ngIf="
+                dateFilterEnabled &&
+                filteredTransactions.length !== transactions.length
+              "
+              class="text-xs text-blue-600 mt-1"
+            >
+              Filtered from {{ transactions.length }} total
             </div>
           </div>
           <div class="p-3 bg-blue-50 rounded-lg">
@@ -125,10 +134,99 @@
       </div>
     </div>
 
+    <!-- Date Range Filter -->
+    <div
+      *ngIf="transactions.length > 0"
+      class="bg-white rounded-lg border-sm mb-6"
+    >
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              [checked]="dateFilterEnabled"
+              (change)="toggleDateFilter()"
+              id="enableDateFilter"
+              class="mr-2 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <label
+              for="enableDateFilter"
+              class="text-sm font-medium text-gray-700"
+            >
+              Enable Date Range Filter
+            </label>
+          </div>
+          <button
+            *ngIf="dateFilterEnabled"
+            (click)="resetFilters()"
+            class="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
+          >
+            Reset Dates
+          </button>
+        </div>
+
+        <div
+          *ngIf="dateFilterEnabled"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <div class="relative">
+              <i
+                class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+                calendar_today
+              </i>
+              <input
+                type="date"
+                [(ngModel)]="startDate"
+                [max]="endDate"
+                (change)="onDateFilterChange()"
+                class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <div class="relative">
+              <i
+                class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+                calendar_today
+              </i>
+              <input
+                type="date"
+                [(ngModel)]="endDate"
+                [min]="startDate"
+                (change)="onDateFilterChange()"
+                class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter stats summary -->
+        <div
+          *ngIf="
+            dateFilterEnabled &&
+            filteredTransactions.length !== transactions.length
+          "
+          class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700"
+        >
+          Showing {{ filteredTransactions.length }} of
+          {{ transactions.length }} transactions based on date range.
+        </div>
+      </div>
+    </div>
+
     <!-- Transaction List -->
-    <div *ngIf="transactions.length > 0" class="space-y-4">
+    <div *ngIf="filteredTransactions.length > 0" class="space-y-4">
       <div
-        *ngFor="let tx of transactions"
+        *ngFor="let tx of filteredTransactions"
         class="bg-white rounded-lg border-sm overflow-hidden"
       >
         <!-- Header -->
@@ -277,55 +375,106 @@
               </div>
             </div>
           </div>
-          
+
           <!-- JSON Data View Button -->
           <div class="mt-6">
             <button
               (click)="toggleJsonView(tx)"
               class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                />
               </svg>
-              {{ tx.showJsonData ? 'Hide JSON Data' : 'View JSON Data' }}
+              {{ tx.showJsonData ? "Hide JSON Data" : "View JSON Data" }}
             </button>
-            
+
             <!-- JSON Data Display -->
-            <div *ngIf="tx.showJsonData" class="mt-4 bg-gray-800 text-white p-4 rounded-lg overflow-auto max-h-96">
-              <pre class="text-sm whitespace-pre-wrap break-words">{{ getFormattedJsonData(tx) }}</pre>
+            <div
+              *ngIf="tx.showJsonData"
+              class="mt-4 bg-gray-800 text-white p-4 rounded-lg overflow-auto max-h-96"
+            >
+              <pre class="text-sm whitespace-pre-wrap break-words">{{
+                getFormattedJsonData(tx)
+              }}</pre>
             </div>
           </div>
         </div>
 
-        <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">
+        <div
+          class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3"
+        >
           <button
             (click)="openStatusModal(tx)"
             class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Update Status
           </button>
-          
+
           <button
             (click)="openReverseModal(tx)"
             [disabled]="!canReverse(tx)"
             class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+              />
             </svg>
             Reverse
           </button>
-          
+
           <button
             (click)="openCompleteModal(tx)"
             [disabled]="!canComplete(tx)"
             class="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
             Complete
           </button>
@@ -333,7 +482,20 @@
       </div>
     </div>
 
-    <!-- No Results -->
+    <!-- No Results with Filters -->
+    <div
+      *ngIf="
+        !filteredTransactions.length && !loading && transactions.length > 0
+      "
+      class="text-center py-12 bg-white rounded-lg border-sm"
+    >
+      <p class="text-gray-500">
+        No transactions match the selected date range. Try adjusting your
+        filters.
+      </p>
+    </div>
+
+    <!-- No Results from Search -->
     <div
       *ngIf="!transactions.length && !loading"
       class="text-center py-12 bg-white rounded-lg border-sm"
@@ -351,112 +513,175 @@
     </div>
 
     <!-- Status Update Modal -->
-<div *ngIf="showStatusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
-    <h3 class="text-lg font-medium mb-4">Update Transaction Status</h3>
-    
-    <form [formGroup]="statusForm" (ngSubmit)="updateTransaction()">
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Select Status</label>
-        <select formControlName="status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
-          <option value="">Select a status...</option>
-          <option value="PAID">Paid</option>
-          <option value="PENDING">Pending</option>
-          <option value="FAILED">Failed</option>
-        </select>
-        <div *ngIf="statusForm.get('status')?.invalid && statusForm.get('status')?.touched" class="text-red-500 text-sm mt-1">
-          Status is required
+    <div
+      *ngIf="showStatusModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
+        <h3 class="text-lg font-medium mb-4">Update Transaction Status</h3>
+
+        <form [formGroup]="statusForm" (ngSubmit)="updateTransaction()">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Select Status</label
+            >
+            <select
+              formControlName="status"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select a status...</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+            <div
+              *ngIf="
+                statusForm.get('status')?.invalid &&
+                statusForm.get('status')?.touched
+              "
+              class="text-red-500 text-sm mt-1"
+            >
+              Status is required
+            </div>
+          </div>
+
+          <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+            {{ error }}
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              (click)="closeStatusModal()"
+              class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="statusForm.invalid || loading"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {{ loading ? "Updating..." : "Update Status" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Reverse Transaction Modal -->
+    <div
+      *ngIf="showReverseModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
+        <h3 class="text-lg font-medium mb-4">Reverse Transaction</h3>
+
+        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+          <div class="grid grid-cols-2 gap-2">
+            <span class="text-gray-500">Reference:</span>
+            <span class="font-medium">{{
+              selectedTransaction?.transactionRef
+            }}</span>
+
+            <span class="text-gray-500">Amount:</span>
+            <span class="font-medium">{{
+              formatAmount(selectedTransaction?.amount || 0)
+            }}</span>
+
+            <span class="text-gray-500">Date:</span>
+            <span class="font-medium">{{
+              formatDate(selectedTransaction?.createdAt || "")
+            }}</span>
+          </div>
+        </div>
+
+        <div class="bg-yellow-50 text-yellow-700 p-3 rounded-md mb-4">
+          <p>
+            Are you sure you want to reverse this transaction? This action
+            cannot be undone.
+          </p>
+        </div>
+
+        <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+          {{ error }}
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            (click)="closeReverseModal()"
+            [disabled]="loading"
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="reverseTransaction()"
+            [disabled]="loading"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+          >
+            {{ loading ? "Processing..." : "Confirm Reversal" }}
+          </button>
         </div>
       </div>
-      
-      <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
-        {{ error }}
-      </div>
-      
-      <div class="flex justify-end space-x-3">
-        <button type="button" (click)="closeStatusModal()" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-          Cancel
-        </button>
-        <button type="submit" [disabled]="statusForm.invalid || loading" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-          {{ loading ? 'Updating...' : 'Update Status' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+    </div>
 
-<!-- Reverse Transaction Modal -->
-<div *ngIf="showReverseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
-    <h3 class="text-lg font-medium mb-4">Reverse Transaction</h3>
-    
-    <div class="bg-gray-50 p-4 rounded-lg mb-4">
-      <div class="grid grid-cols-2 gap-2">
-        <span class="text-gray-500">Reference:</span>
-        <span class="font-medium">{{ selectedTransaction?.transactionRef }}</span>
-        
-        <span class="text-gray-500">Amount:</span>
-        <span class="font-medium">{{ formatAmount(selectedTransaction?.amount || 0) }}</span>
-        
-        <span class="text-gray-500">Date:</span>
-        <span class="font-medium">{{ formatDate(selectedTransaction?.createdAt || '') }}</span>
-      </div>
-    </div>
-    
-    <div class="bg-yellow-50 text-yellow-700 p-3 rounded-md mb-4">
-      <p>Are you sure you want to reverse this transaction? This action cannot be undone.</p>
-    </div>
-    
-    <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
-      {{ error }}
-    </div>
-    
-    <div class="flex justify-end space-x-3">
-      <button type="button" (click)="closeReverseModal()" [disabled]="loading" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">
-        Cancel
-      </button>
-      <button type="button" (click)="reverseTransaction()" [disabled]="loading" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">
-        {{ loading ? 'Processing...' : 'Confirm Reversal' }}
-      </button>
-    </div>
-  </div>
-</div>
+    <!-- Complete Transaction Modal -->
+    <div
+      *ngIf="showCompleteModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
+        <h3 class="text-lg font-medium mb-4">Complete Transaction</h3>
 
-<!-- Complete Transaction Modal -->
-<div *ngIf="showCompleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
-    <h3 class="text-lg font-medium mb-4">Complete Transaction</h3>
-    
-    <div class="bg-gray-50 p-4 rounded-lg mb-4">
-      <div class="grid grid-cols-2 gap-2">
-        <span class="text-gray-500">Reference:</span>
-        <span class="font-medium">{{ selectedTransaction?.transactionRef }}</span>
-        
-        <span class="text-gray-500">Amount:</span>
-        <span class="font-medium">{{ formatAmount(selectedTransaction?.amount || 0) }}</span>
-        
-        <span class="text-gray-500">Status:</span>
-        <span [class]="getStatusClass(selectedTransaction?.status || '')">{{ selectedTransaction?.status }}</span>
+        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+          <div class="grid grid-cols-2 gap-2">
+            <span class="text-gray-500">Reference:</span>
+            <span class="font-medium">{{
+              selectedTransaction?.transactionRef
+            }}</span>
+
+            <span class="text-gray-500">Amount:</span>
+            <span class="font-medium">{{
+              formatAmount(selectedTransaction?.amount || 0)
+            }}</span>
+
+            <span class="text-gray-500">Status:</span>
+            <span [class]="getStatusClass(selectedTransaction?.status || '')">{{
+              selectedTransaction?.status
+            }}</span>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 text-blue-700 p-3 rounded-md mb-4">
+          <p>Are you sure you want to mark this transaction as completed?</p>
+        </div>
+
+        <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
+          {{ error }}
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            (click)="closeCompleteModal()"
+            [disabled]="loading"
+            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="completeTransaction()"
+            [disabled]="loading"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+          >
+            {{ loading ? "Processing..." : "Complete Transaction" }}
+          </button>
+        </div>
       </div>
     </div>
-    
-    <div class="bg-blue-50 text-blue-700 p-3 rounded-md mb-4">
-      <p>Are you sure you want to mark this transaction as completed?</p>
-    </div>
-    
-    <div *ngIf="error" class="bg-red-50 text-red-700 p-3 rounded-md mb-4">
-      {{ error }}
-    </div>
-    
-    <div class="flex justify-end space-x-3">
-      <button type="button" (click)="closeCompleteModal()" [disabled]="loading" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">
-        Cancel
-      </button>
-      <button type="button" (click)="completeTransaction()" [disabled]="loading" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50">
-        {{ loading ? 'Processing...' : 'Complete Transaction' }}
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </div>
