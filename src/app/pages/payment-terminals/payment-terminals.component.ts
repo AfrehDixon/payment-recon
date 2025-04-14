@@ -682,22 +682,38 @@ export class PaymentTerminalsComponent implements OnInit {
 
   loadTerminals(): void {
     this.loading = true;
-    const merchantId = this.store.selectSnapshot(
-      (state) => state.auth.user?.merchantId?._id
-    );
-
+    
+    // Get user from state
+    const user = this.store.selectSnapshot((state) => state.auth.user);
+    
+    // Get merchantId handling both string and object formats
+    let merchantId;
+    if (typeof user?.merchantId === 'string') {
+      // If merchantId is a string, use it directly
+      merchantId = user.merchantId;
+      console.log('Merchant ID found (string):', merchantId);
+    } else if (user?.merchantId?._id) {
+      // If merchantId is an object with _id, use that
+      merchantId = user.merchantId._id;
+      console.log('Merchant ID found (object):', merchantId);
+    }
+  
     if (!merchantId) {
       this.error = 'Merchant ID not found';
       this.loading = false;
+      console.log('No merchant ID found in user object:', user);
       return;
     }
-
+  
+    console.log('Loading terminals for merchant:', merchantId);
+    
     this.http
       .get<any>(`https://doronpay.com/api/terminals/merchant/${merchantId}`, {
         headers: this.getHeaders(),
       })
       .subscribe({
         next: (response) => {
+          console.log('Terminal response:', response);
           if (response.success) {
             this.terminals = response.data;
           } else {
@@ -706,9 +722,9 @@ export class PaymentTerminalsComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
+          console.error('Terminal fetch error:', err);
           this.error = 'Error loading terminals';
           this.loading = false;
-          console.error('Terminal fetch error:', err);
         },
       });
   }

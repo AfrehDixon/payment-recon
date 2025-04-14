@@ -67,8 +67,8 @@ interface WalletAccount {
   styleUrls: ['./hub-dashboard.component.scss']
 })
 export class HubDashboardComponent implements OnInit {
-  @Select(AuthState.user) user$!: Observable<any>;
-  @Select(AuthState.token) token$!: Observable<string>;
+  // @Select(AuthState.user) user$!: Observable<any>;
+  // @Select(AuthState.token) token$!: Observable<string>;
   
   merchantId: string = '';
   apps: App[] = [];
@@ -101,13 +101,35 @@ export class HubDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.store.select(AuthState.user).subscribe(user => {
-      if (user?.merchantId?._id) {
-        this.merchantId = user.merchantId._id;
+      
+      let merchantIdValue;
+      
+      if (typeof user?.merchantId === 'string') {
+        // If merchantId is a string, use it directly
+        merchantIdValue = user.merchantId;
+        console.log('Merchant ID found (string):', merchantIdValue);
+      } else if (user?.merchantId?._id) {
+        // If merchantId is an object with _id, use that
+        merchantIdValue = user.merchantId._id;
+      }
+      
+      if (merchantIdValue) {
+        this.merchantId = merchantIdValue;
         this.fetchApps(this.merchantId);
-        // this.fetchBalance(this.merchantId);
-        this.merchantname = user.merchantId.merchant_tradeName;
+        
+        // Set merchant name if available
+        if (typeof user?.merchantId === 'object' && user?.merchantId?.merchant_tradeName) {
+          this.merchantname = user.merchantId.merchant_tradeName;
+        } else {
+          // Default merchantname if not available
+          this.merchantname = 'Merchant';
+        }
+      } else {
+        console.log('No merchant ID found in user object');
       }
     });
+    console.log('After AuthState.user subscription');
+    
     this.apps.forEach(app => {
       this.isKeyVisible[app._id] = false;
     });
@@ -148,12 +170,21 @@ export class HubDashboardComponent implements OnInit {
     });
   }
 
+  private getHeaders(): HttpHeaders {
+    const token = this.store.selectSnapshot(AuthState.token);
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
+
   fetchApps(merchantId: string) {
+    console.log('Attempting to fetch apps for merchant:', merchantId);
+    console.log('Current headers:', this.getHeaders());
     this.loading = true;
     this.http.get<any>(`https://doronpay.com/api/hub/get`, {
       headers: this.getHeaders()
     }).subscribe({
       next: (response) => {
+        console.log('Fetch apps response:', response);
+
         if (response.success && response.data) {
           this.apps = response.data;
           this.filteredApps = this.apps; // Update filtered apps too
@@ -247,10 +278,10 @@ export class HubDashboardComponent implements OnInit {
     this.router.navigate(['/transactions', appId]);
   }
 
-  private getHeaders(): HttpHeaders {
-    const token = this.store.selectSnapshot(AuthState.token);
-    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
-  }
+  // private getHeaders(): HttpHeaders {
+  //   const token = this.store.selectSnapshot(AuthState.token);
+  //   return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  // }
 
   formatDate(date: string): string {
     return new Date(date).toLocaleDateString();

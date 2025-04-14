@@ -1,15 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { AuthState } from '../../state/apps/app.states';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 interface Permission {
   _id?: string;
   name: string;
   scope: 'admin' | 'merchant';
   createdAt?: Date;
+}
+
+interface PaginatedResponse {
+  success: boolean;
+  data: Permission[];
+  totalCount?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 @Component({
@@ -23,95 +33,33 @@ interface Permission {
   templateUrl: './permission-management.component.html',
   styleUrls: ['./permission-management.component.css']
 })
-export class PermissionManagementComponent implements OnInit {
-  permissions: Permission[] = [];
+export class PermissionManagementComponent implements OnInit, OnDestroy {
+  permissions: Permission[] = []; // Current page of permissions
+  allPermissions: Permission[] = []; // All permissions from the API
   loading = true;
   error: string | null = null;
   isAddModalOpen = false;
   isDeleteModalOpen = false;
   selectedPermission: Permission | null = null;
 
+  // Pagination properties
+  currentPage = 1;
+  pageSize = 10;
+  totalItems = 0;
+  totalPages = 0;
+  pageSizeOptions = [5, 10, 25, 50];
+
   // Predefined permission names from backend enum
   permissionNames = [
-    "can view merchants module",
-    "can access action button in merchant module",
-    "can view admins module",
-    "can onboard admin",
-    "can edit admin",
-    "can delete admin",
-    "can block admin",
-    "can view reports module",
-    "can download reports",
-    "can view wallets module",
-    "can view wallet details",
-    "can add wallet module",
-    "can view merchant collections module",
-    "can view hub module",
-    "can add new application",
-    "can generate new api key",
-    "can view transactions",
-    "can edit application",
-    "can view api key",
-    "can view queues module",
-    "can view credit/debit module",
-    "can process credit",
-    "can process debit",
-    "can view transaction filters module",
-    "can view operator config module",
-    "can add operator config",
-    "can edit operator config",
-    "can view velocity rules module",
-    "can add velocity rule",
-    "can edit velocity rule",
-    "can disable velocity rule",
-    "can view payment terminals module",
-    "can add terminal",
-    "can view terminal details",
-    "can disable terminal",
-    "can suspend terminal",
-    "can view charge config module",
-    "can add charge config",
-    "can edit charge config",
-    "can view merchant tier module",
-    "can add merchant tier",
-    "can edit merchant tier",
-    "can view daily statistics module",
-    "can view monthly statistics module",
-    "can view weekly statistics module",
-    "can view cumulative statistics module",
-    "can view system logs module",
-    "can view logs summary module",
-    "can view payout reconciliation module",
-    "can run payout reconciliation",
-    "can view payout issues module",
-    "can view operator switch module",
-    "can run manual switch",
-    "can run analysis",
-    "can start service",
-    "can view merchant statistics module",
-    "can view merchant balance history module",
-    "can view merchant balance summary module",
-    "can view payment links module",
-    "can view account blacklist module",
-    "can add account blacklist",
-    "can edit account blacklist",
-    "can disable account balcklist",
-    "can view system settings module",
-    "can edit system setings",
-    "can view merchant details",
-    "can top up merchant",
-    "can check check merchant",
-    "can approve merchant",
-    "can view merchant transactions",
-    "can view merchant settlements",
-    "can settle merchant",
-    "can toggle merchant auto settle",
-    "can toggle merchant tiers"
+    // Your existing permissions list...
   ];
 
   // Forms
   addForm: FormGroup;
   deleteForm: FormGroup;
+  
+  // Token subscription
+  private tokenSubscription: Subscription | null = null;
 
   constructor(
     private http: HttpClient,
@@ -130,6 +78,17 @@ export class PermissionManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPermissions();
+    
+    // Subscribe to token changes to reload data when token refreshes
+    this.tokenSubscription = this.store.select(AuthState.token).subscribe(() => {
+      this.loadPermissions();
+    });
+  }
+  
+  ngOnDestroy(): void {
+    if (this.tokenSubscription) {
+      this.tokenSubscription.unsubscribe();
+    }
   }
 
   private getHeaders(): HttpHeaders {
@@ -139,24 +98,72 @@ export class PermissionManagementComponent implements OnInit {
 
   loadPermissions(): void {
     this.loading = true;
-    this.http.get<{success: boolean, data: Permission[]}>(
+    
+    // Since backend doesn't support pagination, just get all data
+    this.http.get<PaginatedResponse>(
       'https://doronpay.com/api/merchants/permissions/get',
       { headers: this.getHeaders() }
-    ).subscribe(
-      (response) => {
+    ).subscribe({
+      next: (response) => {
+        console.log('API Response:', response);
         if (response.success) {
-          this.permissions = response.data;
+          this.allPermissions = response.data;
+          this.totalItems = this.allPermissions.length;
+          this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+          
+          // Apply client-side pagination
+          this.applyPagination();
+          
+          // console.log(`Received ${this.permissions.length} items of ${this.totalItems} total`);
         } else {
           this.error = 'Failed to load permissions';
         }
         this.loading = false;
       },
-      (error) => {
+      error: (error) => {
+        console.error('API Error:', error);
         this.error = 'Failed to load permissions';
         this.loading = false;
-        console.error(error);
       }
-    );
+    });
+  }
+
+  // Apply client-side pagination to the data
+  applyPagination(): void {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = Math.min(startIndex + this.pageSize, this.allPermissions.length);
+    
+    this.permissions = this.allPermissions.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+    this.currentPage = page;
+    this.applyPagination();
+  }
+
+  changePage(delta: number): void {
+    this.goToPage(this.currentPage + delta);
+  }
+
+  onPageSizeChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    if (select && select.value) {
+      this.changePageSize(parseInt(select.value, 10));
+    }
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page when changing page size
+    this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+    this.applyPagination();
+  }
+
+  minValue(a: number, b: number): number {
+    return Math.min(a, b);
   }
 
   openAddModal(): void {
@@ -196,16 +203,16 @@ export class PermissionManagementComponent implements OnInit {
       'https://doronpay.com/api/merchants/permissions/add',
       permissionData,
       { headers: this.getHeaders() }
-    ).subscribe(
-      () => {
-        this.loadPermissions();
+    ).subscribe({
+      next: () => {
+        this.loadPermissions(); // Reload all permissions
         this.closeAddModal();
       },
-      (error) => {
+      error: (error) => {
         this.error = 'Failed to add permission';
         console.error(error);
       }
-    );
+    });
   }
 
   onSubmitDelete(): void {
@@ -219,15 +226,44 @@ export class PermissionManagementComponent implements OnInit {
         body: { id: this.selectedPermission._id },
         headers: this.getHeaders()
       }
-    ).subscribe(
-      () => {
-        this.loadPermissions();
+    ).subscribe({
+      next: () => {
+        this.loadPermissions(); // Reload all permissions
         this.closeDeleteModal();
       },
-      (error) => {
+      error: (error) => {
         this.error = 'Failed to delete permission';
         console.error(error);
       }
-    );
+    });
+  }
+  
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      // Show all pages if total pages is less than max pages to show
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Calculate start and end page numbers
+      let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = startPage + maxPagesToShow - 1;
+      
+      // Adjust if end page is beyond total pages
+      if (endPage > this.totalPages) {
+        endPage = this.totalPages;
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+      
+      // Add page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 }
