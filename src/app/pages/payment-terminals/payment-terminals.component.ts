@@ -767,9 +767,20 @@ export class PaymentTerminalsComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    const merchantId = this.store.selectSnapshot(
-      (state) => state.auth.user?.merchantId?._id
-    );
+    // Get user from state
+    const user = this.store.selectSnapshot((state) => state.auth.user);
+    
+    // Get merchantId handling both string and object formats
+    let merchantId;
+    if (typeof user?.merchantId === 'string') {
+      // If merchantId is a string, use it directly
+      merchantId = user.merchantId;
+      console.log('Merchant ID found (string):', merchantId);
+    } else if (user?.merchantId?._id) {
+      // If merchantId is an object with _id, use that
+      merchantId = user.merchantId._id;
+      console.log('Merchant ID found (object):', merchantId);
+    }
 
     if (!merchantId) {
       this.error = 'Merchant ID not found';

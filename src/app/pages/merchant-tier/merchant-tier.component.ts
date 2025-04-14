@@ -176,8 +176,8 @@ export class MerchantTierComponent implements OnInit {
     // Update existing tier
     updateTier() {
         if (this.tierForm.invalid) {
-            this.markFormGroupTouched(this.tierForm);
-            return;
+          this.markFormGroupTouched(this.tierForm);
+          return;
         }
         
         this.updating = true;
@@ -185,26 +185,33 @@ export class MerchantTierComponent implements OnInit {
         
         const tierId = this.selectedTier?._id;
         if (!tierId) {
-            this.error = 'Tier ID not found.';
-            this.updating = false;
-            return;
+          this.error = 'Tier ID not found.';
+          this.updating = false;
+          return;
         }
         
-        this.tierService.updateTier(tierId, this.tierForm.value)
-            .subscribe({
-                next: (response) => {
-                    this.success = 'Tier updated successfully.';
-                    this.viewMode = 'list';
-                    this.searchTiers();
-                    this.updating = false;
-                    setTimeout(() => this.success = null, 3000);
-                },
-                error: (error) => {
-                    this.error = 'Failed to update tier.';
-                    this.updating = false;
-                }
-            });
-    }
+        // Get complete form data including all nested properties
+        const formData = this.tierForm.getRawValue();
+        
+        // Log the data being sent
+        console.log('Updating tier with data:', formData);
+        
+        this.tierService.updateTier(tierId, formData)
+          .subscribe({
+            next: (response) => {
+              this.success = 'Tier updated successfully.';
+              this.viewMode = 'list';
+              this.searchTiers();
+              this.updating = false;
+              setTimeout(() => this.success = null, 3000);
+            },
+            error: (error) => {
+              this.error = 'Failed to update tier.';
+              this.updating = false;
+              console.error('Update error:', error);
+            }
+          });
+      }
     
     // Assign tier to merchant
     assignTierToMerchant(tierId: string) {
@@ -243,9 +250,59 @@ export class MerchantTierComponent implements OnInit {
     // UI Helpers
     editTier(tier: MerchantTier) {
         this.selectedTier = tier;
-        this.tierForm.patchValue(tier);
+        
+        // Create a deep copy of tier data to prevent reference issues
+        const tierData = {...tier};
+        
+        // Ensure transactionLimits is properly structured
+        if (!tierData.transactionLimits) {
+          tierData.transactionLimits = {
+            debit: {
+              dailyLimit: 0,
+              monthlyLimit: 0,
+              maxSingleTransactionAmount: 0
+            },
+            credit: {
+              dailyLimit: 0,
+              monthlyLimit: 0,
+              maxSingleTransactionAmount: 0
+            }
+          };
+        }
+        
+        // Ensure features is an array
+        if (!tierData.features) {
+          tierData.features = [];
+        }
+        
+        // Reset form to default values first
+        this.tierForm.reset({
+          scope: ETierScope.GLOBAL,
+          status: ETierStatus.ACTIVE,
+          transactionLimits: {
+            debit: {
+              dailyLimit: 0,
+              monthlyLimit: 0,
+              maxSingleTransactionAmount: 0
+            },
+            credit: {
+              dailyLimit: 0,
+              monthlyLimit: 0,
+              maxSingleTransactionAmount: 0
+            }
+          },
+          features: [],
+          monthlyFee: 0
+        });
+        
+        // Now patch with the tier data
+        this.tierForm.patchValue(tierData);
+        
+        // Log the form values to verify they're set correctly
+        console.log('Form values after patch:', this.tierForm.value);
+        
         this.viewMode = 'edit';
-    }
+      }
     
     startCreateTier() {
         this.tierForm.reset({
