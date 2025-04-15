@@ -234,7 +234,7 @@ interface VerifyAccountResponse {
                   </div>
 
                   <!-- Service Type for Bank transfers -->
-                  <div *ngIf="creditForm.get('account_type')?.value === 'bank'">
+                  <!-- <div *ngIf="creditForm.get('account_type')?.value === 'bank'">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
                     <div class="grid grid-cols-2 gap-3">
                       <div 
@@ -248,7 +248,7 @@ interface VerifyAccountResponse {
                         <p class="text-xs text-gray-500 mt-1">{{ type.description }}</p>
                       </div>
                     </div>
-                  </div>
+                  </div> -->
                 </div>
 
                 <!-- Right Column -->
