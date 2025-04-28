@@ -40,6 +40,8 @@
           <th>Contact Info</th>
           <th>Status</th>
           <th>Type</th>
+          <th>Location</th>
+          <th>CreatedAt</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -70,7 +72,9 @@
               {{ merchant.active ? "Active" : "Inactive" }}
             </span>
           </td>
-          <td>{{ merchant.type || "N/A" }}</td>
+          <td>{{ merchant.lineOfBusiness || "N/A" }}</td>
+          <td>{{ merchant.location || "N/A" }}</td>
+          <td>{{ merchant.createdAt | date:'medium' }}</td>
           <td class="actions">
             <button
             *appHasPermission="'can access action button in merchant module'"
