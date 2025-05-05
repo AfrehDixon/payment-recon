@@ -6,6 +6,7 @@ import { AdminService } from "../../service/admin.service";
 import { Router } from '@angular/router';
 import { PermissionService } from '../../service/permissions.service';
 import { tap } from 'rxjs/operators';
+import { InactivityTimeoutService } from '../../service/interactivity-timeout.service';
 
 interface StateModel {
   user: any;
@@ -53,7 +54,8 @@ export class AuthState {
   constructor(
     private service: AdminService, 
     private router: Router,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private inactivityService: InactivityTimeoutService
   ) {}
 
   @Action(AutoLogin)
@@ -99,6 +101,8 @@ export class AuthState {
     if (payload.user && payload.user.permissions) {
       this.permissionService.setPermissions(payload.user.permissions);
     }
+
+    this.inactivityService.startMonitoring();
   
     return ;
   }
@@ -106,6 +110,8 @@ export class AuthState {
   @Action(Logout)
   logout({ patchState }: StateContext<StateModel>) {
     console.log('Logout action executing');
+    this.inactivityService.stopMonitoring();
+
     
     // Clear permissions
     this.permissionService.clearPermissions();

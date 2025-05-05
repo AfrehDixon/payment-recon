@@ -51,6 +51,7 @@ export class PermissionManagementComponent implements OnInit, OnDestroy {
 
   // Predefined permission names from backend enum
   permissionNames = [
+    // 'can approve payroll'
     // Your existing permissions list...
   ];
 
