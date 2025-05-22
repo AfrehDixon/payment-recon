@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SystemSettingsService } from './system-settings.service';
-import { SystemSettings, EditableSystemSettings } from './system-settings.interface';
+import { SystemSettings, EditableSystemSettings, BtcBalanceData } from './system-settings.interface';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -20,9 +20,12 @@ import { of } from 'rxjs';
 })
 export class SystemSettingsComponent implements OnInit {
   settings: SystemSettings | null = null;
+  btcBalance: BtcBalanceData | null = null;
   settingsForm: FormGroup;
   loading = false;
+  loadingBalance = false;
   error: string | null = null;
+  balanceError: string | null = null;
   isEditing = false;
 
   constructor(
@@ -34,6 +37,7 @@ export class SystemSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSettings();
+    this.fetchBtcBalance();
   }
 
   private createForm(): FormGroup {
@@ -68,11 +72,43 @@ export class SystemSettingsComponent implements OnInit {
       });
   }
 
+  fetchBtcBalance(): void {
+    this.loadingBalance = true;
+    this.balanceError = null;
+
+    this.systemSettingsService.getBtcChainBalance()
+      .pipe(
+        catchError(error => {
+          this.balanceError = 'Failed to load BTC balance. Please try again later.';
+          return of({ success: false, message: error.message, data: null });
+        }),
+        finalize(() => {
+          this.loadingBalance = false;
+        })
+      )
+      .subscribe(response => {
+        if (response.success && response.data) {
+          this.btcBalance = response.data;
+        } else if (!response.success) {
+          this.balanceError = response.message || 'Failed to load BTC balance';
+        }
+      });
+  }
+
+  refreshAll(): void {
+    this.fetchSettings();
+    this.fetchBtcBalance();
+  }
+
   formatCurrency(value: number): string {
     return value?.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  }
+
+  formatBtc(value: number): string {
+    return value?.toFixed(8) + ' BTC';
   }
 
   toggleEdit(): void {

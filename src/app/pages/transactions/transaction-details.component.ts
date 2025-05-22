@@ -261,6 +261,9 @@ export class TransactionDetailsComponent {
     this.transactionService.completeTransaction(completeData).subscribe({
       next: (response) => {
         if (response.success) {
+          if (this.selectedTransaction) {
+            this.selectedTransaction.status = completeData.status;
+          }
           // Refresh the search to get updated transaction
           this.searchTransaction();
           this.closeCompleteModal();

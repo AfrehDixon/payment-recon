@@ -30,5 +30,17 @@ export interface SystemSettings {
     dynamicPricingEnabled: boolean;
     lastUpdated: string;
   }
+
+  export interface BtcBalanceData {
+  confirmed: number;
+  unconfirmed: number;
+  total: number;
+}
+
+export interface BtcBalanceResponse {
+  success: boolean;
+  message: string;
+  data: BtcBalanceData;
+}
   
   export type EditableSystemSettings = Omit<SystemSettings, 'exchangeRate' | 'lastUpdated'>;

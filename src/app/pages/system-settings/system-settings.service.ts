@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponse, SystemSettings } from './system-settings.interface';
+import { ApiResponse, BtcBalanceResponse, SystemSettings } from './system-settings.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SystemSettingsService {
   private baseUrl = 'https://doronpay.com/api/system';
+  private btcApiUrl = 'https://doronpay.com/api/btc';
 
   constructor(private http: HttpClient) {}
 
@@ -17,5 +18,9 @@ export class SystemSettingsService {
 
   updateSettings(settings: Partial<SystemSettings>): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/update`, settings);
+  }
+
+    getBtcChainBalance(): Observable<BtcBalanceResponse> {
+    return this.http.get<BtcBalanceResponse>(`${this.btcApiUrl}/chain/balance`);
   }
 }

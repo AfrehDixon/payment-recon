@@ -84,6 +84,28 @@ interface VerifyAccountResponse {
             >
               Debit Merchant
             </button>
+            <button
+              [class.bg-green-50]="activeTab === 'direct-credit'"
+              [class.text-green-600]="activeTab === 'direct-credit'"
+              [class.border-green-500]="activeTab === 'direct-credit'"
+              [class.border-b-2]="activeTab === 'direct-credit'"
+              [class.font-medium]="activeTab === 'direct-credit'"
+              class="flex-1 py-4 px-6 text-center focus:outline-none"
+              (click)="setActiveTab('direct-credit')"
+            >
+              Direct Credit
+            </button>
+            <button
+              [class.bg-green-50]="activeTab === 'direct-debit'"
+              [class.text-green-600]="activeTab === 'direct-debit'"
+              [class.border-green-500]="activeTab === 'direct-debit'"
+              [class.border-b-2]="activeTab === 'direct-debit'"
+              [class.font-medium]="activeTab === 'direct-debit'"
+              class="flex-1 py-4 px-6 text-center focus:outline-none"
+              (click)="setActiveTab('direct-debit')"
+            >
+              Direct Debit
+            </button>
           </div>
 
           <!-- Credit Form -->
@@ -232,23 +254,6 @@ interface VerifyAccountResponse {
                       <span *ngIf="creditForm.get('account_issuer')?.errors?.['required']">{{ accountIssuerLabel }} is required</span>
                     </div>
                   </div>
-
-                  <!-- Service Type for Bank transfers -->
-                  <!-- <div *ngIf="creditForm.get('account_type')?.value === 'bank'">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
-                    <div class="grid grid-cols-2 gap-3">
-                      <div 
-                        *ngFor="let type of serviceTypes" 
-                        [class.bg-blue-50]="creditForm.get('serviceType')?.value === type.value" 
-                        [class.border-blue-500]="creditForm.get('serviceType')?.value === type.value" 
-                        class="border rounded-lg p-3 text-center cursor-pointer hover:bg-gray-50 transition-all"
-                        (click)="creditForm.patchValue({serviceType: type.value})"
-                      >
-                        <span class="font-medium">{{ type.label }}</span>
-                        <p class="text-xs text-gray-500 mt-1">{{ type.description }}</p>
-                      </div>
-                    </div>
-                  </div> -->
                 </div>
 
                 <!-- Right Column -->
@@ -477,6 +482,252 @@ interface VerifyAccountResponse {
               </div>
             </form>
           </div>
+
+          <!-- Direct Credit Form -->
+          <div *ngIf="activeTab === 'direct-credit'" class="p-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="material-icons text-blue-400">info</i>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-blue-800">Direct Credit</h3>
+                  <div class="mt-2 text-sm text-blue-700">
+                    <p>Direct credit allows you to add funds directly to a merchant's wallet without requiring external account details.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form [formGroup]="directCreditForm" (ngSubmit)="submitDirectCreditForm()">
+              <!-- Error/Success Messages -->
+              <div *ngIf="directCreditError" class="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+                {{ directCreditError }}
+              </div>
+              <div *ngIf="directCreditSuccess" class="mb-4 p-4 bg-green-50 text-green-600 rounded-md">
+                {{ directCreditSuccess }}
+              </div>
+
+              <!-- Merchant Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Merchant</label>
+                <div class="relative">
+                  <select
+                    formControlName="merchantId"
+                    class="block w-full py-3 px-4 pr-10 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    (change)="onMerchantChange('direct-credit')"
+                  >
+                    <option value="" disabled>Select a merchant</option>
+                    <option *ngFor="let merchant of merchants" [value]="merchant._id">
+                      {{ merchant.merchant_tradeName }} ({{ merchant.email }})
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="material-icons text-gray-400">arrow_drop_down</i>
+                  </div>
+                </div>
+                <div *ngIf="directCreditForm.get('merchantId')?.invalid && directCreditForm.get('merchantId')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directCreditForm.get('merchantId')?.errors?.['required']">Please select a merchant</span>
+                </div>
+              </div>
+
+              <!-- Wallet Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Wallet</label>
+                <div class="relative">
+                  <select
+                    formControlName="walletId"
+                    class="block w-full py-3 px-4 pr-10 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    [disabled]="loadingWallets || !directCreditForm.get('merchantId')?.value"
+                  >
+                    <option value="" disabled>{{ walletDropdownPlaceholder('direct-credit') }}</option>
+                    <option *ngFor="let wallet of directCreditWallets" [value]="wallet._id">
+                      {{ formatWalletOption(wallet) }}
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div *ngIf="loadingWallets" class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <i *ngIf="!loadingWallets" class="material-icons text-gray-400">arrow_drop_down</i>
+                  </div>
+                </div>
+                <div *ngIf="directCreditForm.get('walletId')?.invalid && directCreditForm.get('walletId')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directCreditForm.get('walletId')?.errors?.['required']">Please select a wallet</span>
+                </div>
+              </div>
+
+              <!-- Transaction Amount -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                <div class="relative mt-1 rounded-md shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500">GHS</span>
+                  </div>
+                  <input
+                    type="text"
+                    formControlName="amount"
+                    class="block w-full pl-12 pr-12 py-3 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div *ngIf="directCreditForm.get('amount')?.invalid && directCreditForm.get('amount')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directCreditForm.get('amount')?.errors?.['required']">Amount is required</span>
+                  <span *ngIf="directCreditForm.get('amount')?.errors?.['pattern']">Amount must be a valid number</span>
+                </div>
+              </div>
+
+              <!-- Description (Optional) -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                <textarea
+                  formControlName="description"
+                  rows="3"
+                  class="block w-full py-3 px-4 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Add a note for this transaction..."
+                ></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="mt-8">
+                <button
+                  type="submit"
+                  [disabled]="directCreditForm.invalid || isDirectCreditSubmitting"
+                  class="w-full py-3 px-4 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span *ngIf="!isDirectCreditSubmitting">Process Direct Credit</span>
+                  <span *ngIf="isDirectCreditSubmitting" class="flex items-center justify-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Direct Debit Form -->
+          <div *ngIf="activeTab === 'direct-debit'" class="p-6">
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="material-icons text-orange-400">warning</i>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-orange-800">Direct Debit</h3>
+                  <div class="mt-2 text-sm text-orange-700">
+                    <p>Direct debit allows you to deduct funds directly from a merchant's wallet. Please ensure sufficient balance before proceeding.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form [formGroup]="directDebitForm" (ngSubmit)="submitDirectDebitForm()">
+              <!-- Error/Success Messages -->
+              <div *ngIf="directDebitError" class="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+                {{ directDebitError }}
+              </div>
+              <div *ngIf="directDebitSuccess" class="mb-4 p-4 bg-green-50 text-green-600 rounded-md">
+                {{ directDebitSuccess }}
+              </div>
+
+              <!-- Merchant Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Merchant</label>
+                <div class="relative">
+                  <select
+                    formControlName="merchantId"
+                    class="block w-full py-3 px-4 pr-10 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    (change)="onMerchantChange('direct-debit')"
+                  >
+                    <option value="" disabled>Select a merchant</option>
+                    <option *ngFor="let merchant of merchants" [value]="merchant._id">
+                      {{ merchant.merchant_tradeName }} ({{ merchant.email }})
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="material-icons text-gray-400">arrow_drop_down</i>
+                  </div>
+                </div>
+                <div *ngIf="directDebitForm.get('merchantId')?.invalid && directDebitForm.get('merchantId')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directDebitForm.get('merchantId')?.errors?.['required']">Please select a merchant</span>
+                </div>
+              </div>
+
+              <!-- Wallet Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Wallet</label>
+                <div class="relative">
+                  <select
+                    formControlName="walletId"
+                    class="block w-full py-3 px-4 pr-10 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    [disabled]="loadingWallets || !directDebitForm.get('merchantId')?.value"
+                  >
+                    <option value="" disabled>{{ walletDropdownPlaceholder('direct-debit') }}</option>
+                    <option *ngFor="let wallet of directDebitWallets" [value]="wallet._id">
+                      {{ formatWalletOption(wallet) }}
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div *ngIf="loadingWallets" class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <i *ngIf="!loadingWallets" class="material-icons text-gray-400">arrow_drop_down</i>
+                  </div>
+                </div>
+                <div *ngIf="directDebitForm.get('walletId')?.invalid && directDebitForm.get('walletId')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directDebitForm.get('walletId')?.errors?.['required']">Please select a wallet</span>
+                </div>
+              </div>
+
+              <!-- Transaction Amount -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                <div class="relative mt-1 rounded-md shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500">GHS</span>
+                  </div>
+                  <input
+                    type="text"
+                    formControlName="amount"
+                    class="block w-full pl-12 pr-12 py-3 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div *ngIf="directDebitForm.get('amount')?.invalid && directDebitForm.get('amount')?.touched" class="mt-1 text-red-500 text-sm">
+                  <span *ngIf="directDebitForm.get('amount')?.errors?.['required']">Amount is required</span>
+                  <span *ngIf="directDebitForm.get('amount')?.errors?.['pattern']">Amount must be a valid number</span>
+                </div>
+              </div>
+
+              <!-- Description (Optional) -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                <textarea
+                  formControlName="description"
+                  rows="3"
+                  class="block w-full py-3 px-4 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Add a note for this transaction..."
+                ></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="mt-8">
+                <button
+                  type="submit"
+                  [disabled]="directDebitForm.invalid || isDirectDebitSubmitting"
+                  class="w-full py-3 px-4 bg-orange-600 text-white font-medium rounded-md shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span *ngIf="!isDirectDebitSubmitting">Process Direct Debit</span>
+                  <span *ngIf="isDirectDebitSubmitting" class="flex items-center justify-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -487,6 +738,9 @@ export class CreditDebitComponent implements OnInit {
   activeTab = 'credit';
   creditForm!: FormGroup;
   debitForm!: FormGroup;
+  directCreditForm!: FormGroup;
+  directDebitForm!: FormGroup;
+  
   banks: Bank[] = [];
   merchants: Merchant[] = [];
   
@@ -494,6 +748,8 @@ export class CreditDebitComponent implements OnInit {
   wallets: Wallet[] = [];
   creditWallets: Wallet[] = [];
   debitWallets: Wallet[] = [];
+  directCreditWallets: Wallet[] = [];
+  directDebitWallets: Wallet[] = [];
   loadingWallets = false;
   
   accountVerifying = false;
@@ -502,6 +758,7 @@ export class CreditDebitComponent implements OnInit {
   debitAccountVerifying = false;
   debitAccountNameReadOnly = false;
   
+  // Regular transaction states
   creditError = '';
   creditSuccess = '';
   isCreditSubmitting = false;
@@ -509,6 +766,15 @@ export class CreditDebitComponent implements OnInit {
   debitError = '';
   debitSuccess = '';
   isDebitSubmitting = false;
+  
+  // Direct transaction states
+  directCreditError = '';
+  directCreditSuccess = '';
+  isDirectCreditSubmitting = false;
+  
+  directDebitError = '';
+  directDebitSuccess = '';
+  isDirectDebitSubmitting = false;
 
   // Constants for account types
   accountTypes = [
@@ -553,7 +819,6 @@ export class CreditDebitComponent implements OnInit {
       account_name: ['', [Validators.required, Validators.minLength(2)]],
       account_issuer: ['', [Validators.required]],
       account_type: ['momo'],
-    //   serviceType: ['GIP'],
     });
 
     // Initialize Debit Form
@@ -565,6 +830,22 @@ export class CreditDebitComponent implements OnInit {
       account_name: ['', [Validators.required]],
       account_number: ['', [Validators.required, Validators.pattern(/^\d+$/), Validators.minLength(10)]],
       account_issuer: ['', [Validators.required]]
+    });
+
+    // Initialize Direct Credit Form
+    this.directCreditForm = this.fb.group({
+      merchantId: ['', [Validators.required]],
+      walletId: ['', [Validators.required]],
+      amount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+      description: ['']
+    });
+
+    // Initialize Direct Debit Form
+    this.directDebitForm = this.fb.group({
+      merchantId: ['', [Validators.required]],
+      walletId: ['', [Validators.required]],
+      amount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+      description: ['']
     });
 
     // Update form validation when account type changes
@@ -592,6 +873,10 @@ export class CreditDebitComponent implements OnInit {
     this.creditSuccess = '';
     this.debitError = '';
     this.debitSuccess = '';
+    this.directCreditError = '';
+    this.directCreditSuccess = '';
+    this.directDebitError = '';
+    this.directDebitSuccess = '';
   }
 
   fetchBanks() {
@@ -628,26 +913,50 @@ export class CreditDebitComponent implements OnInit {
     });
   }
 
-  onMerchantChange(formType: 'credit' | 'debit') {
+  onMerchantChange(formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit') {
     // Reset wallet dropdown and clear any previous errors
-    if (formType === 'credit') {
-      this.creditForm.patchValue({ walletId: '' });
-      this.creditWallets = [];
-    } else {
-      this.debitForm.patchValue({ walletId: '' });
-      this.debitWallets = [];
+    switch (formType) {
+      case 'credit':
+        this.creditForm.patchValue({ walletId: '' });
+        this.creditWallets = [];
+        break;
+      case 'debit':
+        this.debitForm.patchValue({ walletId: '' });
+        this.debitWallets = [];
+        break;
+      case 'direct-credit':
+        this.directCreditForm.patchValue({ walletId: '' });
+        this.directCreditWallets = [];
+        break;
+      case 'direct-debit':
+        this.directDebitForm.patchValue({ walletId: '' });
+        this.directDebitWallets = [];
+        break;
     }
     
-    const merchantId = formType === 'credit' 
-      ? this.creditForm.get('merchantId')?.value 
-      : this.debitForm.get('merchantId')?.value;
+    const merchantId = this.getMerchantId(formType);
     
     if (merchantId) {
       this.fetchMerchantWallets(merchantId, formType);
     }
   }
 
-  fetchMerchantWallets(merchantId: string, formType: 'credit' | 'debit') {
+  private getMerchantId(formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit'): string {
+    switch (formType) {
+      case 'credit':
+        return this.creditForm.get('merchantId')?.value;
+      case 'debit':
+        return this.debitForm.get('merchantId')?.value;
+      case 'direct-credit':
+        return this.directCreditForm.get('merchantId')?.value;
+      case 'direct-debit':
+        return this.directDebitForm.get('merchantId')?.value;
+      default:
+        return '';
+    }
+  }
+
+  fetchMerchantWallets(merchantId: string, formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit') {
     this.loadingWallets = true;
     
     this.http.get<any>('https://doronpay.com/api/accounts/get', {
@@ -662,35 +971,74 @@ export class CreditDebitComponent implements OnInit {
           
           this.wallets = merchantWallets;
           
-          if (formType === 'credit') {
-            this.creditWallets = merchantWallets;
-          } else {
-            this.debitWallets = merchantWallets;
+          switch (formType) {
+            case 'credit':
+              this.creditWallets = merchantWallets;
+              break;
+            case 'debit':
+              this.debitWallets = merchantWallets;
+              break;
+            case 'direct-credit':
+              this.directCreditWallets = merchantWallets;
+              break;
+            case 'direct-debit':
+              this.directDebitWallets = merchantWallets;
+              break;
           }
         } else {
-          if (formType === 'credit') {
-            this.creditError = 'Failed to load wallets: ' + (response.message || 'Unknown error');
-          } else {
-            this.debitError = 'Failed to load wallets: ' + (response.message || 'Unknown error');
-          }
+          this.setError(formType, 'Failed to load wallets: ' + (response.message || 'Unknown error'));
         }
         this.loadingWallets = false;
       },
       error: (err) => {
-        if (formType === 'credit') {
-          this.creditError = 'Error loading wallets';
-        } else {
-          this.debitError = 'Error loading wallets';
-        }
+        this.setError(formType, 'Error loading wallets');
         console.error('Error fetching wallets:', err);
         this.loadingWallets = false;
       }
     });
   }
 
-  walletDropdownPlaceholder(formType: 'credit' | 'debit'): string {
-    const form = formType === 'credit' ? this.creditForm : this.debitForm;
-    const wallets = formType === 'credit' ? this.creditWallets : this.debitWallets;
+  private setError(formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit', error: string) {
+    switch (formType) {
+      case 'credit':
+        this.creditError = error;
+        break;
+      case 'debit':
+        this.debitError = error;
+        break;
+      case 'direct-credit':
+        this.directCreditError = error;
+        break;
+      case 'direct-debit':
+        this.directDebitError = error;
+        break;
+    }
+  }
+
+  walletDropdownPlaceholder(formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit'): string {
+    let form: FormGroup;
+    let wallets: Wallet[];
+    
+    switch (formType) {
+      case 'credit':
+        form = this.creditForm;
+        wallets = this.creditWallets;
+        break;
+      case 'debit':
+        form = this.debitForm;
+        wallets = this.debitWallets;
+        break;
+      case 'direct-credit':
+        form = this.directCreditForm;
+        wallets = this.directCreditWallets;
+        break;
+      case 'direct-debit':
+        form = this.directDebitForm;
+        wallets = this.directDebitWallets;
+        break;
+      default:
+        return 'Select a wallet';
+    }
     
     if (!form.get('merchantId')?.value) {
       return 'Select a merchant first';
@@ -1039,6 +1387,101 @@ export class CreditDebitComponent implements OnInit {
       console.error('Debit transaction error:', error);
     } finally {
       this.isDebitSubmitting = false;
+    }
+  }
+
+  async submitDirectCreditForm() {
+    if (this.directCreditForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      this.markFormGroupTouched(this.directCreditForm);
+      return;
+    }
+    
+    this.isDirectCreditSubmitting = true;
+    this.directCreditError = '';
+    this.directCreditSuccess = '';
+    
+    try {
+      // Prepare the payload for direct credit
+      const payload = {
+        walletId: this.directCreditForm.get('walletId')?.value,
+        amount: this.directCreditForm.get('amount')?.value,
+        description: this.directCreditForm.get('description')?.value || 'Direct credit transaction',
+        transactionType: 'direct_credit',
+        merchantId: this.directCreditForm.get('merchantId')?.value
+      };
+      
+      const response = await this.http
+        .put<any>(
+          'https://doronpay.com/api/accounts/deposit',
+          payload,
+          { headers: this.getHeaders() }
+        )
+        .toPromise();
+      
+      if (response?.success) {
+        this.directCreditSuccess = 'Direct credit processed successfully!';
+        // Reset form but keep merchant ID
+        const merchantId = this.directCreditForm.get('merchantId')?.value;
+        this.directCreditForm.reset();
+        this.directCreditForm.patchValue({ merchantId });
+        // Refresh wallets for the merchant
+        this.fetchMerchantWallets(merchantId, 'direct-credit');
+      } else {
+        this.directCreditError = response?.message || 'Failed to process direct credit';
+      }
+    } catch (error: any) {
+      this.directCreditError = 'Error processing direct credit: ' + (error.message || 'Unknown error');
+      console.error('Direct credit error:', error);
+    } finally {
+      this.isDirectCreditSubmitting = false;
+    }
+  }
+
+  async submitDirectDebitForm() {
+    if (this.directDebitForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      this.markFormGroupTouched(this.directDebitForm);
+      return;
+    }
+    
+    this.isDirectDebitSubmitting = true;
+    this.directDebitError = '';
+    this.directDebitSuccess = '';
+    
+    try {
+      // Prepare the payload for direct debit
+      const payload = {
+        walletId: this.directDebitForm.get('walletId')?.value,
+        amount: this.directDebitForm.get('amount')?.value,
+        description: this.directDebitForm.get('description')?.value || 'Direct debit transaction',
+        transactionType: 'direct_debit'
+      };
+      
+      const response = await this.http
+        .put<any>(
+          'https://doronpay.com/api/accounts/debit',
+          payload,
+          { headers: this.getHeaders() }
+        )
+        .toPromise();
+      
+      if (response?.success) {
+        this.directDebitSuccess = 'Direct debit processed successfully!';
+        // Reset form but keep merchant ID
+        const merchantId = this.directDebitForm.get('merchantId')?.value;
+        this.directDebitForm.reset();
+        this.directDebitForm.patchValue({ merchantId });
+        // Refresh wallets for the merchant
+        this.fetchMerchantWallets(merchantId, 'direct-debit');
+      } else {
+        this.directDebitError = response?.message || 'Failed to process direct debit';
+      }
+    } catch (error: any) {
+      this.directDebitError = 'Error processing direct debit: ' + (error.message || 'Unknown error');
+      console.error('Direct debit error:', error);
+    } finally {
+      this.isDirectDebitSubmitting = false;
     }
   }
 
