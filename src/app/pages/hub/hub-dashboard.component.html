@@ -64,9 +64,27 @@
                 type="text" 
                 id="name"
                 formControlName="name"
-                placeholder="Enter USSD shortcode (e.g., *123#)"
+                placeholder="Enter app name"
                 class="form-input">
             </div>
+
+            <div class="form-group">
+              <label for="operations">Operations</label>
+              <div class="operations-checkboxes" formArrayName="operations">
+                <div 
+                  class="operation-checkbox" 
+                  *ngFor="let operation of availableOperations; let i = index">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [formControlName]="i"
+                      class="checkbox-input">
+                    <span class="checkbox-text">{{operation}}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="form-group">
               <label for="ussdCode">USSD Shortcode</label>
               <input 
@@ -116,82 +134,11 @@
           </form>
         </div>
       </div>
-
-      <!-- <div class="cards-container">
-        <div class="card" *ngIf="balance">
-          <div class="card-front">
-            <div class="card-header">
-              <div class="chip-container">
-                <div class="chip"></div>
-                <div class="contactless">
-                  <svg viewBox="0 0 24 24" class="contactless-icon">
-                    <path
-                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <span class="card-type">{{balance.walletType}}</span>
-            </div>
-      
-            <div class="card-body">
-              <div class="card-number">
-                <span>{{formatAccountNumber(balance.accountNumber)}}</span>
-              </div>
-              <div class="balance-info">
-                <div class="balance-primary">
-                  <span class="label">Available Balance</span>
-                  <span class="amount">{{formatCurrency(balance.availableBalance)}}</span>
-                </div>
-              </div>
-      
-              <div class="balance-details">
-                <div class="detail-item">
-                  <span class="label">Confirmed Balance</span>
-                  <span class="value">{{formatCurrency(balance.confirmedBalance)}}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Blocked Balance</span>
-                  <span class="value">{{formatCurrency(balance.blockedBalance)}}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Unconfirmed Balance</span>
-                  <span class="value">{{formatCurrency(balance.unConfirmedBalance)}}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Total Balance</span>
-                  <span class="value">{{formatCurrency(balance.totalBalance)}}</span>
-                </div>
-              </div>
-            </div>
-      
-            <div class="card-footer">
-              <div class="merchant-info">
-                <span class="merchant-name">{{merchantname}}</span>
-                <span class="account-type">{{balance.accountType}}</span>
-              </div>
-              <div class="card-badges">
-                <span class="currency-badge">{{balance.currency}}</span>
-                <span class="status-badge" [class.active]="balance.active">
-                  {{balance.active ? 'ACTIVE' : 'INACTIVE'}}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> -->
-      
   
     <!-- Apps Section -->
     <div class="apps-section">
       <div class="section-header">
         <h2>Applications</h2>
-        <!-- <button class="create-app-btn" (click)="showCreateModal = true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14m-7-7h14"/>
-          </svg>
-          New Application
-        </button> -->
       </div>
     
       <div class="loading-container" *ngIf="loading">

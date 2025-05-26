@@ -70,6 +70,9 @@ interface Transaction {
   balanceAfterCredit: number;
   balanceBeforeDebit: number;
   balanceAfterDebit: number;
+  operator: string;
+  externalTransactionId: string;
+  profitEarned: number;
 }
 
 interface ReportResponse {
@@ -396,6 +399,10 @@ const paymentIssuerImages: { [key: string]: string } = {
                       'Net Amount',
                       'Type',
                       'Status',
+                      'Operator',
+                      'Account Issuer',
+                      'Ext. Tx ID',
+                      'Profit',
                       'Reference',
                       'Actions'
                     ]
@@ -427,20 +434,28 @@ const paymentIssuerImages: { [key: string]: string } = {
                   </div>
                 </td>
                 <td class="px-6 py-4">
-      <div class="text-sm font-medium text-gray-900">
-        {{ getSafeValue(tx.payment_account_name) }}
-      </div>
-      <div class="text-sm text-gray-500">
-        {{ getSafeValue(tx.payment_account_number) }}
-        <span *ngIf="tx.payment_account_issuer || tx.payment_account_type" class="text-xs text-gray-400">
-          ({{ getSafeValue(tx.payment_account_issuer) }} {{ getSafeValue(tx.payment_account_type) }})
-        </span>
-        <img *ngIf="getSafeImage(tx.payment_account_issuer)" 
-             [src]="getSafeImage(tx.payment_account_issuer)" 
-             alt="{{ tx.payment_account_issuer }}" 
-             class="w-6 h-6 inline-block ml-2">
-      </div>
-    </td>
+                  <div class="text-sm font-medium text-gray-900">
+                    {{ getSafeValue(tx.payment_account_name) }}
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    {{ getSafeValue(tx.payment_account_number) }}
+                    <span
+                      *ngIf="
+                        tx.payment_account_issuer || tx.payment_account_type
+                      "
+                      class="text-xs text-gray-400"
+                    >
+                      ({{ getSafeValue(tx.payment_account_issuer) }}
+                      {{ getSafeValue(tx.payment_account_type) }})
+                    </span>
+                    <img
+                      *ngIf="getSafeImage(tx.payment_account_issuer)"
+                      [src]="getSafeImage(tx.payment_account_issuer)"
+                      alt="{{ tx.payment_account_issuer }}"
+                      class="w-6 h-6 inline-block ml-2"
+                    />
+                  </div>
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
                   {{ formatCurrency(tx.amount, tx.walletType) }}
                 </td>
@@ -474,6 +489,18 @@ const paymentIssuerImages: { [key: string]: string } = {
                   >
                     {{ tx.status }}
                   </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ tx.operator }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ tx.payment_account_issuer }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ tx.externalTransactionId }}
+                </td>
+                <td class="px-6 py-4 text-sm text-green-600">
+                  {{ tx.profitEarned | currency : 'GHS' }}
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">
@@ -764,7 +791,7 @@ export class ReportsComponent implements OnInit {
   getSafeValue(value: any, fallback: string = 'N/A'): string {
     return value !== null && value !== undefined ? value.toString() : fallback;
   }
-  
+
   getSafeImage(issuer: string | undefined): string | null {
     if (!issuer) return null;
     const key = issuer.toLowerCase();
@@ -906,6 +933,10 @@ export class ReportsComponent implements OnInit {
         'Net Amount': tx.actualAmount,
         Type: tx.transaction_type,
         Status: tx.status,
+        Operator: tx.operator,
+        'Account Issuer': tx.payment_account_issuer,
+        'External Transaction ID': tx.externalTransactionId,
+        Profit: tx.profitEarned,
         Reference: tx.transactionRef,
         Description: tx.description,
         'Balance Before Debit':

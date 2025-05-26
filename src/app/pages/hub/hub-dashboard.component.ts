@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { AuthState } from '../../state/apps/app.states';
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
 interface App {
@@ -85,6 +85,9 @@ export class HubDashboardComponent implements OnInit {
   searchTerm: string = '';
   filteredApps: App[] = [];
 
+  // Available operations from backend
+  availableOperations = ['DEBIT', 'CREDIT', 'CHECKOUT', 'TRANSFER'];
+
   constructor(
     private http: HttpClient,
     private store: Store,
@@ -95,8 +98,14 @@ export class HubDashboardComponent implements OnInit {
       name: [''],
       ussdShortCode: [''],
       ussdPaymentCallbackUrl: ['', Validators.pattern(/^https?:\/\/.+/)],
-      ussdEnabled: [false]
+      ussdEnabled: [false],
+      operations: this.fb.array([]) // FormArray for operations
     });
+  }
+
+  // Get operations FormArray
+  get operationsFormArray(): FormArray {
+    return this.updateForm.get('operations') as FormArray;
   }
 
   ngOnInit() {
@@ -201,21 +210,6 @@ export class HubDashboardComponent implements OnInit {
     });
   }
 
-  // fetchBalance(merchantId: string) {
-  //   this.http.get<any>(`https://doronpay.com/api/accounts/merchant/${merchantId}`, {
-  //     headers: this.getHeaders()
-  //   }).subscribe({
-  //     next: (response) => {
-  //       if (response.success && response.data) {
-  //         this.balance = response.data;
-  //       }
-  //     },
-  //     error: (err) => {
-  //       alert('Failed to fetch balance');
-  //     }
-  //   });
-  // }
-
   generateNewKey(appId: string, merchantId: string) {
     if (!merchantId) {
       alert('Merchant ID not found');
@@ -278,11 +272,6 @@ export class HubDashboardComponent implements OnInit {
     this.router.navigate(['/transactions', appId]);
   }
 
-  // private getHeaders(): HttpHeaders {
-  //   const token = this.store.selectSnapshot(AuthState.token);
-  //   return new HttpHeaders().set('Authorization', `Bearer ${token}`);
-  // }
-
   formatDate(date: string): string {
     return new Date(date).toLocaleDateString();
   }
@@ -301,12 +290,25 @@ export class HubDashboardComponent implements OnInit {
 
   openUpdateModal(app: App) {
     this.currentAppId = app._id;
+    
+    // Clear existing operations FormArray
+    while (this.operationsFormArray.length !== 0) {
+      this.operationsFormArray.removeAt(0);
+    }
+
+    // Add FormControls for each available operation
+    this.availableOperations.forEach(operation => {
+      const isSelected = app.operations.includes(operation);
+      this.operationsFormArray.push(this.fb.control(isSelected));
+    });
+
     this.updateForm.patchValue({
       name: app.name,
       ussdShortCode: app.ussdShortCode || '',
       ussdPaymentCallbackUrl: app.ussdPaymentCallbackUrl || '',
       ussdEnabled: app.ussdEnabled || false
     });
+    
     this.showUpdateModal = true;
   }
 
@@ -319,10 +321,22 @@ export class HubDashboardComponent implements OnInit {
   updateWalletDetails() {
     if (this.updateForm.invalid) return;
 
+    // Get selected operations
+    const selectedOperations = this.availableOperations.filter((operation, index) => {
+      return this.operationsFormArray.at(index).value;
+    });
+
     const payload = {
       id: this.currentAppId,
-      data: this.updateForm.value
+      data: {
+        ...this.updateForm.value,
+        operations: selectedOperations
+      }
     };
+
+    // Remove the operations FormArray from the payload since we're handling it separately
+    delete payload.data.operations;
+    payload.data.operations = selectedOperations;
 
     this.loading = true;
     this.http.put('https://doronpay.com/api/hub/update', payload, {
@@ -351,6 +365,9 @@ export class HubDashboardComponent implements OnInit {
       alert('API key copied to clipboard');
     });
   }
+
+  // Helper method to check if an operation is selected
+  isOperationSelected(index: number): boolean {
+    return this.operationsFormArray.at(index)?.value || false;
+  }
 }
-
-
