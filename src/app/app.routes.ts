@@ -34,6 +34,7 @@ import { PaymentTerminalsComponent } from './pages/payment-terminals/payment-ter
 import { PermissionManagementComponent } from './pages/permission-management/permission-management.component';
 import { PermissionGuard } from './guard/permissions.guard';
 import { AdminTicketManagementComponent } from './pages/admin-ticket/admin-ticket-management.component';
+import { VaultManagementComponent } from './pages/vault-management/vault-management.component';
 
 export const routes: Routes = [
   {
@@ -205,6 +206,10 @@ export const routes: Routes = [
       {
         path: 'charge-config',
         component: ChargeConfigComponent,
+      },
+      {
+        path: 'valut-config',
+        component: VaultManagementComponent,
       },
       // Add other child routes here
       { path: '', redirectTo: 'mechant', pathMatch: 'full' },

@@ -26,7 +26,8 @@ export enum EAccountType {
   BTC = 'btc',
   TRC20 = 'trc20',
   ERC20 = 'erc20',
-  SOLANA = 'solana'
+  SOLANA = 'solana',
+  BEP20 = 'bep20',
 }
 
 export enum EOperator {
@@ -40,7 +41,8 @@ export enum EOperator {
   ERC20 = "ERC20",
   GTB = "GTB",
   FAB = "FAB",
-  BTC = "BTC"
+  BTC = "BTC",
+  BEP20 = "BEP20",
 }
 
 export enum EAccountIssuer {

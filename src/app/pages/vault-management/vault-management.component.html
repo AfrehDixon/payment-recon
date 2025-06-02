@@ -1,0 +1,412 @@
+<div class="vault-container">
+  <!-- Header with Actions -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Private Key Vault Management</h1>
+    <div class="flex space-x-3">
+      <button
+        (click)="toggleStatistics()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+      >
+        <i class="fas fa-chart-bar"></i>
+        <span>{{ showStatistics ? 'Hide' : 'Show' }} Statistics</span>
+      </button>
+      <button
+        (click)="showActionsPanel = !showActionsPanel"
+        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+      >
+        <i class="fas fa-cogs"></i>
+        <span>Actions</span>
+      </button>
+      <button
+        (click)="refresh()"
+        [disabled]="loading$ | async"
+        class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center space-x-2"
+      >
+        <i class="fas fa-sync-alt" [class.animate-spin]="loading$ | async"></i>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Panel -->
+  <div *ngIf="showStatistics" class="bg-white rounded-lg shadow mb-6 p-4">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Vault Statistics</h2>
+    
+    <!-- Loading State -->
+    <div *ngIf="(loading$ | async) && !statistics && !statisticsError" class="flex justify-center items-center h-32">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span class="ml-3 text-gray-600">Loading statistics...</span>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="statisticsError" class="flex justify-center items-center h-32">
+      <div class="text-center">
+        <div class="text-4xl mb-3">⚠️</div>
+        <p class="text-gray-600">Unable to load statistics</p>
+        <button 
+          (click)="loadStatistics()" 
+          class="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+          Retry
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div *ngIf="statistics" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-blue-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="text-2xl text-blue-600 mr-3">📦</div>
+          <div>
+            <p class="text-sm text-gray-600">Total Entries</p>
+            <p class="text-xl font-bold text-gray-900">{{ statistics.totalEntries | number }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-green-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="text-2xl text-green-600 mr-3">✅</div>
+          <div>
+            <p class="text-sm text-gray-600">Active Entries</p>
+            <p class="text-xl font-bold text-gray-900">{{ statistics.activeEntries | number }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-red-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="text-2xl text-red-600 mr-3">⏰</div>
+          <div>
+            <p class="text-sm text-gray-600">Expired Entries</p>
+            <p class="text-xl font-bold text-gray-900">{{ statistics.expiredEntries | number }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-purple-50 p-4 rounded-lg">
+        <div class="flex items-center">
+          <div class="text-2xl text-purple-600 mr-3">📈</div>
+          <div>
+            <p class="text-sm text-gray-600">Recent Activity</p>
+            <p class="text-xl font-bold text-gray-900">{{ statistics.recentActivity | number }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakdown Charts -->
+    <div *ngIf="statistics" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gray-50 p-4 rounded-lg">
+        <h3 class="text-md font-medium text-gray-800 mb-3">Network Distribution</h3>
+        <div class="space-y-2">
+          <div *ngFor="let item of statistics.networkBreakdown | keyvalue" class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">{{ getNetworkIcon(item.key) }} {{ item.key }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ item.value | number }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 p-4 rounded-lg">
+        <h3 class="text-md font-medium text-gray-800 mb-3">Purpose Distribution</h3>
+        <div class="space-y-2">
+          <div *ngFor="let item of statistics.purposeBreakdown | keyvalue" class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">{{ getPurposeIcon(item.key) }} {{ item.key | titlecase }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ item.value | number }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions Panel Overlay -->
+  <div *ngIf="showActionsPanel" class="overlay">
+    <div class="dialog bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+      <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-xl font-semibold text-gray-800">Vault Management Actions</h2>
+        <button
+          (click)="showActionsPanel = false"
+          class="text-gray-500 hover:text-gray-700"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6">
+        <div class="space-y-6">
+          <!-- Cleanup Action -->
+          <div class="border rounded-lg p-4">
+            <div class="flex items-start space-x-4">
+              <div class="text-3xl">🧹</div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-gray-900">Cleanup Expired Entries</h3>
+                <p class="text-sm text-gray-600 mt-1">Remove all expired vault entries from the database. This action cannot be undone.</p>
+                <button
+                  (click)="cleanupExpiredEntries()"
+                  [disabled]="actionLoading.cleanup"
+                  class="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 flex items-center space-x-2"
+                >
+                  <span *ngIf="actionLoading.cleanup" class="animate-spin">⌛</span>
+                  <span>{{ actionLoading.cleanup ? 'Cleaning up...' : 'Cleanup Now' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backup Action -->
+          <div class="border rounded-lg p-4">
+            <div class="flex items-start space-x-4">
+              <div class="text-3xl">💾</div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-gray-900">Create Backup</h3>
+                <p class="text-sm text-gray-600 mt-1">Create a backup of vault metadata (private keys are not included in the backup).</p>
+                <button
+                  (click)="createBackup()"
+                  [disabled]="actionLoading.backup"
+                  class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+                >
+                  <span *ngIf="actionLoading.backup" class="animate-spin">⌛</span>
+                  <span>{{ actionLoading.backup ? 'Creating backup...' : 'Create Backup' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="bg-white rounded-lg shadow mb-6 p-4">
+    <form [formGroup]="filterForm" class="space-y-4">
+      <!-- Search Bar -->
+      <div class="flex space-x-4">
+        <div class="flex-1">
+          <input
+            type="text"
+            formControlName="search"
+            placeholder="Search vault entries..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <select
+          formControlName="isActive"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+
+        <select
+          formControlName="network"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Networks</option>
+          <option *ngFor="let option of networkOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+
+        <select
+          formControlName="purpose"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Purposes</option>
+          <option *ngFor="let option of purposeOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading$ | async" class="flex justify-center items-center h-40">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Entries Table -->
+  <div *ngIf="!(loading$ | async)" class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Transaction ID
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Address
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Network
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Purpose
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Access Count
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Created
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let entry of paginatedEntries; trackBy: trackByTransactionId" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+              {{ entry.transactionId }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+              {{ formatAddress(entry.address) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <span class="inline-flex items-center">
+                {{ getNetworkIcon(entry.network) }} {{ entry.network }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {{ getPurposeIcon(entry.purpose) }} {{ entry.purpose | titlecase }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span 
+                [class]="entry.isActive 
+                  ? 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800'
+                  : 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800'"
+              >
+                {{ entry.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ entry.accessCount | number }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ formatDate(entry.createdAt) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="deactivateEntry(entry)"
+                [disabled]="!entry.isActive || actionLoading.deactivate"
+                class="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Deactivate Entry"
+              >
+                <i class="fas fa-ban"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="vaultEntries.length === 0" class="text-center py-12">
+      <div class="text-6xl mb-4">📭</div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No vault entries found</h3>
+      <p class="text-gray-500">Try adjusting your filters or check back later.</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!(loading$ | async) && vaultEntries.length > 0" 
+       class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+    <div class="flex-1 flex justify-between sm:hidden">
+      <button
+        (click)="previousPage()"
+        [disabled]="currentPage === 1"
+        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        [class.opacity-50]="currentPage === 1"
+      >
+        Previous
+      </button>
+      <button
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages"
+        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        [class.opacity-50]="currentPage === totalPages"
+      >
+        Next
+      </button>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          Showing
+          <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+          to
+          <span class="font-medium">{{ Math.min(currentPage * pageSize, totalEntries) }}</span>
+          of
+          <span class="font-medium">{{ totalEntries }}</span>
+          results
+        </p>
+      </div>
+      <div>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          <button
+            (click)="previousPage()"
+            [disabled]="currentPage === 1"
+            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            [class.opacity-50]="currentPage === 1"
+          >
+            <span class="sr-only">Previous</span>
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <!-- Page Numbers -->
+          <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+            <button
+              *ngIf="(i + 1 <= 3 || i + 1 >= totalPages - 2 || Math.abs(i + 1 - currentPage) <= 1) && totalPages > 1"
+              (click)="goToPage(i + 1)"
+              [class]="
+                i + 1 === currentPage
+                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium'
+                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium'
+              "
+            >
+              {{ i + 1 }}
+            </button>
+            <span
+              *ngIf="i + 1 === 4 && currentPage > 4 && totalPages > 7"
+              class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+            >
+              ...
+            </span>
+            <span
+              *ngIf="i + 1 === totalPages - 3 && currentPage < totalPages - 3 && totalPages > 7"
+              class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+            >
+              ...
+            </span>
+          </ng-container>
+
+          <button
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages"
+            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            [class.opacity-50]="currentPage === totalPages"
+          >
+            <span class="sr-only">Next</span>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>

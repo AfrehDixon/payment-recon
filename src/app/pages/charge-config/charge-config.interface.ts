@@ -40,5 +40,6 @@ export interface Tier {
     ERC20 = 'erc20',
     BANKTRF = 'banktrf',
     BANKTRFNRT = 'banktrfnrt',
-    MOMO = 'momo'
+    MOMO = 'momo',
+    BEP20 = 'bep20',
   }
