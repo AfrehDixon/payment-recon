@@ -277,7 +277,7 @@ interface CompleteResponse {
                     class="icon-btn"
                     (click)="openReverseModal(transaction)"
                     title="Reverse Transaction"
-                    [disabled]="transaction.status !== 'PAID'"
+                    [disabled]="transaction.status === 'FAILED' || transaction.status === 'INITIATED'"
                   >
                     <i class="fas fa-undo"></i>
                   </button>
@@ -292,7 +292,7 @@ interface CompleteResponse {
                     class="icon-btn"
                     (click)="completeTransaction(transaction)"
                     title="Complete Transaction"
-                    [disabled]="transaction.status === 'COMPLETED'"
+                    [disabled]="transaction.status === 'PAID' || transaction.status !== 'INITIATED'"
                   >
                     <i class="fas fa-check"></i>
                   </button>

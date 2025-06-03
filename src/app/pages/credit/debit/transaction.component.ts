@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http'; // Remove HttpClientModule
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
@@ -49,7 +49,7 @@ interface VerifyAccountResponse {
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule], // Removed HttpClientModule
   template: `
     <div class="min-h-screen p-6" style="margin-left: 200px;">
       <div class="max-w-7xl mx-auto space-y-6">
@@ -858,10 +858,6 @@ export class CreditDebitComponent implements OnInit {
     });
   }
 
-  private getHeaders(): HttpHeaders {
-    const token = this.store.selectSnapshot(AuthState.token);
-    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
-  }
 
   setActiveTab(tab: string) {
     this.activeTab = tab;
@@ -880,9 +876,7 @@ export class CreditDebitComponent implements OnInit {
   }
 
   fetchBanks() {
-    this.http.get<any>('https://doronpay.com/api/hub/banks/get', {
-      headers: this.getHeaders()
-    }).subscribe({
+    this.http.get<any>('https://doronpay.com/api/hub/banks/get').subscribe({
       next: (response) => {
         if (response.success) {
           this.banks = response.data;
@@ -897,9 +891,7 @@ export class CreditDebitComponent implements OnInit {
   }
 
   fetchMerchants() {
-    this.http.get<any>('https://doronpay.com/api/merchants/get', {
-      headers: this.getHeaders()
-    }).subscribe({
+    this.http.get<any>('https://doronpay.com/api/merchants/get').subscribe({
       next: (response) => {
         if (response.success) {
           this.merchants = response.data.filter((merchant: Merchant) => merchant.active);
@@ -959,9 +951,7 @@ export class CreditDebitComponent implements OnInit {
   fetchMerchantWallets(merchantId: string, formType: 'credit' | 'debit' | 'direct-credit' | 'direct-debit') {
     this.loadingWallets = true;
     
-    this.http.get<any>('https://doronpay.com/api/accounts/get', {
-      headers: this.getHeaders()
-    }).subscribe({
+    this.http.get<any>('https://doronpay.com/api/accounts/get').subscribe({
       next: (response) => {
         if (response.success) {
           // Filter wallets by merchant ID
@@ -1299,8 +1289,7 @@ export class CreditDebitComponent implements OnInit {
     try {
       return await this.http
         .get<VerifyAccountResponse>(
-          `https://doronpay.com/api/transactions/nec?number=${number}&bankCode=${bankCode}&account_type=${accountType}`,
-          { headers: this.getHeaders() }
+          `https://doronpay.com/api/transactions/nec?number=${number}&bankCode=${bankCode}&account_type=${accountType}`
         )
         .toPromise();
     } catch (error) {
@@ -1324,8 +1313,7 @@ export class CreditDebitComponent implements OnInit {
       const response = await this.http
         .put<any>(
           'https://doronpay.com/api/accounts/deposit',
-          this.creditForm.value,
-          { headers: this.getHeaders() }
+          this.creditForm.value
         )
         .toPromise();
       
@@ -1363,8 +1351,7 @@ export class CreditDebitComponent implements OnInit {
       const response = await this.http
         .put<any>(
           'https://doronpay.com/api/accounts/debit',
-          this.debitForm.value,
-          { headers: this.getHeaders() }
+          this.debitForm.value
         )
         .toPromise();
       
@@ -1414,8 +1401,7 @@ export class CreditDebitComponent implements OnInit {
       const response = await this.http
         .put<any>(
           'https://doronpay.com/api/accounts/deposit',
-          payload,
-          { headers: this.getHeaders() }
+          payload
         )
         .toPromise();
       
@@ -1461,8 +1447,7 @@ export class CreditDebitComponent implements OnInit {
       const response = await this.http
         .put<any>(
           'https://doronpay.com/api/accounts/debit',
-          payload,
-          { headers: this.getHeaders() }
+          payload
         )
         .toPromise();
       
