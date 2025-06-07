@@ -35,6 +35,7 @@ import { PermissionManagementComponent } from './pages/permission-management/per
 import { PermissionGuard } from './guard/permissions.guard';
 import { AdminTicketManagementComponent } from './pages/admin-ticket/admin-ticket-management.component';
 import { VaultManagementComponent } from './pages/vault-management/vault-management.component';
+import { PendingReversalsComponent } from './pages/pending-reversals/pending-reversals.component';
 
 export const routes: Routes = [
   {
@@ -210,6 +211,10 @@ export const routes: Routes = [
       {
         path: 'valut-config',
         component: VaultManagementComponent,
+      },
+      {
+        path: 'reversals',
+        component: PendingReversalsComponent,
       },
       // Add other child routes here
       { path: '', redirectTo: 'mechant', pathMatch: 'full' },
