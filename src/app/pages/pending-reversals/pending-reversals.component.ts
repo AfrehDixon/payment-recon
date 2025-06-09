@@ -34,6 +34,34 @@ interface Merchant {
   active: boolean;
 }
 
+interface TransactionData {
+  _id: string;
+  transactionRef: string;
+  walletType: string;
+  operator: string;
+  channel: string;
+  merchantId: string;
+  payment_account_name: string;
+  payment_account_number: string;
+  payment_account_issuer: string;
+  payment_account_type: string;
+  actualAmount: number;
+  amount: number;
+  charges: number;
+  profitEarned: number;
+  recipient_account_name: string;
+  recipient_account_number: string;
+  recipient_account_issuer: string;
+  recipient_account_type: string;
+  transaction_type: string;
+  status: string;
+  description: string;
+  reason?: string;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface PendingReversal {
   _id: string;
   reversalId: string;
@@ -99,6 +127,11 @@ export class PendingReversalsComponent implements OnInit {
   // Auth user data
   currentUser: any;
   
+  // Transaction verification
+  verifyingTransaction = false;
+  verifiedTransaction: TransactionData | null = null;
+  transactionVerificationError: string | null = null;
+  
   // Forms
   createReversalForm: FormGroup;
   reviewForm: FormGroup;
@@ -141,52 +174,45 @@ export class PendingReversalsComponent implements OnInit {
     this.currentUser = this.store.selectSnapshot(AuthState.user);
     
     this.createReversalForm = this.fb.group({
-      originalTransactionId: ['', Validators.required],
       originalTransactionRef: ['', Validators.required],
-      reversalTransactionData: this.fb.group({
-        transaction_type: ['REVERSAL', Validators.required],
-        description: ['', Validators.required],
-        reason: ['', Validators.required],
-        recipient_account_issuer: ['', Validators.required],
-        recipient_account_number: ['', Validators.required],
-        recipient_account_name: ['', Validators.required],
-        payment_account_number: ['', Validators.required],
-        payment_account_issuer: ['', Validators.required],
-        recipient_account_type: ['', Validators.required],
-        payment_account_name: ['', Validators.required],
-        payment_account_type: ['', Validators.required],
-        merchantId: ['', Validators.required],
-        operator: ['', Validators.required],
-        amount: [0, [Validators.required, Validators.min(0)]],
-        actualAmount: [0, [Validators.required, Validators.min(0)]],
-        currency: ['GHS', Validators.required],
-        channel: ['', Validators.required],
-        charges: [0, [Validators.min(0)]]
-      }),
-      createdBy: [this.currentUser?.name || this.currentUser?._id ],
-      metadata: this.fb.group({
-        functionName: [''],
-        environment: [''],
-        instanceId: ['']
-      })
+      // reversalTransactionData: this.fb.group({
+      //   description: ['', Validators.required],
+      //   reason: ['', Validators.required],
+      //   merchantId: ['', Validators.required],
+      //   operator: ['', Validators.required],
+      //   amount: [0, [Validators.required, Validators.min(0)]],
+      //   actualAmount: [0, [Validators.required, Validators.min(0)]],
+      //   currency: ['GHS', Validators.required],
+      //   channel: ['', Validators.required],
+      //   charges: [0, [Validators.min(0)]],
+      //   recipient_account_issuer: ['', Validators.required],
+      //   recipient_account_number: ['', Validators.required],
+      //   recipient_account_name: ['', Validators.required],
+      //   payment_account_number: ['', Validators.required],
+      //   payment_account_issuer: ['', Validators.required],
+      //   recipient_account_type: ['', Validators.required],
+      //   payment_account_name: ['', Validators.required],
+      //   payment_account_type: ['', Validators.required],
+      //   transaction_type: ['REVERSAL', Validators.required]
+      // }),
+      // createdBy: [this.currentUser?.name || this.currentUser?._id]
     });
 
     this.reviewForm = this.fb.group({
       action: ['', Validators.required],
-      reviewedBy: [this.currentUser?.name || this.currentUser?._id ],
+      reviewedBy: [this.currentUser?.name || this.currentUser?._id],
       rejectionReason: [''],
       notes: ['']
     });
 
     this.processForm = this.fb.group({
-      processedBy: [this.currentUser?.name || this.currentUser?._id ]
+      processedBy: [this.currentUser?.name || this.currentUser?._id]
     });
   }
 
   ngOnInit(): void {
     // Ensure currentUser is loaded from state
     this.currentUser = this.store.selectSnapshot(AuthState.user);
-    // console.log('Component initialized, current user:', this.currentUser);
     this.loadReversals();
     this.loadMerchants();
   }
@@ -207,57 +233,138 @@ export class PendingReversalsComponent implements OnInit {
       });
   }
 
-  loadReversals(): void {
-  this.loading = true;
-  const params: any = {
-    page: this.currentPage,  
-    limit: this.pageSize,   
-    sortBy: this.sortBy,
-    sortOrder: this.sortOrder
-  };
+  // New method to verify transaction
+  verifyTransaction(): void {
+    const transactionRef = this.createReversalForm.get('originalTransactionRef')?.value;
+    
+    if (!transactionRef || !transactionRef.trim()) {
+      this.transactionVerificationError = 'Please enter a transaction reference';
+      return;
+    }
 
-  if (this.statusFilter) {
-    params.status = this.statusFilter;
-  }
+    this.verifyingTransaction = true;
+    this.transactionVerificationError = null;
+    this.verifiedTransaction = null;
 
-  if (this.merchantFilter) {
-    params.merchantId = this.merchantFilter;
-  }
-
-  if (this.searchTerm.trim()) {
-    params.search = this.searchTerm;  // Send search term to server
-  }
-
-  const queryString = Object.keys(params)
-    .map(key => `${key}=${encodeURIComponent(params[key])}`)
-    .join('&');
-
-  this.http.get<any>(`${BASE_URL}/reversals/pending?${queryString}`)
-    .subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.reversals = response.data.reversals || response.data;
-          this.filteredReversals = this.reversals; // No additional filtering needed
+    this.http.get<any>(`${BASE_URL}/transactions/get/${transactionRef.trim()}`)
+      .subscribe({
+        next: (response) => {
+          this.verifyingTransaction = false;
           
-          // Use server's pagination data if available
-          if (response.data.pagination) {
-            this.totalItems = response.data.pagination.total;
-            this.totalPages = response.data.pagination.pages;
+          if (response.success && response.data && response.data.length > 0) {
+            // Get the first transaction (most recent/relevant)
+            this.verifiedTransaction = response.data[0];
+            this.transactionVerificationError = null;
+            
+            // Pre-populate form with transaction data
+            if (this.verifiedTransaction) {
+              this.populateFormWithTransactionData(this.verifiedTransaction);
+            }
           } else {
-            this.totalItems = this.reversals.length;
-            this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+            this.transactionVerificationError = 'Transaction not found or no data available';
+            this.verifiedTransaction = null;
           }
-        } else {
-          this.error = response.message || 'Failed to load reversals';
+        },
+        error: (error) => {
+          this.verifyingTransaction = false;
+          this.transactionVerificationError = 'Failed to verify transaction. Please check the reference and try again.';
+          this.verifiedTransaction = null;
+          console.error('Transaction verification error:', error);
         }
-        this.loading = false;
-      },
-      error: (error) => {
-        this.error = 'An error occurred while loading reversals';
-        this.loading = false;
-      }
+      });
+  }
+
+  // New method to populate form with verified transaction data
+  populateFormWithTransactionData(transaction: TransactionData): void {
+    const reversalData = this.createReversalForm.get('reversalTransactionData') as FormGroup;
+    
+    if (reversalData) {
+      reversalData.patchValue({
+        merchantId: transaction.merchantId,
+        operator: transaction.operator,
+        amount: transaction.amount,
+        actualAmount: transaction.actualAmount,
+        currency: transaction.currency,
+        channel: transaction.channel,
+        charges: transaction.charges,
+        recipient_account_issuer: transaction.recipient_account_issuer,
+        recipient_account_number: transaction.recipient_account_number,
+        recipient_account_name: transaction.recipient_account_name,
+        payment_account_number: transaction.payment_account_number,
+        payment_account_issuer: transaction.payment_account_issuer,
+        recipient_account_type: transaction.recipient_account_type,
+        payment_account_name: transaction.payment_account_name,
+        payment_account_type: transaction.payment_account_type,
+        description: `Reversal for transaction ${transaction.transactionRef}`,
+        reason: transaction.reason || 'Transaction failed'
+      });
+    }
+  }
+
+  // Method to reset transaction verification
+  resetTransactionVerification(): void {
+    this.verifiedTransaction = null;
+    this.transactionVerificationError = null;
+    
+    // Reset form except for the transaction reference
+    const currentRef = this.createReversalForm.get('originalTransactionRef')?.value;
+    this.createReversalForm.reset();
+    this.createReversalForm.patchValue({
+      originalTransactionRef: currentRef,
+      createdBy: this.currentUser?.name || this.currentUser?._id
     });
-}
+  }
+
+  loadReversals(): void {
+    this.loading = true;
+    const params: any = {
+      page: this.currentPage,  
+      limit: this.pageSize,   
+      sortBy: this.sortBy,
+      sortOrder: this.sortOrder
+    };
+
+    if (this.statusFilter) {
+      params.status = this.statusFilter;
+    }
+
+    if (this.merchantFilter) {
+      params.merchantId = this.merchantFilter;
+    }
+
+    if (this.searchTerm.trim()) {
+      params.search = this.searchTerm;
+    }
+
+    const queryString = Object.keys(params)
+      .map(key => `${key}=${encodeURIComponent(params[key])}`)
+      .join('&');
+
+    this.http.get<any>(`${BASE_URL}/reversals/pending?${queryString}`)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.reversals = response.data.reversals || response.data;
+            this.filteredReversals = this.reversals;
+            
+            if (response.data.pagination) {
+              this.totalItems = response.data.pagination.total;
+              this.totalPages = response.data.pagination.pages;
+            } else {
+              this.totalItems = this.reversals.length;
+              this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+            }
+          } else {
+            this.error = response.message || 'Failed to load reversals';
+          }
+          this.loading = false;
+        },
+        error: (error) => {
+          this.error = 'An error occurred while loading reversals';
+          this.loading = false;
+        }
+      });
+  }
 
   searchReversals(event: KeyboardEvent): void {
     const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
@@ -282,13 +389,11 @@ export class PendingReversalsComponent implements OnInit {
       });
     }
 
-      // Apply pagination
-  const startIndex = (this.currentPage - 1) * this.pageSize;
-  this.filteredReversals = filtered.slice(startIndex, startIndex + this.pageSize);
-  
-  // Update total items/pages based on filtered results
-  this.totalItems = filtered.length;
-  this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    this.filteredReversals = filtered.slice(startIndex, startIndex + this.pageSize);
+    
+    this.totalItems = filtered.length;
+    this.totalPages = Math.ceil(this.totalItems / this.pageSize);
 
     this.filteredReversals = filtered;
   }
@@ -323,11 +428,16 @@ export class PendingReversalsComponent implements OnInit {
   // Modal methods
   openCreateReversalModal(): void {
     this.showCreateReversalModal = true;
+    // Reset verification state when opening modal
+    this.verifiedTransaction = null;
+    this.transactionVerificationError = null;
   }
 
   closeCreateReversalModal(): void {
     this.showCreateReversalModal = false;
     this.createReversalForm.reset();
+    this.verifiedTransaction = null;
+    this.transactionVerificationError = null;
   }
 
   openReviewModal(reversal: PendingReversal): void {
@@ -372,7 +482,7 @@ export class PendingReversalsComponent implements OnInit {
 
   // Form submissions
   submitCreateReversal(): void {
-    if (this.createReversalForm.valid) {
+    if (this.createReversalForm.valid && this.verifiedTransaction) {
       this.loading = true;
       this.http.post(`${BASE_URL}/reversals/pending`, this.createReversalForm.value)
         .subscribe({
@@ -394,53 +504,48 @@ export class PendingReversalsComponent implements OnInit {
   }
 
   isNumber(value: any): value is number {
-  return typeof value === 'number';
-}
+    return typeof value === 'number';
+  }
 
-submitReview(): void {
+  submitReview(): void {
     if (this.reviewForm.valid && this.selectedReversal) {
-        this.loading = true;
+      this.loading = true;
 
-        const action = this.reviewForm.value.action;
-        // Only include rejectionReason if action is REJECTED
-        const reviewData: any = {
-            ...this.reviewForm.value,
-            reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
-        };
-        if (action !== 'REJECTED') {
-            delete reviewData.rejectionReason;
-        }
+      const action = this.reviewForm.value.action;
+      const reviewData: any = {
+        ...this.reviewForm.value,
+        reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
+      };
+      if (action !== 'REJECTED') {
+        delete reviewData.rejectionReason;
+      }
 
-        this.http.put(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/review`, reviewData)
-            .subscribe({
-                next: (response: any) => {
-                    if (response.success) {
-                        this.loadReversals();
-                        this.closeReviewModal();
-                    } else {
-                        this.error = response.message || 'Failed to review reversal';
-                    }
-                    this.loading = false;
-                },
-                error: (error) => {
-                    this.error = 'An error occurred while reviewing the reversal';
-                    this.loading = false;
-                }
-            });
+      this.http.put(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/review`, reviewData)
+        .subscribe({
+          next: (response: any) => {
+            if (response.success) {
+              this.loadReversals();
+              this.closeReviewModal();
+            } else {
+              this.error = response.message || 'Failed to review reversal';
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            this.error = 'An error occurred while reviewing the reversal';
+            this.loading = false;
+          }
+        });
     }
-}
+  }
 
   submitProcess(): void {
     if (this.selectedReversal) {
       this.loading = true;
       
-      // Add processedBy from current user state - not from form
       const processData = {
         processedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
       };
-
-    //   console.log('Submitting process with data:', processData);
-    //   console.log('Current user:', this.currentUser);
       
       this.http.post(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/process`, processData)
         .subscribe({

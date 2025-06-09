@@ -240,128 +240,248 @@
     <p>No reversals found. Click "Create Reversal" to add one.</p>
   </div>
 
-  <!-- Create Reversal Modal -->
-  <div class="modal" *ngIf="showCreateReversalModal">
-    <div class="modal-content large-modal">
-      <div class="modal-header">
-        <h2>Create New Reversal</h2>
-        <button class="close-btn" (click)="closeCreateReversalModal()">&times;</button>
+<!-- Create Reversal Modal -->
+<div class="modal" *ngIf="showCreateReversalModal">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2>Create New Reversal</h2>
+      <button class="close-btn" (click)="closeCreateReversalModal()">&times;</button>
+    </div>
+
+    <form [formGroup]="createReversalForm" (ngSubmit)="submitCreateReversal()">
+      <!-- Transaction Reference Section -->
+      <div class="form-section">
+        <h3>Transaction Reference</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="originalTransactionRef">Transaction Reference *</label>
+            <div class="input-with-button">
+              <input 
+                id="originalTransactionRef" 
+                formControlName="originalTransactionRef" 
+                placeholder="Enter transaction reference"
+                (input)="resetTransactionVerification()"
+              />
+              <button 
+                type="button" 
+                class="verify-btn"
+                (click)="verifyTransaction()"
+                [disabled]="verifyingTransaction || !createReversalForm.get('originalTransactionRef')?.value?.trim()"
+              >
+                <span *ngIf="!verifyingTransaction">Verify</span>
+                <span *ngIf="verifyingTransaction">
+                  <div class="mini-spinner"></div>
+                  Verifying...
+                </span>
+              </button>
+            </div>
+            
+            <!-- Verification Error -->
+            <div *ngIf="transactionVerificationError" class="verification-error">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              {{ transactionVerificationError }}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <form [formGroup]="createReversalForm" (ngSubmit)="submitCreateReversal()">
-        <div class="form-section">
-          <h3>Original Transaction</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="originalTransactionId">Transaction ID</label>
-              <input id="originalTransactionId" formControlName="originalTransactionId" placeholder="Original transaction ID" />
+      <!-- Transaction Verification Results -->
+      <div class="form-section" *ngIf="verifiedTransaction">
+        <h3>
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" class="success-icon">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <path d="M22 4L12 14.01l-3-3"/>
+          </svg>
+          Verified Transaction Details
+        </h3>
+        <div class="transaction-details">
+          <div class="details-grid">
+            <div class="detail-item">
+              <label>Transaction ID</label>
+              <span>{{ verifiedTransaction._id }}</span>
             </div>
-            <div class="form-group">
-              <label for="originalTransactionRef">Transaction Reference</label>
-              <input id="originalTransactionRef" formControlName="originalTransactionRef" placeholder="Original transaction reference" />
+            <div class="detail-item">
+              <label>Reference</label>
+              <span>{{ verifiedTransaction.transactionRef }}</span>
             </div>
-          </div>
-        </div>
-
-        <div class="form-section" formGroupName="reversalTransactionData">
-          <h3>Reversal Details</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="description">Description</label>
-              <input id="description" formControlName="description" placeholder="Reversal description" />
+            <div class="detail-item">
+              <label>Status</label>
+              <span [class]="'status-badge ' + getStatusClass(verifiedTransaction.status)">
+                {{ verifiedTransaction.status }}
+              </span>
             </div>
-            <div class="form-group">
-              <label for="reason">Reason</label>
-              <input id="reason" formControlName="reason" placeholder="Reason for reversal" />
+            <div class="detail-item">
+              <label>Type</label>
+              <span>{{ verifiedTransaction.transaction_type }}</span>
             </div>
-            <div class="form-group">
-              <label for="merchantId">Merchant</label>
-              <select id="merchantId" formControlName="merchantId" class="merchant-select">
-                <option value="">Select a merchant</option>
-                <option *ngFor="let merchant of merchants" [value]="merchant._id">
-                  {{ getMerchantDisplayName(merchant) }}
-                </option>
-              </select>
+            <div class="detail-item">
+              <label>Merchant</label>
+              <span>{{ getMerchantName(verifiedTransaction.merchantId) }}</span>
             </div>
-            <div class="form-group">
-              <label for="operator">Operator</label>
-              <select id="operator" formControlName="operator">
-                <option value="">Select operator</option>
-                <option *ngFor="let op of operators" [value]="op">{{ op }}</option>
-              </select>
+            <div class="detail-item">
+              <label>Amount</label>
+              <span class="amount-highlight">{{ formatCurrency(verifiedTransaction.amount, verifiedTransaction.currency) }}</span>
             </div>
-          </div>
-        </div>
-
-        <div class="form-section" formGroupName="reversalTransactionData">
-          <h3>Account Details</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="recipient_account_issuer">Recipient Account Issuer</label>
-              <input id="recipient_account_issuer" formControlName="recipient_account_issuer" placeholder="Recipient account issuer" />
+            <div class="detail-item">
+              <label>Actual Amount</label>
+              <span>{{ formatCurrency(verifiedTransaction.actualAmount, verifiedTransaction.currency) }}</span>
             </div>
-            <div class="form-group">
-              <label for="recipient_account_number">Recipient Account Number</label>
-              <input id="recipient_account_number" formControlName="recipient_account_number" placeholder="Recipient account number" />
+            <div class="detail-item">
+              <label>Charges</label>
+              <span>{{ formatCurrency(verifiedTransaction.charges, verifiedTransaction.currency) }}</span>
             </div>
-            <div class="form-group">
-              <label for="recipient_account_name">Recipient Account Name</label>
-              <input id="recipient_account_name" formControlName="recipient_account_name" placeholder="Recipient account name" />
+            <div class="detail-item">
+              <label>Operator</label>
+              <span>{{ verifiedTransaction.operator }}</span>
             </div>
-            <div class="form-group">
-              <label for="payment_account_number">Payment Account Number</label>
-              <input id="payment_account_number" formControlName="payment_account_number" placeholder="Payment account number" />
+            <div class="detail-item">
+              <label>Channel</label>
+              <span>{{ verifiedTransaction.channel }}</span>
             </div>
-            <div class="form-group">
-              <label for="payment_account_issuer">Payment Account Issuer</label>
-              <input id="payment_account_issuer" formControlName="payment_account_issuer" placeholder="Payment account issuer" />
+            <div class="detail-item">
+              <label>Recipient</label>
+              <span>{{ verifiedTransaction.recipient_account_name }} ({{ verifiedTransaction.recipient_account_number }})</span>
             </div>
-            <div class="form-group">
-              <label for="payment_account_name">Payment Account Name</label>
-              <input id="payment_account_name" formControlName="payment_account_name" placeholder="Payment account name" />
+            <div class="detail-item">
+              <label>Payment Account</label>
+              <span>{{ verifiedTransaction.payment_account_name }} ({{ verifiedTransaction.payment_account_number }})</span>
             </div>
-          </div>
-        </div>
-
-        <div class="form-section" formGroupName="reversalTransactionData">
-          <h3>Amount & Channel</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="amount">Amount</label>
-              <input id="amount" type="number" formControlName="amount" placeholder="Amount" />
+            <div class="detail-item">
+              <label>Date</label>
+              <span>{{ formatDate(verifiedTransaction.createdAt) }}</span>
             </div>
-            <div class="form-group">
-              <label for="actualAmount">Actual Amount</label>
-              <input id="actualAmount" type="number" formControlName="actualAmount" placeholder="Actual amount" />
+            <div class="detail-item full-width" *ngIf="verifiedTransaction.description">
+              <label>Description</label>
+              <span>{{ verifiedTransaction.description }}</span>
             </div>
-            <div class="form-group">
-              <label for="currency">Currency</label>
-              <select id="currency" formControlName="currency">
-                <option value="GHS">GHS</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="channel">Channel</label>
-              <input id="channel" formControlName="channel" placeholder="Channel" />
-            </div>
-            <div class="form-group">
-              <label for="charges">Charges</label>
-              <input id="charges" type="number" formControlName="charges" placeholder="Charges" />
+            <div class="detail-item full-width" *ngIf="verifiedTransaction.reason">
+              <label>Reason</label>
+              <span>{{ verifiedTransaction.reason }}</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="modal-actions">
-          <button type="button" class="cancel-btn" (click)="closeCreateReversalModal()">Cancel</button>
-          <button type="submit" class="submit-btn" [disabled]="!createReversalForm.valid || loading">
-            Create Reversal
-          </button>
+      <!-- Reversal Details Form - Only shown after verification -->
+      <!-- <div class="form-section" *ngIf="verifiedTransaction" formGroupName="reversalTransactionData">
+        <h3>Reversal Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="description">Description *</label>
+            <input id="description" formControlName="description" placeholder="Reversal description" />
+          </div>
+          <div class="form-group">
+            <label for="reason">Reason *</label>
+            <input id="reason" formControlName="reason" placeholder="Reason for reversal" />
+          </div>
+          <div class="form-group">
+            <label for="merchantId">Merchant *</label>
+            <select id="merchantId" formControlName="merchantId" class="merchant-select">
+              <option value="">Select a merchant</option>
+              <option *ngFor="let merchant of merchants" [value]="merchant._id">
+                {{ getMerchantDisplayName(merchant) }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="operator">Operator *</label>
+            <select id="operator" formControlName="operator">
+              <option value="">Select operator</option>
+              <option *ngFor="let op of operators" [value]="op">{{ op }}</option>
+            </select>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <div class="form-section" *ngIf="verifiedTransaction" formGroupName="reversalTransactionData">
+        <h3>Account Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="recipient_account_issuer">Recipient Account Issuer *</label>
+            <input id="recipient_account_issuer" formControlName="recipient_account_issuer" placeholder="Recipient account issuer" />
+          </div>
+          <div class="form-group">
+            <label for="recipient_account_number">Recipient Account Number *</label>
+            <input id="recipient_account_number" formControlName="recipient_account_number" placeholder="Recipient account number" />
+          </div>
+          <div class="form-group">
+            <label for="recipient_account_name">Recipient Account Name *</label>
+            <input id="recipient_account_name" formControlName="recipient_account_name" placeholder="Recipient account name" />
+          </div>
+          <div class="form-group">
+            <label for="payment_account_number">Payment Account Number *</label>
+            <input id="payment_account_number" formControlName="payment_account_number" placeholder="Payment account number" />
+          </div>
+          <div class="form-group">
+            <label for="payment_account_issuer">Payment Account Issuer *</label>
+            <input id="payment_account_issuer" formControlName="payment_account_issuer" placeholder="Payment account issuer" />
+          </div>
+          <div class="form-group">
+            <label for="payment_account_name">Payment Account Name *</label>
+            <input id="payment_account_name" formControlName="payment_account_name" placeholder="Payment account name" />
+          </div>
+          <div class="form-group">
+            <label for="recipient_account_type">Recipient Account Type *</label>
+            <input id="recipient_account_type" formControlName="recipient_account_type" placeholder="Recipient account type" />
+          </div>
+          <div class="form-group">
+            <label for="payment_account_type">Payment Account Type *</label>
+            <input id="payment_account_type" formControlName="payment_account_type" placeholder="Payment account type" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section" *ngIf="verifiedTransaction" formGroupName="reversalTransactionData">
+        <h3>Amount & Channel</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="amount">Amount *</label>
+            <input id="amount" type="number" formControlName="amount" placeholder="Amount" />
+          </div>
+          <div class="form-group">
+            <label for="actualAmount">Actual Amount *</label>
+            <input id="actualAmount" type="number" formControlName="actualAmount" placeholder="Actual amount" />
+          </div>
+          <div class="form-group">
+            <label for="currency">Currency *</label>
+            <select id="currency" formControlName="currency">
+              <option value="GHS">GHS</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="channel">Channel *</label>
+            <input id="channel" formControlName="channel" placeholder="Channel" />
+          </div>
+          <div class="form-group">
+            <label for="charges">Charges</label>
+            <input id="charges" type="number" formControlName="charges" placeholder="Charges" />
+          </div>
+        </div>
+      </div> -->
+
+      <div class="modal-actions">
+        <button type="button" class="cancel-btn" (click)="closeCreateReversalModal()">Cancel</button>
+        <button 
+          type="submit" 
+          class="submit-btn" 
+          [disabled]="!createReversalForm.valid || !verifiedTransaction || loading"
+        >
+          <span *ngIf="!loading">Create Reversal</span>
+          <span *ngIf="loading">
+            <div class="mini-spinner"></div>
+            Creating...
+          </span>
+        </button>
+      </div>
+    </form>
   </div>
+</div>
 
   <!-- Review Modal -->
   <div class="modal" *ngIf="showReviewModal">
