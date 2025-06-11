@@ -1290,3 +1290,39 @@
     color: #1e40af;
   }
 }
+
+.refresh-btn {
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #e0e7ef;
+    color: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    transform: none;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: inherit;
+  }
+}

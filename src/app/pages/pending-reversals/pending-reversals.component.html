@@ -42,6 +42,16 @@
         <div class="reversals-count" *ngIf="!loading">
           {{ filteredReversals.length }} reversal{{ filteredReversals.length !== 1 ? "s" : "" }}
         </div>
+        <button class="refresh-btn" (click)="loadReversals()" [disabled]="loading" title="Refresh">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+            <path d="M4 4v5h.582M20 20v-5h-.581M5.07 19A9 9 0 1 1 19 5.07" />
+          </svg>
+          <span *ngIf="!loading">Refresh</span>
+          <span *ngIf="loading">
+            <div class="mini-spinner"></div>
+            Loading...
+          </span>
+        </button>
       </div>
       
       <button class="add-reversal-btn" (click)="openCreateReversalModal()">
