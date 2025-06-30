@@ -40,6 +40,7 @@ enum EOperator {
   FAB = 'FAB',
   BTC = 'BTC',
   GIP = 'GIP',
+  WIGAL = "WIGAL",
 }
 
 interface ReportStats {
@@ -937,7 +938,7 @@ export class ReportsComponent implements OnInit {
         Type: tx.transaction_type,
         Status: tx.status,
         Operator: tx.operator,
-        'Partner Transaction ID': tx.callbackResponse.PartnerTransId,
+        'Partner Transaction ID': tx.callbackResponse?.PartnerTransId ?? '',
         'Account Issuer': tx.payment_account_issuer,
         'External Transaction ID': tx.externalTransactionId,
         Profit: tx.profitEarned,

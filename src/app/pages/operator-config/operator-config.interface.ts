@@ -43,6 +43,7 @@ export enum EOperator {
   FAB = "FAB",
   BTC = "BTC",
   BEP20 = "BEP20",
+  WIGAL = "WIGAL",
 }
 
 export enum EAccountIssuer {
