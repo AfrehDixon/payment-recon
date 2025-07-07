@@ -1326,3 +1326,272 @@
     color: inherit;
   }
 }
+
+// Bulk Actions Styles
+.bulk-actions-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+
+  .selection-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .selected-count {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .clear-selection-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+
+  .bulk-action-buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .bulk-approve-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+
+    &:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    &:disabled {
+      background: rgba(255, 255, 255, 0.3);
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+}
+
+// Bulk Progress Styles
+.bulk-progress {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 1.1rem;
+    }
+
+    .progress-text {
+      color: #666;
+      font-weight: 500;
+    }
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+  }
+}
+
+// // Checkbox Styles
+// .checkbox-column {
+//   width: 40px;
+//   text-align: center;
+// }
+
+// .checkbox-wrapper {
+//   position: relative;
+//   display: inline-block;
+//   cursor: pointer;
+
+//   input[type="checkbox"] {
+//     position: absolute;
+//     opacity: 0;
+//     cursor: pointer;
+//     height: 0;
+//     width: 0;
+
+//     &:checked ~ .checkmark {
+//       background-color: #7c3aed;
+//       border-color: #7c3aed;
+
+//       &:after {
+//         display: block;
+//       }
+//     }
+
+//     &:indeterminate ~ .checkmark {
+//       background-color: #7c3aed;
+//       border-color: #7c3aed;
+
+//       &:after {
+//         content: '';
+//         position: absolute;
+//         left: 50%;
+//         top: 50%;
+//         width: 8px;
+//         height: 2px;
+//         background: white;
+//         transform: translate(-50%, -50%);
+//         display: block;
+//       }
+//     }
+//   }
+
+//   .checkmark {
+//     position: relative;
+//     height: 18px;
+//     width: 18px;
+//     background-color: white;
+//     border: 2px solid #ddd;
+//     border-radius: 3px;
+//     transition: all 0.2s;
+
+//     &:after {
+//       content: "";
+//       position: absolute;
+//       display: none;
+//       left: 5px;
+//       top: 2px;
+//       width: 4px;
+//       height: 8px;
+//       border: solid white;
+//       border-width: 0 2px 2px 0;
+//       transform: rotate(45deg);
+//     }
+//   }
+
+//   &:hover input ~ .checkmark {
+//     border-color: #7c3aed;
+//     background-color: rgba(124, 58, 237, 0.1);
+//   }
+// }
+
+// Bulk Modal Styles
+.bulk-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+
+  p {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-weight: 500;
+  }
+
+  .selected-items-preview {
+    .selected-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .reversal-id {
+        font-family: monospace;
+        color: #666;
+      }
+
+      .amount {
+        font-weight: 600;
+        color: #2c3e50;
+      }
+    }
+
+    .more-items {
+      margin: 0.5rem 0 0 0;
+      color: #666;
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Responsive updates for checkboxes
+@media (max-width: 768px) {
+  .checkbox-column {
+    width: 30px;
+  }
+
+  .checkbox-wrapper .checkmark {
+    height: 16px;
+    width: 16px;
+
+    &:after {
+      left: 4px;
+      top: 1px;
+      width: 3px;
+      height: 7px;
+    }
+  }
+
+  .bulk-actions-bar {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+
+    .selection-info,
+    .bulk-action-buttons {
+      justify-content: center;
+    }
+  }
+}

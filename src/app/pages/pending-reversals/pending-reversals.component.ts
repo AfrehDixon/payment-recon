@@ -65,7 +65,9 @@ interface TransactionData {
 interface PendingReversal {
   _id: string;
   reversalId: string;
-  originalTransactionId: string;
+  originalTransactionId: {
+    reason: string;
+  };
   originalTransactionRef: string;
   status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'PROCESSED' | 'FAILED';
   reversalTransactionData: {
@@ -127,6 +129,14 @@ export class PendingReversalsComponent implements OnInit {
   // Auth user data
   currentUser: any;
   
+  // Bulk Selection
+  selectedReversals: Set<string> = new Set();
+  isAllSelected = false;
+  isBulkProcessing = false;
+  bulkProcessProgress = 0;
+  bulkProcessTotal = 0;
+  showBulkConfirm = false;
+  
   // Transaction verification
   verifyingTransaction = false;
   verifiedTransaction: TransactionData | null = null;
@@ -136,12 +146,14 @@ export class PendingReversalsComponent implements OnInit {
   createReversalForm: FormGroup;
   reviewForm: FormGroup;
   processForm: FormGroup;
+  bulkReviewForm: FormGroup;
   
   // Modal states
   showCreateReversalModal = false;
   showReviewModal = false;
   showProcessModal = false;
   showDetailsModal = false;
+  showBulkReviewModal = false;
   selectedReversal: PendingReversal | null = null;
   
   // Filters and search
@@ -175,27 +187,6 @@ export class PendingReversalsComponent implements OnInit {
     
     this.createReversalForm = this.fb.group({
       originalTransactionRef: ['', Validators.required],
-      // reversalTransactionData: this.fb.group({
-      //   description: ['', Validators.required],
-      //   reason: ['', Validators.required],
-      //   merchantId: ['', Validators.required],
-      //   operator: ['', Validators.required],
-      //   amount: [0, [Validators.required, Validators.min(0)]],
-      //   actualAmount: [0, [Validators.required, Validators.min(0)]],
-      //   currency: ['GHS', Validators.required],
-      //   channel: ['', Validators.required],
-      //   charges: [0, [Validators.min(0)]],
-      //   recipient_account_issuer: ['', Validators.required],
-      //   recipient_account_number: ['', Validators.required],
-      //   recipient_account_name: ['', Validators.required],
-      //   payment_account_number: ['', Validators.required],
-      //   payment_account_issuer: ['', Validators.required],
-      //   recipient_account_type: ['', Validators.required],
-      //   payment_account_name: ['', Validators.required],
-      //   payment_account_type: ['', Validators.required],
-      //   transaction_type: ['REVERSAL', Validators.required]
-      // }),
-      // createdBy: [this.currentUser?.name || this.currentUser?._id]
     });
 
     this.reviewForm = this.fb.group({
@@ -208,6 +199,12 @@ export class PendingReversalsComponent implements OnInit {
     this.processForm = this.fb.group({
       processedBy: [this.currentUser?.name || this.currentUser?._id]
     });
+
+    // Bulk review form
+    this.bulkReviewForm = this.fb.group({
+      action: ['APPROVE', Validators.required],
+      notes: ['']
+    });
   }
 
   ngOnInit(): void {
@@ -217,6 +214,151 @@ export class PendingReversalsComponent implements OnInit {
     this.loadMerchants();
   }
 
+  // Bulk Selection Methods
+  toggleSelectAll(): void {
+    if (this.isAllSelected) {
+      this.selectedReversals.clear();
+    } else {
+      this.getSelectableReversals().forEach(reversal => {
+        this.selectedReversals.add(reversal.reversalId);
+      });
+    }
+    this.updateSelectAllState();
+  }
+
+  toggleReversalSelection(reversalId: string): void {
+    if (this.selectedReversals.has(reversalId)) {
+      this.selectedReversals.delete(reversalId);
+    } else {
+      this.selectedReversals.add(reversalId);
+    }
+    this.updateSelectAllState();
+  }
+
+  updateSelectAllState(): void {
+    const selectableReversals = this.getSelectableReversals();
+    this.isAllSelected = selectableReversals.length > 0 && 
+      selectableReversals.every(reversal => this.selectedReversals.has(reversal.reversalId));
+  }
+
+  getSelectableReversals(): PendingReversal[] {
+    return this.filteredReversals.filter(reversal => this.canReview(reversal));
+  }
+
+  getSelectedReversalsCount(): number {
+    return this.selectedReversals.size;
+  }
+
+  getSelectedReversals(): PendingReversal[] {
+    return this.filteredReversals.filter(reversal => this.selectedReversals.has(reversal.reversalId));
+  }
+
+  isReversalSelected(reversalId: string): boolean {
+    return this.selectedReversals.has(reversalId);
+  }
+
+  clearSelection(): void {
+    this.selectedReversals.clear();
+    this.updateSelectAllState();
+  }
+
+  // Bulk Operations
+  openBulkReviewModal(): void {
+    if (this.selectedReversals.size === 0) return;
+    this.showBulkReviewModal = true;
+    this.bulkReviewForm.reset({
+      action: 'APPROVE',
+      notes: ''
+    });
+  }
+
+  closeBulkReviewModal(): void {
+    this.showBulkReviewModal = false;
+    this.bulkReviewForm.reset();
+  }
+
+  async submitBulkReview(): Promise<void> {
+    if (!this.bulkReviewForm.valid || this.selectedReversals.size === 0) return;
+
+    this.isBulkProcessing = true;
+    this.bulkProcessProgress = 0;
+    this.bulkProcessTotal = this.selectedReversals.size;
+    
+    const formValue = this.bulkReviewForm.value;
+    const selectedReversals = this.getSelectedReversals();
+    
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < selectedReversals.length; i++) {
+      const reversal = selectedReversals[i];
+      
+      try {
+        const reviewData = {
+          action: formValue.action,
+          reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER',
+          notes: formValue.notes
+        };
+
+        const response = await this.http.put<any>(
+          `${BASE_URL}/reversals/pending/${reversal.reversalId}/review`, 
+          reviewData
+        ).toPromise();
+
+        if (response.success) {
+          successCount++;
+          
+          // If approved, also process the reversal
+          if (formValue.action === 'APPROVE') {
+            try {
+              const processData = {
+                processedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
+              };
+              
+              await this.http.post<any>(
+                `${BASE_URL}/reversals/pending/${reversal.reversalId}/process`, 
+                processData
+              ).toPromise();
+            } catch (processError) {
+              console.error(`Failed to process reversal ${reversal.reversalId}:`, processError);
+              // Don't count this as an error since the approval succeeded
+            }
+          }
+        } else {
+          errorCount++;
+          errors.push(`${reversal.reversalId}: ${response.message || 'Unknown error'}`);
+        }
+      } catch (error: any) {
+        errorCount++;
+        errors.push(`${reversal.reversalId}: ${error.message || 'Network error'}`);
+      }
+
+      this.bulkProcessProgress = i + 1;
+    }
+
+    this.isBulkProcessing = false;
+    
+    // Show results
+    if (successCount > 0) {
+      const action = formValue.action === 'APPROVE' ? 'approved and processed' : 'reviewed';
+      alert(`Successfully ${action} ${successCount} reversal${successCount !== 1 ? 's' : ''}${errorCount > 0 ? `. ${errorCount} failed.` : '.'}`);
+    }
+    
+    if (errorCount > 0 && errors.length > 0) {
+      console.error('Bulk operation errors:', errors);
+      if (successCount === 0) {
+        this.error = `Failed to process reversals: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`;
+      }
+    }
+
+    // Refresh data and clear selection
+    this.loadReversals();
+    this.clearSelection();
+    this.closeBulkReviewModal();
+  }
+
+  // Existing methods remain the same...
   loadMerchants(): void {
     this.http.get<any>(`${BASE_URL}/merchants/get`)
       .subscribe({
@@ -233,7 +375,6 @@ export class PendingReversalsComponent implements OnInit {
       });
   }
 
-  // New method to verify transaction
   verifyTransaction(): void {
     const transactionRef = this.createReversalForm.get('originalTransactionRef')?.value;
     
@@ -252,11 +393,9 @@ export class PendingReversalsComponent implements OnInit {
           this.verifyingTransaction = false;
           
           if (response.success && response.data && response.data.length > 0) {
-            // Get the first transaction (most recent/relevant)
             this.verifiedTransaction = response.data[0];
             this.transactionVerificationError = null;
             
-            // Pre-populate form with transaction data
             if (this.verifiedTransaction) {
               this.populateFormWithTransactionData(this.verifiedTransaction);
             }
@@ -274,7 +413,6 @@ export class PendingReversalsComponent implements OnInit {
       });
   }
 
-  // New method to populate form with verified transaction data
   populateFormWithTransactionData(transaction: TransactionData): void {
     const reversalData = this.createReversalForm.get('reversalTransactionData') as FormGroup;
     
@@ -301,12 +439,10 @@ export class PendingReversalsComponent implements OnInit {
     }
   }
 
-  // Method to reset transaction verification
   resetTransactionVerification(): void {
     this.verifiedTransaction = null;
     this.transactionVerificationError = null;
     
-    // Reset form except for the transaction reference
     const currentRef = this.createReversalForm.get('originalTransactionRef')?.value;
     this.createReversalForm.reset();
     this.createReversalForm.patchValue({
@@ -354,6 +490,17 @@ export class PendingReversalsComponent implements OnInit {
               this.totalItems = this.reversals.length;
               this.totalPages = Math.ceil(this.totalItems / this.pageSize);
             }
+            
+            // Update selection state after loading
+            this.updateSelectAllState();
+            
+            // Clear invalid selections
+            const validIds = new Set(this.reversals.map(r => r.reversalId));
+            this.selectedReversals.forEach(id => {
+              if (!validIds.has(id)) {
+                this.selectedReversals.delete(id);
+              }
+            });
           } else {
             this.error = response.message || 'Failed to load reversals';
           }
@@ -366,6 +513,7 @@ export class PendingReversalsComponent implements OnInit {
       });
   }
 
+  // Rest of the existing methods remain unchanged...
   searchReversals(event: KeyboardEvent): void {
     const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
     this.searchTerm = searchTerm;
@@ -396,21 +544,25 @@ export class PendingReversalsComponent implements OnInit {
     this.totalPages = Math.ceil(this.totalItems / this.pageSize);
 
     this.filteredReversals = filtered;
+    this.updateSelectAllState();
   }
 
   onStatusFilterChange(): void {
     this.currentPage = 1;
+    this.clearSelection();
     this.loadReversals();
   }
 
   onMerchantFilterChange(): void {
     this.currentPage = 1;
+    this.clearSelection();
     this.loadReversals();
   }
 
   changePage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.clearSelection();
       this.loadReversals();
     }
   }
@@ -422,13 +574,13 @@ export class PendingReversalsComponent implements OnInit {
       this.sortBy = field;
       this.sortOrder = 'desc';
     }
+    this.clearSelection();
     this.loadReversals();
   }
 
   // Modal methods
   openCreateReversalModal(): void {
     this.showCreateReversalModal = true;
-    // Reset verification state when opening modal
     this.verifiedTransaction = null;
     this.transactionVerificationError = null;
   }
@@ -677,6 +829,7 @@ export class PendingReversalsComponent implements OnInit {
 
   onPageSizeChange(): void {
     this.currentPage = 1;
+    this.clearSelection();
     this.loadReversals();
   }
 }

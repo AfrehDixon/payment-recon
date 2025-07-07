@@ -702,46 +702,59 @@ export class ReportsComponent implements OnInit {
     this.filters.startDate = sevenDaysAgo.toISOString().split('T')[0];
   }
 
-  get filteredTransactions(): Transaction[] {
-    const filtered = this.transactions.filter((tx) => {
-      const phoneMatch =
-        !this.searchFilters.phone ||
-        tx.payment_account_number.includes(this.searchFilters.phone);
-      const refMatch =
-        !this.searchFilters.transactionRef ||
-        tx.transactionRef
-          .toLowerCase()
-          .includes(this.searchFilters.transactionRef.toLowerCase());
-      const nameMatch =
-        !this.searchFilters.customerName ||
-        tx.payment_account_name
-          .toLowerCase()
-          .includes(this.searchFilters.customerName.toLowerCase());
-
-      return phoneMatch && refMatch && nameMatch;
-    });
-
-    this._analytics = this.calculateAnalytics(filtered);
-    this.reportStats = {
-      count: this._analytics.totalCount,
-      amount: this._analytics.totalAmount,
-      actualAmount: this._analytics.netAmount,
-      charges: this._analytics.charges,
-    };
-
-    return filtered;
+get filteredTransactions(): Transaction[] {
+  let filtered = this.transactions;
+  
+  // Apply merchant filter first if set
+  if (this.filters.merchantId) {
+    filtered = filtered.filter(tx => tx.merchantId?._id === this.filters.merchantId);
   }
+  
+  // Then apply other search filters
+  filtered = filtered.filter((tx) => {
+    const phoneMatch =
+      !this.searchFilters.phone ||
+      tx.payment_account_number.includes(this.searchFilters.phone);
+    const refMatch =
+      !this.searchFilters.transactionRef ||
+      tx.transactionRef
+        .toLowerCase()
+        .includes(this.searchFilters.transactionRef.toLowerCase());
+    const nameMatch =
+      !this.searchFilters.customerName ||
+      tx.payment_account_name
+        .toLowerCase()
+        .includes(this.searchFilters.customerName.toLowerCase());
+
+    return phoneMatch && refMatch && nameMatch;
+  });
+
+  this._analytics = this.calculateAnalytics(filtered);
+  this.reportStats = {
+    count: this._analytics.totalCount,
+    amount: this._analytics.totalAmount,
+    actualAmount: this._analytics.netAmount,
+    charges: this._analytics.charges,
+  };
+
+  return filtered;
+}
 
   get analytics(): AnalyticsStats {
     return this._analytics;
   }
 
-  calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
+calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
+    // Filter transactions by merchantId if it's set in filters
+    const filteredTransactions = this.filters.merchantId 
+        ? transactions.filter(tx => tx.merchantId?._id === this.filters.merchantId)
+        : transactions;
+
     const currentDate = new Date();
     const lastMonthStart = new Date();
     lastMonthStart.setMonth(currentDate.getMonth() - 1);
 
-    const lastMonthTransactions = this.transactions.filter((tx) => {
+    const lastMonthTransactions = filteredTransactions.filter((tx) => {
       const txDate = new Date(tx.createdAt);
       return (
         txDate >= lastMonthStart && txDate < new Date(this.filters.startDate)
@@ -749,13 +762,13 @@ export class ReportsComponent implements OnInit {
     });
 
     const currentStats = {
-      totalCount: transactions.length,
-      successfulCount: transactions.filter((tx) => tx.status === 'PAID').length,
-      failedCount: transactions.filter((tx) => tx.status === 'FAILED').length,
-      pendingCount: transactions.filter((tx) => tx.status === 'PENDING').length,
-      totalAmount: transactions.reduce((sum, tx) => sum + tx.amount, 0),
-      netAmount: transactions.reduce((sum, tx) => sum + tx.actualAmount, 0),
-      charges: transactions.reduce((sum, tx) => sum + tx.charges, 0),
+      totalCount: filteredTransactions.length,
+      successfulCount: filteredTransactions.filter((tx) => tx.status === 'PAID').length,
+      failedCount: filteredTransactions.filter((tx) => tx.status === 'FAILED').length,
+      pendingCount: filteredTransactions.filter((tx) => tx.status === 'PENDING').length,
+      totalAmount: filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0),
+      netAmount: filteredTransactions.reduce((sum, tx) => sum + tx.actualAmount, 0),
+      charges: filteredTransactions.reduce((sum, tx) => sum + tx.charges, 0),
     };
 
     const lastMonthTotalCount = lastMonthTransactions.length;

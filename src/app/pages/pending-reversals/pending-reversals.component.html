@@ -1,12 +1,41 @@
-
-
 <div class="pending-reversals-container">
   <!-- Header -->
   <div class="header">
     <div class="header-content">
       <h1>Pending Reversals</h1>
       
+      <!-- Bulk Actions Bar - Only show when items are selected -->
+      <div class="bulk-actions-bar" *ngIf="selectedReversals.size > 0">
+        <div class="selection-info">
+          <span class="selected-count">{{ selectedReversals.size }} item{{ selectedReversals.size !== 1 ? 's' : '' }} selected</span>
+          <button class="clear-selection-btn" (click)="clearSelection()" title="Clear Selection">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Clear
+          </button>
+        </div>
+        
+        <div class="bulk-action-buttons">
+          <button 
+            class="bulk-approve-btn" 
+            (click)="openBulkReviewModal()"
+            [disabled]="isBulkProcessing"
+            title="Approve and Process Selected"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+              <path d="M22 4L12 14.01l-3-3"/>
+            </svg>
+            Bulk Approve & Process
+          </button>
+        </div>
+      </div>
+
+      <!-- Search and Filter Section -->
       <div class="search-section">
+        <!-- Existing search and filter controls remain the same -->
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
             <circle cx="11" cy="11" r="8" />
@@ -63,6 +92,17 @@
     </div>
   </div>
 
+  <!-- Bulk Processing Progress -->
+  <div *ngIf="isBulkProcessing" class="bulk-progress">
+    <div class="progress-header">
+      <h3>Processing Reversals...</h3>
+      <span class="progress-text">{{ bulkProcessProgress }} of {{ bulkProcessTotal }}</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="(bulkProcessProgress / bulkProcessTotal) * 100"></div>
+    </div>
+  </div>
+
   <!-- Error Message -->
   <div *ngIf="error" class="error-message">
     {{ error }}
@@ -80,6 +120,19 @@
     <table class="reversals-table">
       <thead>
         <tr>
+          <!-- Select All Checkbox -->
+          <th class="checkbox-column">
+            <label class="checkbox-wrapper">
+              <input 
+                type="checkbox" 
+                [checked]="isAllSelected"
+                [indeterminate]="selectedReversals.size > 0 && !isAllSelected"
+                (change)="toggleSelectAll()"
+                [disabled]="getSelectableReversals().length === 0"
+              />
+              <span class="checkmark"></span>
+            </label>
+          </th>
           <th (click)="changeSort('reversalId')" class="sortable">
             Reversal ID
             <span class="sort-indicator" *ngIf="sortBy === 'reversalId'">
@@ -119,6 +172,17 @@
       </thead>
       <tbody>
         <tr *ngFor="let reversal of filteredReversals" class="table-row">
+          <!-- Individual Row Checkbox -->
+          <td class="checkbox-column">
+            <label class="checkbox-wrapper" *ngIf="canReview(reversal)">
+              <input 
+                type="checkbox" 
+                [checked]="isReversalSelected(reversal.reversalId)"
+                (change)="toggleReversalSelection(reversal.reversalId)"
+              />
+              <span class="checkmark"></span>
+            </label>
+          </td>
           <td class="reversal-id">{{ reversal.reversalId }}</td>
           <td class="transaction-ref">{{ reversal.originalTransactionRef }}</td>
           <td class="merchant-name">{{ getMerchantName(reversal.reversalTransactionData.merchantId) }}</td>
@@ -493,6 +557,71 @@
   </div>
 </div>
 
+<!-- Bulk Review Modal -->
+  <div class="modal" *ngIf="showBulkReviewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Bulk Review Reversals</h2>
+        <button class="close-btn" (click)="closeBulkReviewModal()">&times;</button>
+      </div>
+
+      <div class="bulk-summary">
+        <p><strong>{{ selectedReversals.size }}</strong> reversal{{ selectedReversals.size !== 1 ? 's' : '' }} selected for bulk processing</p>
+        <div class="selected-items-preview">
+          <div *ngFor="let reversal of getSelectedReversals().slice(0, 5)" class="selected-item">
+            <span class="reversal-id">{{ reversal.reversalId }}</span>
+            <span class="amount">{{ formatCurrency(reversal.reversalTransactionData.amount, reversal.reversalTransactionData.currency) }}</span>
+          </div>
+          <p *ngIf="selectedReversals.size > 5" class="more-items">
+            + {{ selectedReversals.size - 5 }} more items...
+          </p>
+        </div>
+      </div>
+
+      <form [formGroup]="bulkReviewForm" (ngSubmit)="submitBulkReview()">
+        <div class="form-group">
+          <label for="bulkAction">Action</label>
+          <select id="bulkAction" formControlName="action">
+            <option value="APPROVE">Approve & Process All</option>
+            <option value="REJECT">Reject All</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="bulkNotes">Notes (Optional)</label>
+          <textarea id="bulkNotes" formControlName="notes" placeholder="Add notes for all selected reversals" rows="3"></textarea>
+        </div>
+
+        <div class="warning-section">
+          <p><strong>Warning:</strong> This action will {{ bulkReviewForm.get('action')?.value === 'APPROVE' ? 'approve and process' : 'reject' }} all selected reversals and cannot be undone.</p>
+        </div>
+
+        <div class="user-info">
+          <p><strong>Processing as:</strong> {{ currentUser?.name || currentUser?._id || 'Unknown User' }}</p>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-btn" (click)="closeBulkReviewModal()">Cancel</button>
+          <button 
+            type="submit" 
+            class="submit-btn" 
+            [class.process-btn]="bulkReviewForm.get('action')?.value === 'APPROVE'"
+            [disabled]="!bulkReviewForm.valid || isBulkProcessing"
+          >
+            <span *ngIf="!isBulkProcessing">
+              {{ bulkReviewForm.get('action')?.value === 'APPROVE' ? 'Approve & Process All' : 'Reject All' }}
+            </span>
+            <span *ngIf="isBulkProcessing">
+              <div class="mini-spinner"></div>
+              Processing...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
   <!-- Review Modal -->
   <div class="modal" *ngIf="showReviewModal">
     <div class="modal-content">
@@ -516,7 +645,7 @@
         </div>
         <div class="info-row">
           <span class="label">Reason:</span>
-          <span class="value">{{ selectedReversal.reversalTransactionData.reason }}</span>
+          <span class="value">{{ selectedReversal.originalTransactionId.reason }}</span>
         </div>
       </div>
 
@@ -676,7 +805,7 @@
           <div class="text-details">
             <div class="text-item">
               <label>Reason</label>
-              <p>{{ selectedReversal.reversalTransactionData.reason }}</p>
+              <p>{{ selectedReversal.originalTransactionId.reason }}</p>
             </div>
             <div class="text-item">
               <label>Description</label>
