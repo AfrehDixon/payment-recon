@@ -668,8 +668,15 @@ export class PendingReversalsComponent implements OnInit {
         ...this.reviewForm.value,
         reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
       };
-      if (action !== 'REJECTED') {
+      // Ensure rejectionReason is included only when action is 'REJECT'
+      if (action !== 'REJECT') {
         delete reviewData.rejectionReason;
+      } else {
+        reviewData.rejectionReason = this.reviewForm.value.rejectionReason;
+      }
+      // Only include notes if not empty or whitespace
+      if (!this.reviewForm.value.notes || !this.reviewForm.value.notes.trim()) {
+        delete reviewData.notes;
       }
 
       this.http.put(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/review`, reviewData)
