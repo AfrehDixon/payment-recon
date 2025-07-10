@@ -208,8 +208,16 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   margin-bottom: 1rem;
+  width: 100%;
+
+  // Ensure horizontal scroll on small screens
+  @media (max-width: 1024px) {
+    min-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .reversals-table {
