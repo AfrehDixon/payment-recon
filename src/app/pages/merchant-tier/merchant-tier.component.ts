@@ -15,7 +15,6 @@ import { AdminService } from "../../service/admin.service";
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        HttpClientModule,
         RouterModule
     ],
     templateUrl: './merchant-tier.component.html',

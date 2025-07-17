@@ -26,7 +26,7 @@ interface ApiResponse {
   selector: 'app-payment-links',
   templateUrl: './payment-links.component.html',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule],
   styleUrls: ['./payment-links.component.scss'],
 })
 export class PaymentLinksComponent implements OnInit {

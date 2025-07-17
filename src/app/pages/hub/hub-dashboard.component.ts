@@ -62,7 +62,7 @@ interface WalletAccount {
 @Component({
   selector: 'app-hub-dashboard',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, AsyncPipe, NgxsModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, AsyncPipe, NgxsModule, FormsModule, ReactiveFormsModule],
   templateUrl: './hub-dashboard.component.html',
   styleUrls: ['./hub-dashboard.component.scss']
 })
@@ -334,7 +334,6 @@ export class HubDashboardComponent implements OnInit {
       }
     };
 
-    // Remove the operations FormArray from the payload since we're handling it separately
     delete payload.data.operations;
     payload.data.operations = selectedOperations;
 

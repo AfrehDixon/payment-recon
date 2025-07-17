@@ -27,7 +27,6 @@ interface PaginatedResponse {
   standalone: true,
   imports: [
     CommonModule,
-    HttpClientModule,
     ReactiveFormsModule
   ],
   templateUrl: './permission-management.component.html',

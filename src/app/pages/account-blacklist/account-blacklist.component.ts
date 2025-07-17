@@ -47,7 +47,7 @@ export enum EAccountIssuer {
   selector: 'app-account-blacklist',
   templateUrl: './account-blacklist.component.html',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   styleUrls: ['./account-blacklist.component.scss']
 })
 export class AccountBlacklistComponent implements OnInit {
@@ -91,15 +91,13 @@ export class AccountBlacklistComponent implements OnInit {
     this.isLoading = false;
   }
 
-  // Since the GET /account endpoint requires accountNumber, 
-  // we need to use a different endpoint or approach to get all accounts
+
   fetchAllBlacklistedAccounts(): void {
     this.isLoading = true;
     
-    // Option 1: Use a dedicated endpoint for getting all accounts
     this.http
       .get<ApiResponse>(
-        'https://doronpay.com/api/blacklist/accounts/all',  // This would be a custom endpoint that returns all accounts
+        'https://doronpay.com/api/blacklist/accounts/all',  
         { headers: this.getHeaders() }
       )
       .subscribe({
@@ -118,8 +116,6 @@ export class AccountBlacklistComponent implements OnInit {
         },
       });
       
-    // Option 2: If there's no dedicated endpoint, you might need to discuss with the backend team
-    // to create one, or modify the existing endpoint to accept optional parameters
   }
 
   private getHeaders(): HttpHeaders {

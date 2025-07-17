@@ -12,7 +12,6 @@ import { of } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule,
-    HttpClientModule,
     ReactiveFormsModule
   ],
   templateUrl: './system-settings.component.html',

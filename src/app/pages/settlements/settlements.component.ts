@@ -39,7 +39,7 @@ interface Merchant {
 @Component({
   selector: 'app-settlements',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
     <div class="min-h-screen p-6" style="margin-left: 200px;">
       <div class="max-w-7xl mx-auto space-y-6">
