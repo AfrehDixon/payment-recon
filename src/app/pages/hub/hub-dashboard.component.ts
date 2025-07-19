@@ -86,7 +86,7 @@ export class HubDashboardComponent implements OnInit {
   filteredApps: App[] = [];
 
   // Available operations from backend
-  availableOperations = ['DEBIT', 'CREDIT', 'CHECKOUT', 'TRANSFER'];
+  availableOperations = ['DEBIT', 'CREDIT', 'CHECKOUT', 'TRANSFER', 'BALANCE'];
 
   constructor(
     private http: HttpClient,

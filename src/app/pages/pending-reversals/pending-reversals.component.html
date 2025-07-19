@@ -159,7 +159,7 @@
             </span>
           </th>
           <th>Reason</th>
-          <th>Channel</th>
+          <th>Operator</th>
           <th (click)="changeSort('createdAt')" class="sortable">
             Created
             <span class="sort-indicator" *ngIf="sortBy === 'createdAt'">
@@ -192,8 +192,8 @@
             </span>
           </td>
           <td class="amount">{{ formatCurrency(reversal.reversalTransactionData.amount, reversal.reversalTransactionData.currency) }}</td>
-          <td class="reason">{{ reversal.reversalTransactionData.reason }}</td>
-          <td class="channel">{{ reversal.reversalTransactionData.channel }}</td>
+          <td class="reason">{{ reversal.originalTransactionId.reason }}</td>
+          <td class="channel">{{ reversal.reversalTransactionData.operator }}</td>
           <td class="date">{{ formatDate(reversal.createdAt) }}</td>
           <td class="reviewed-by">{{ reversal.reviewedBy || '-' }}</td>
           <td class="actions">
