@@ -28,9 +28,12 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, Observable, of } from 'rxjs';
 import { PermissionService } from '../../service/permissions.service';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Store } from '@ngxs/store';
+import { AuthState } from '../../state/apps/app.states';
 
 interface DialogData {
   title: string;
@@ -133,7 +136,9 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     private adminService: AdminService,
     private fb: FormBuilder,
     private permissionService: PermissionService,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    private http: HttpClient, 
+    private store: Store
   ) {
     this.initializeForm();
   }
@@ -199,14 +204,19 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
+    private getHeaders(): HttpHeaders {
+    const token = this.store.selectSnapshot(AuthState.token);
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
+
   loadInitialData() {
     this.isLoading = true;
 
     // Use forkJoin to make parallel requests for admins, permissions, and merchants
     forkJoin({
-      admins: this.adminService.getAdmins(),
-      permissions: this.adminService.getPermissions(),
-      merchants: this.adminService.getMerchantsNew(),
+      admins: this.loadAdminsDirectly(),
+      permissions: this.loadPermissionsDirectly(),
+      merchants: this.loadMerchantsDirectly(),
     }).subscribe({
       next: (results) => {
         if (results.admins.success) {
@@ -280,15 +290,50 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
     });
   }
 
+ private loadAdminsDirectly(): Observable<any> {
+    return this.http.get<any>('https://doronpay.com/api/admin/get', {
+      headers: this.getHeaders()
+    }).pipe(
+      catchError((err) => {
+        console.error('Error loading admins:', err);
+        return of({ success: false, data: [] });
+      })
+    );
+  }
+
+  private loadPermissionsDirectly(): Observable<any> {
+    return this.http.get<any>('https://doronpay.com/api/merchants/permissions/get', {
+      headers: this.getHeaders()
+    }).pipe(
+      catchError((err) => {
+        console.error('Error loading permissions:', err);
+        return of({ success: false, data: [] });
+      })
+    );
+  }
+
+  private loadMerchantsDirectly(): Observable<any> {
+    return this.http.get<any>('https://doronpay.com/api/merchants/get', {
+      headers: this.getHeaders()
+    }).pipe(
+      catchError((err) => {
+        console.error('Error loading merchants:', err);
+        return of({ success: false, data: [] });
+      })
+    );
+  }
+
+  // Replace loadAdmins method
   loadAdmins() {
     this.isLoading = true;
-    this.adminService.getAdmins().subscribe({
+    
+    this.http.get<any>('https://doronpay.com/api/admin/get', {
+      headers: this.getHeaders()
+    }).subscribe({
       next: (response) => {
-        if (response.success) {
+        if (response?.success) {
           this.admins = response.data;
           this.dataSource.data = this.admins;
-
-          // Re-connect paginator and sort after data is loaded
           setTimeout(() => this.connectPaginatorAndSort());
         }
         this.isLoading = false;
@@ -299,6 +344,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
       },
     });
   }
+
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;

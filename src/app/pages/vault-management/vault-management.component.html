@@ -1,8 +1,15 @@
 <div class="vault-container">
   <!-- Header with Actions -->
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Private Key Vault Management</h1>
+    <h1 class="text-2xl font-bold text-gray-900">Encryption Vault Management</h1>
     <div class="flex space-x-3">
+      <button
+        (click)="showCreatePanel = true"
+        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+      >
+        <i class="fas fa-plus"></i>
+        <span>Add Entry</span>
+      </button>
       <button
         (click)="toggleStatistics()"
         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
@@ -12,7 +19,7 @@
       </button>
       <button
         (click)="showActionsPanel = !showActionsPanel"
-        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center space-x-2"
       >
         <i class="fas fa-cogs"></i>
         <span>Actions</span>
@@ -28,8 +35,111 @@
     </div>
   </div>
 
+  <!-- Create Entry Panel -->
+  <div *ngIf="showCreatePanel" class="overlay">
+    <div class="dialog bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+      <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-xl font-semibold text-gray-800">Create New Vault Entry</h2>
+        <button
+          (click)="showCreatePanel = false"
+          class="text-gray-500 hover:text-gray-700"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="createForm" (ngSubmit)="createEntry()" class="p-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Identifier *</label>
+            <input
+              type="text"
+              formControlName="identifier"
+              placeholder="Unique identifier (e.g., wallet address, user ID)"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Data *</label>
+            <textarea
+              formControlName="data"
+              placeholder="Private key or mnemonic phrase"
+              rows="3"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            ></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Type *</label>
+            <select
+              formControlName="type"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option *ngFor="let option of typeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Network</label>
+            <select
+              formControlName="network"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select Network (Optional)</option>
+              <option *ngFor="let option of networkOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Expires At</label>
+            <input
+              type="datetime-local"
+              formControlName="expiresAt"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Metadata (JSON)</label>
+            <textarea
+              formControlName="metadata"
+              placeholder='{"key": "value"}'
+              rows="2"
+              class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 mt-6">
+          <button
+            type="button"
+            (click)="showCreatePanel = false"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="actionLoading.create"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+          >
+            <span *ngIf="actionLoading.create" class="animate-spin">⌛</span>
+            <span>{{ actionLoading.create ? 'Creating...' : 'Create Entry' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Statistics Panel -->
-  <div *ngIf="showStatistics" class="bg-white rounded-lg shadow mb-6 p-4">
+  <div *ngIf="showStatistics" class="bg-white rounded-lg mb-6 p-4">
     <h2 class="text-lg font-semibold text-gray-800 mb-4">Vault Statistics</h2>
     
     <!-- Loading State -->
@@ -103,14 +213,17 @@
             <span class="text-sm text-gray-600">{{ getNetworkIcon(item.key) }} {{ item.key }}</span>
             <span class="text-sm font-medium text-gray-900">{{ item.value | number }}</span>
           </div>
+          <div *ngIf="(statistics.networkBreakdown | keyvalue).length === 0" class="text-sm text-gray-500">
+            No network data available
+          </div>
         </div>
       </div>
       
       <div class="bg-gray-50 p-4 rounded-lg">
-        <h3 class="text-md font-medium text-gray-800 mb-3">Purpose Distribution</h3>
+        <h3 class="text-md font-medium text-gray-800 mb-3">Type Distribution</h3>
         <div class="space-y-2">
-          <div *ngFor="let item of statistics.purposeBreakdown | keyvalue" class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">{{ getPurposeIcon(item.key) }} {{ item.key | titlecase }}</span>
+          <div *ngFor="let item of statistics.typeBreakdown | keyvalue" class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">{{ getTypeIcon(item.key) }} {{ item.key | titlecase }}</span>
             <span class="text-sm font-medium text-gray-900">{{ item.value | number }}</span>
           </div>
         </div>
@@ -120,7 +233,7 @@
 
   <!-- Actions Panel Overlay -->
   <div *ngIf="showActionsPanel" class="overlay">
-    <div class="dialog bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+    <div class="dialog bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
       <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white z-10">
         <h2 class="text-xl font-semibold text-gray-800">Vault Management Actions</h2>
         <button
@@ -158,7 +271,7 @@
               <div class="text-3xl">💾</div>
               <div class="flex-1">
                 <h3 class="text-lg font-medium text-gray-900">Create Backup</h3>
-                <p class="text-sm text-gray-600 mt-1">Create a backup of vault metadata (private keys are not included in the backup).</p>
+                <p class="text-sm text-gray-600 mt-1">Create a backup of vault metadata (encrypted data is not included in the backup).</p>
                 <button
                   (click)="createBackup()"
                   [disabled]="actionLoading.backup"
@@ -176,7 +289,7 @@
   </div>
 
   <!-- Filters Section -->
-  <div class="bg-white rounded-lg shadow mb-6 p-4">
+  <div class="bg-white rounded-lg mb-6 p-4">
     <form [formGroup]="filterForm" class="space-y-4">
       <!-- Search Bar -->
       <div class="flex space-x-4">
@@ -219,11 +332,11 @@
         </select>
 
         <select
-          formControlName="purpose"
+          formControlName="type"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="">All Purposes</option>
-          <option *ngFor="let option of purposeOptions" [value]="option.value">
+          <option value="">All Types</option>
+          <option *ngFor="let option of typeOptions" [value]="option.value">
             {{ option.label }}
           </option>
         </select>
@@ -237,22 +350,19 @@
   </div>
 
   <!-- Entries Table -->
-  <div *ngIf="!(loading$ | async)" class="bg-white rounded-lg shadow overflow-hidden">
+  <div *ngIf="!(loading$ | async)" class="bg-white rounded-lg overflow-hidden">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Transaction ID
+              Identifier
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Address
+              Type
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Network
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Purpose
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
@@ -264,27 +374,28 @@
               Created
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Last Accessed
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let entry of paginatedEntries; trackBy: trackByTransactionId" class="hover:bg-gray-50">
+          <tr *ngFor="let entry of paginatedEntries; trackBy: trackByIdentifier" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-              {{ entry.transactionId }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-              {{ formatAddress(entry.address) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              <span class="inline-flex items-center">
-                {{ getNetworkIcon(entry.network) }} {{ entry.network }}
-              </span>
+              {{ formatIdentifier(entry.identifier) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {{ getPurposeIcon(entry.purpose) }} {{ entry.purpose | titlecase }}
+                {{ getTypeIcon(entry.type) }} {{ entry.type | titlecase }}
               </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <span *ngIf="entry.network" class="inline-flex items-center">
+                {{ getNetworkIcon(entry.network) }} {{ entry.network }}
+              </span>
+              <span *ngIf="!entry.network" class="text-gray-400">-</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span 
@@ -300,6 +411,9 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ formatDate(entry.createdAt) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ entry.lastAccessedAt ? formatDate(entry.lastAccessedAt) : 'Never' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <button
@@ -318,9 +432,9 @@
 
     <!-- Empty State -->
     <div *ngIf="vaultEntries.length === 0" class="text-center py-12">
-      <div class="text-6xl mb-4">📭</div>
+      <div class="text-6xl mb-4">🔒</div>
       <h3 class="text-lg font-medium text-gray-900 mb-2">No vault entries found</h3>
-      <p class="text-gray-500">Try adjusting your filters or check back later.</p>
+      <p class="text-gray-500">Create your first encrypted vault entry to get started.</p>
     </div>
   </div>
 
@@ -358,7 +472,7 @@
         </p>
       </div>
       <div>
-        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+        <nav class="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
           <button
             (click)="previousPage()"
             [disabled]="currentPage === 1"

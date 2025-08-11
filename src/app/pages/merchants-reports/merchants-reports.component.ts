@@ -40,7 +40,7 @@ enum EOperator {
   FAB = 'FAB',
   BTC = 'BTC',
   GIP = 'GIP',
-  WIGAL = "WIGAL",
+  WIGAL = 'WIGAL',
 }
 
 interface ReportStats {
@@ -54,6 +54,10 @@ interface Transaction {
   _id: string;
   payment_account_name: string;
   payment_account_number: string;
+  recipient_account_name: string;
+  recipient_account_number: string;
+  recipient_account_issuer: string;
+  recipient_account_type: string;
   payment_account_issuer: string;
   payment_account_type: string;
   actualAmount: number;
@@ -75,8 +79,8 @@ interface Transaction {
   externalTransactionId: string;
   profitEarned: number;
   callbackResponse: {
-      PartnerTransId: string;
-  }
+    PartnerTransId: string;
+  };
 }
 
 interface ReportResponse {
@@ -439,23 +443,29 @@ const paymentIssuerImages: { [key: string]: string } = {
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{ getSafeValue(tx.payment_account_name) }}
+                    {{
+                      tx.transaction_type === 'DEBIT'
+                        ? getSafeValue(tx.recipient_account_name)
+                        : getSafeValue(tx.payment_account_name)
+                    }}
                   </div>
                   <div class="text-sm text-gray-500">
-                    {{ getSafeValue(tx.payment_account_number) }}
+                    {{
+                      tx.transaction_type === 'DEBIT'
+                        ? getSafeValue(tx.recipient_account_number)
+                        : getSafeValue(tx.payment_account_number)
+                    }}
                     <span
-                      *ngIf="
-                        tx.payment_account_issuer || tx.payment_account_type
-                      "
+                      *ngIf="getAccountIssuer(tx) || getAccountType(tx)"
                       class="text-xs text-gray-400"
                     >
-                      ({{ getSafeValue(tx.payment_account_issuer) }}
-                      {{ getSafeValue(tx.payment_account_type) }})
+                      ({{ getSafeValue(getAccountIssuer(tx)) }}
+                      {{ getSafeValue(getAccountType(tx)) }})
                     </span>
                     <img
-                      *ngIf="getSafeImage(tx.payment_account_issuer)"
-                      [src]="getSafeImage(tx.payment_account_issuer)"
-                      alt="{{ tx.payment_account_issuer }}"
+                      *ngIf="getSafeImage(getAccountIssuer(tx))"
+                      [src]="getSafeImage(getAccountIssuer(tx))"
+                      [alt]="getAccountIssuer(tx)"
                       class="w-6 h-6 inline-block ml-2"
                     />
                   </div>
@@ -518,6 +528,13 @@ const paymentIssuerImages: { [key: string]: string } = {
                     class="inline-flex items-center px-3 py-1.5 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
                   >
                     <i class="material-icons text-base mr-1">visibility</i>
+                  </button>
+                  <button
+                    (click)="viewTransactionJson(tx)"
+                    class="inline-flex items-center px-3 py-1.5 text-sm text-green-600 bg-green-50 rounded-lg hover:bg-green-100"
+                    title="View JSON Data"
+                  >
+                    <i class="material-icons text-base mr-1">code</i>
                   </button>
                 </td>
               </tr>
@@ -592,6 +609,68 @@ const paymentIssuerImages: { [key: string]: string } = {
       </div>
     </div>
 
+    <!-- JSON Data Modal -->
+    <div
+      *ngIf="showJsonModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      (click)="closeJsonModal()"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col"
+        (click)="$event.stopPropagation()"
+      >
+        <!-- Modal Header -->
+        <div
+          class="flex items-center justify-between p-6 border-b border-gray-200"
+        >
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">
+              Transaction JSON Data
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">
+              Reference: {{ selectedJsonData?.transactionRef }}
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              (click)="copyJsonToClipboard()"
+              class="inline-flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+              title="Copy JSON to Clipboard"
+            >
+              <i class="material-icons text-base mr-1">content_copy</i>
+              Copy
+            </button>
+            <button
+              (click)="closeJsonModal()"
+              class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            >
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="flex-1 overflow-auto p-6">
+          <div class="bg-gray-50 rounded-lg p-4">
+            <pre
+              class="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed"
+              >{{ formatJson(selectedJsonData) }}</pre
+            >
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            (click)="closeJsonModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
     <app-transaction-modal
       *ngIf="showModal"
       [transaction]="selectedTransaction"
@@ -606,6 +685,9 @@ export class ReportsComponent implements OnInit {
   showModal = false;
   merchants: any[] = [];
   operators = Object.values(EOperator);
+
+  selectedJsonData: any = null;
+  showJsonModal = false;
 
   // Add to your existing properties
   searchFilters: SearchFilters = {
@@ -702,53 +784,112 @@ export class ReportsComponent implements OnInit {
     this.filters.startDate = sevenDaysAgo.toISOString().split('T')[0];
   }
 
-get filteredTransactions(): Transaction[] {
-  let filtered = this.transactions;
-  
-  // Apply merchant filter first if set
-  if (this.filters.merchantId) {
-    filtered = filtered.filter(tx => tx.merchantId?._id === this.filters.merchantId);
+  get filteredTransactions(): Transaction[] {
+    let filtered = this.transactions;
+
+    // Apply merchant filter first if set
+    if (this.filters.merchantId) {
+      filtered = filtered.filter(
+        (tx) => tx.merchantId?._id === this.filters.merchantId
+      );
+    }
+
+    // Then apply other search filters
+    filtered = filtered.filter((tx) => {
+      const phoneMatch =
+        !this.searchFilters.phone ||
+        tx.payment_account_number.includes(this.searchFilters.phone);
+      const refMatch =
+        !this.searchFilters.transactionRef ||
+        tx.transactionRef
+          .toLowerCase()
+          .includes(this.searchFilters.transactionRef.toLowerCase());
+      const nameMatch =
+        !this.searchFilters.customerName ||
+        tx.payment_account_name
+          .toLowerCase()
+          .includes(this.searchFilters.customerName.toLowerCase());
+
+      return phoneMatch && refMatch && nameMatch;
+    });
+
+    this._analytics = this.calculateAnalytics(filtered);
+    this.reportStats = {
+      count: this._analytics.totalCount,
+      amount: this._analytics.totalAmount,
+      actualAmount: this._analytics.netAmount,
+      charges: this._analytics.charges,
+    };
+
+    return filtered;
   }
-  
-  // Then apply other search filters
-  filtered = filtered.filter((tx) => {
-    const phoneMatch =
-      !this.searchFilters.phone ||
-      tx.payment_account_number.includes(this.searchFilters.phone);
-    const refMatch =
-      !this.searchFilters.transactionRef ||
-      tx.transactionRef
-        .toLowerCase()
-        .includes(this.searchFilters.transactionRef.toLowerCase());
-    const nameMatch =
-      !this.searchFilters.customerName ||
-      tx.payment_account_name
-        .toLowerCase()
-        .includes(this.searchFilters.customerName.toLowerCase());
 
-    return phoneMatch && refMatch && nameMatch;
-  });
+  viewTransactionJson(transaction: any): void {
+    this.selectedJsonData = transaction;
+    this.showJsonModal = true;
+  }
 
-  this._analytics = this.calculateAnalytics(filtered);
-  this.reportStats = {
-    count: this._analytics.totalCount,
-    amount: this._analytics.totalAmount,
-    actualAmount: this._analytics.netAmount,
-    charges: this._analytics.charges,
-  };
+  closeJsonModal(): void {
+    this.showJsonModal = false;
+    this.selectedJsonData = null;
+  }
 
-  return filtered;
-}
+  getAccountIssuer(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT'
+      ? tx.recipient_account_issuer
+      : tx.payment_account_issuer;
+  }
+
+  getAccountType(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT'
+      ? tx.recipient_account_type
+      : tx.payment_account_type;
+  }
+
+  getAccountName(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT'
+      ? this.getSafeValue(tx.recipient_account_name)
+      : this.getSafeValue(tx.payment_account_name);
+  }
+
+  getAccountNumber(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT'
+      ? this.getSafeValue(tx.recipient_account_number)
+      : this.getSafeValue(tx.payment_account_number);
+  }
+
+  // Helper method to format JSON for display
+  formatJson(obj: any): string {
+    return JSON.stringify(obj, null, 2);
+  }
+
+  // Helper method to copy JSON to clipboard
+  copyJsonToClipboard(): void {
+    if (this.selectedJsonData) {
+      const jsonText = this.formatJson(this.selectedJsonData);
+      navigator.clipboard
+        .writeText(jsonText)
+        .then(() => {
+          // You could add a toast notification here
+          console.log('JSON copied to clipboard');
+        })
+        .catch((err) => {
+          console.error('Failed to copy JSON: ', err);
+        });
+    }
+  }
 
   get analytics(): AnalyticsStats {
     return this._analytics;
   }
 
-calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
+  calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
     // Filter transactions by merchantId if it's set in filters
-    const filteredTransactions = this.filters.merchantId 
-        ? transactions.filter(tx => tx.merchantId?._id === this.filters.merchantId)
-        : transactions;
+    const filteredTransactions = this.filters.merchantId
+      ? transactions.filter(
+          (tx) => tx.merchantId?._id === this.filters.merchantId
+        )
+      : transactions;
 
     const currentDate = new Date();
     const lastMonthStart = new Date();
@@ -763,11 +904,17 @@ calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
 
     const currentStats = {
       totalCount: filteredTransactions.length,
-      successfulCount: filteredTransactions.filter((tx) => tx.status === 'PAID').length,
-      failedCount: filteredTransactions.filter((tx) => tx.status === 'FAILED').length,
-      pendingCount: filteredTransactions.filter((tx) => tx.status === 'PENDING').length,
+      successfulCount: filteredTransactions.filter((tx) => tx.status === 'PAID')
+        .length,
+      failedCount: filteredTransactions.filter((tx) => tx.status === 'FAILED')
+        .length,
+      pendingCount: filteredTransactions.filter((tx) => tx.status === 'PENDING')
+        .length,
       totalAmount: filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0),
-      netAmount: filteredTransactions.reduce((sum, tx) => sum + tx.actualAmount, 0),
+      netAmount: filteredTransactions.reduce(
+        (sum, tx) => sum + tx.actualAmount,
+        0
+      ),
       charges: filteredTransactions.reduce((sum, tx) => sum + tx.charges, 0),
     };
 

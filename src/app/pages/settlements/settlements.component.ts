@@ -342,6 +342,131 @@ interface Merchant {
           >
           <p class="mt-2 text-gray-500">No settlements found</p>
         </div>
+
+        <!-- OTP Verification Modal -->
+<div 
+  *ngIf="showOtpModal" 
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  (click)="closeOtpModal()"
+>
+  <div 
+    class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900">OTP Verification</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          Verify your identity to {{ pendingAction }} settlement
+        </p>
+      </div>
+      <button
+        (click)="closeOtpModal()"
+        class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+      >
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div class="p-6 space-y-4">
+      <!-- Error Message -->
+      <div class="p-3 text-red-600 bg-red-50 rounded-lg text-sm" *ngIf="otpError">
+        {{ otpError }}
+      </div>
+
+      <!-- Success Message -->
+      <div class="p-3 text-green-600 bg-green-50 rounded-lg text-sm" *ngIf="otpSuccessMessage">
+        {{ otpSuccessMessage }}
+      </div>
+
+      <!-- Email Input (Show if OTP not sent) -->
+      <div *ngIf="!otpSent">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Email Address
+        </label>
+        <div class="relative">
+          <i class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">email</i>
+          <input
+            type="email"
+            [(ngModel)]="otpEmail"
+            placeholder="Enter your email address"
+            class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            [disabled]="otpLoading"
+          />
+        </div>
+        <p class="text-xs text-gray-500 mt-1">
+          An OTP will be sent to this email address
+        </p>
+      </div>
+
+      <!-- OTP Code Input (Show if OTP sent) -->
+      <div *ngIf="otpSent">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Enter OTP Code
+        </label>
+        <div class="relative">
+          <i class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">lock</i>
+          <input
+            type="text"
+            [(ngModel)]="otpCode"
+            placeholder="Enter 6-digit OTP code"
+            maxlength="6"
+            class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            [disabled]="otpLoading"
+          />
+        </div>
+        <p class="text-xs text-gray-500 mt-1">
+          OTP sent to {{ otpEmail }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
+      <button
+        (click)="closeOtpModal()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+        [disabled]="otpLoading"
+      >
+        Cancel
+      </button>
+
+      <!-- Send OTP Button -->
+      <button
+        *ngIf="!otpSent"
+        (click)="sendOtp()"
+        [disabled]="otpLoading || !otpEmail"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <i class="material-icons text-sm mr-2" *ngIf="otpLoading">refresh</i>
+        <span>{{ otpLoading ? 'Sending...' : 'Send OTP' }}</span>
+      </button>
+
+      <!-- Validate OTP Button -->
+      <button
+        *ngIf="otpSent"
+        (click)="validateOtp()"
+        [disabled]="otpLoading || !otpCode"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <i class="material-icons text-sm mr-2" *ngIf="otpLoading">refresh</i>
+        <span>{{ otpLoading ? 'Validating...' : 'Verify & ' + (pendingAction === 'confirm' ? 'Confirm' : 'Unconfirm') }}</span>
+      </button>
+
+      <!-- Resend OTP Button -->
+      <button
+        *ngIf="otpSent"
+        (click)="sendOtp()"
+        [disabled]="otpLoading"
+        class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+      >
+        Resend OTP
+      </button>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   `,
@@ -356,6 +481,16 @@ export class SettlementsComponent implements OnInit {
   successMessage = '';
   actionInProgress = false;
   settlementIdInProgress = '';
+
+  showOtpModal = false;
+  pendingAction: 'confirm' | 'unconfirm' | null = null;
+  pendingSettlementId = '';
+  otpEmail = '';
+  otpCode = '';
+  otpSent = false;
+  otpLoading = false;
+  otpError = '';
+  otpSuccessMessage = '';
 
   // Filter states
   filterStartDate: string = '';
@@ -488,7 +623,112 @@ export class SettlementsComponent implements OnInit {
     this.currentPage = 1;
   }
 
-  async confirmSettlement(id: string) {
+  async sendOtp() {
+    if (!this.otpEmail) {
+      this.otpError = 'Please enter your email address';
+      return;
+    }
+
+    this.otpLoading = true;
+    this.otpError = '';
+
+    try {
+      const response = await this.http
+        .post<any>(
+          `https://doronpay.com/api/otp/sendotp`,
+          { email: this.otpEmail },
+          { headers: this.getHeaders() }
+        )
+        .toPromise();
+
+      if (response?.success) {
+        this.otpSent = true;
+        this.otpSuccessMessage = 'OTP sent successfully to your email';
+      } else {
+        this.otpError = response?.message || 'Failed to send OTP';
+      }
+    } catch (err: any) {
+      this.otpError = err?.error?.message || 'Failed to send OTP';
+      console.error('Send OTP error:', err);
+    } finally {
+      this.otpLoading = false;
+    }
+  }
+
+  async validateOtp() {
+    if (!this.otpCode) {
+      this.otpError = 'Please enter the OTP code';
+      return;
+    }
+
+    this.otpLoading = true;
+    this.otpError = '';
+
+    try {
+      const response = await this.http
+        .post<any>(
+          `https://doronpay.com/api/otp/validate`,
+          { 
+            email: this.otpEmail,
+            otp: this.otpCode 
+          },
+          { headers: this.getHeaders() }
+        )
+        .toPromise();
+
+      if (response?.success) {
+        this.otpSuccessMessage = 'OTP validated successfully';
+        this.closeOtpModal();
+        
+        // Proceed with the pending action
+        if (this.pendingAction === 'confirm') {
+          await this.proceedWithConfirm(this.pendingSettlementId);
+        } else if (this.pendingAction === 'unconfirm') {
+          await this.proceedWithUnconfirm(this.pendingSettlementId);
+        }
+      } else {
+        this.otpError = response?.message || 'Invalid OTP code';
+      }
+    } catch (err: any) {
+      this.otpError = err?.error?.message || 'Failed to validate OTP';
+      console.error('Validate OTP error:', err);
+    } finally {
+      this.otpLoading = false;
+    }
+  }
+
+  openOtpModal(action: 'confirm' | 'unconfirm', settlementId: string) {
+    this.pendingAction = action;
+    this.pendingSettlementId = settlementId;
+    this.showOtpModal = true;
+    this.resetOtpForm();
+  }
+
+  closeOtpModal() {
+    this.showOtpModal = false;
+    this.pendingAction = null;
+    this.pendingSettlementId = '';
+    this.resetOtpForm();
+  }
+
+  resetOtpForm() {
+    this.otpEmail = '';
+    this.otpCode = '';
+    this.otpSent = false;
+    this.otpLoading = false;
+    this.otpError = '';
+    this.otpSuccessMessage = '';
+  }
+
+    confirmSettlement(id: string) {
+    this.openOtpModal('confirm', id);
+  }
+
+  unconfirmSettlement(id: string) {
+    this.openOtpModal('unconfirm', id);
+  }
+
+   async proceedWithConfirm(id: string) {
     this.actionInProgress = true;
     this.settlementIdInProgress = id;
     this.error = '';
@@ -505,8 +745,8 @@ export class SettlementsComponent implements OnInit {
 
       if (response?.success) {
         this.successMessage = 'Settlement confirmed successfully';
-        await this.fetchSettlements(); // Refresh data
-        this.applyFilters(); // Re-apply current filters
+        await this.fetchSettlements();
+        this.applyFilters();
       } else {
         this.error = response?.message || 'Failed to confirm settlement';
       }
@@ -517,7 +757,6 @@ export class SettlementsComponent implements OnInit {
       this.actionInProgress = false;
       this.settlementIdInProgress = '';
       
-      // Auto-clear success message after 3 seconds
       if (this.successMessage) {
         setTimeout(() => {
           this.successMessage = '';
@@ -526,7 +765,7 @@ export class SettlementsComponent implements OnInit {
     }
   }
 
-  async unconfirmSettlement(id: string) {
+  async proceedWithUnconfirm(id: string) {
     this.actionInProgress = true;
     this.settlementIdInProgress = id;
     this.error = '';
@@ -543,8 +782,8 @@ export class SettlementsComponent implements OnInit {
 
       if (response?.success) {
         this.successMessage = 'Settlement unconfirmed successfully';
-        await this.fetchSettlements(); // Refresh data
-        this.applyFilters(); // Re-apply current filters
+        await this.fetchSettlements();
+        this.applyFilters();
       } else {
         this.error = response?.message || 'Failed to unconfirm settlement';
       }
@@ -555,7 +794,6 @@ export class SettlementsComponent implements OnInit {
       this.actionInProgress = false;
       this.settlementIdInProgress = '';
       
-      // Auto-clear success message after 3 seconds
       if (this.successMessage) {
         setTimeout(() => {
           this.successMessage = '';

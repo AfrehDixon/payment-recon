@@ -648,7 +648,7 @@ export class PendingReversalsComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            this.error = 'An error occurred while creating the reversal';
+            this.error = error.message || 'An error occurred while creating the reversal';
             this.loading = false;
           }
         });

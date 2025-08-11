@@ -4,7 +4,6 @@ import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { VaultEntry, VaultFilters, VaultService, VaultStatistics } from './vault-management.service';
 import { CommonModule } from '@angular/common';
 
-
 @Component({
   selector: 'app-vault-management',
   templateUrl: './vault-management.component.html',
@@ -26,6 +25,7 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
   loading$: any;
   showStatistics = false;
   showActionsPanel = false;
+  showCreatePanel = false;
   statisticsError = false;
   
   // Pagination
@@ -35,25 +35,27 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
   
   // Forms
   filterForm!: FormGroup;
+  createForm!: FormGroup;
   
   // Filter options
-  purposeOptions = [
-    { value: 'deposit', label: 'Deposit' },
-    { value: 'withdrawal', label: 'Withdrawal' },
-    { value: 'escrow', label: 'Escrow' },
-    { value: 'fee_collection', label: 'Fee Collection' }
+  typeOptions = [
+    { value: 'private_key', label: 'Private Key' },
+    { value: 'mnemonic', label: 'Mnemonic' }
   ];
   
   networkOptions = [
     { value: 'BEP20', label: 'BEP20' },
-    { value: 'SOLANA', label: 'Solana' }
+    { value: 'SOLANA', label: 'Solana' },
+    { value: 'ETHEREUM', label: 'Ethereum' },
+    { value: 'BITCOIN', label: 'Bitcoin' }
   ];
 
   // Action states
   actionLoading = {
     cleanup: false,
     backup: false,
-    deactivate: false
+    deactivate: false,
+    create: false
   };
 
   constructor(
@@ -61,7 +63,7 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     private fb: FormBuilder
   ) {
     this.loading$ = this.vaultService.loading$;
-    this.initializeFilterForm();
+    this.initializeForms();
   }
 
   ngOnInit(): void {
@@ -74,12 +76,21 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private initializeFilterForm(): void {
+  private initializeForms(): void {
     this.filterForm = this.fb.group({
       search: [''],
       isActive: [''],
       network: [''],
-      purpose: ['']
+      type: ['']
+    });
+
+    this.createForm = this.fb.group({
+      identifier: [''],
+      data: [''],
+      type: ['private_key'],
+      network: [''],
+      expiresAt: [''],
+      metadata: ['']
     });
   }
 
@@ -94,7 +105,7 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     });
 
     // Subscribe to dropdown changes
-    ['isActive', 'network', 'purpose'].forEach(control => {
+    ['isActive', 'network', 'type'].forEach(control => {
       this.filterForm.get(control)?.valueChanges
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => {
@@ -113,10 +124,10 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase();
         matches = matches && (
-          entry.transactionId.toLowerCase().includes(searchLower) ||
-          entry.address.toLowerCase().includes(searchLower) ||
-          entry.network.toLowerCase().includes(searchLower) ||
-          entry.purpose.toLowerCase().includes(searchLower)
+          (entry.identifier && entry.identifier.toLowerCase().includes(searchLower)) ||
+          (entry.type && entry.type.toLowerCase().includes(searchLower)) ||
+          (!!entry.network && entry.network.toLowerCase().includes(searchLower)) ||
+          (!!entry.createdBy && entry.createdBy.toLowerCase().includes(searchLower))
         );
       }
 
@@ -130,9 +141,9 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
         matches = matches && entry.network === filters.network;
       }
 
-      // Purpose filter
-      if (filters.purpose && filters.purpose !== '') {
-        matches = matches && entry.purpose === filters.purpose;
+      // Type filter
+      if (filters.type && filters.type !== '') {
+        matches = matches && entry.type === filters.type;
       }
 
       return matches;
@@ -216,13 +227,15 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     // Calculate network breakdown
     const networkBreakdown: Record<string, number> = {};
     this.vaultEntries.forEach(entry => {
-      networkBreakdown[entry.network] = (networkBreakdown[entry.network] || 0) + 1;
+      if (entry.network) {
+        networkBreakdown[entry.network] = (networkBreakdown[entry.network] || 0) + 1;
+      }
     });
 
-    // Calculate purpose breakdown
-    const purposeBreakdown: Record<string, number> = {};
+    // Calculate type breakdown
+    const typeBreakdown: Record<string, number> = {};
     this.vaultEntries.forEach(entry => {
-      purposeBreakdown[entry.purpose] = (purposeBreakdown[entry.purpose] || 0) + 1;
+      typeBreakdown[entry.type] = (typeBreakdown[entry.type] || 0) + 1;
     });
 
     this.statistics = {
@@ -231,7 +244,7 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
       expiredEntries,
       recentActivity,
       networkBreakdown,
-      purposeBreakdown
+      typeBreakdown
     };
 
     console.log('Calculated statistics:', this.statistics);
@@ -263,7 +276,7 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
       search: '',
       isActive: '',
       network: '',
-      purpose: ''
+      type: ''
     });
     this.applyFilters();
   }
@@ -289,20 +302,61 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     this.loadVaultEntries();
   }
 
+  // Create new entry
+  async createEntry(): Promise<void> {
+    if (!this.createForm.valid || !this.createForm.value.identifier || !this.createForm.value.data) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    this.actionLoading.create = true;
+    
+    try {
+      const formData = this.createForm.value;
+      const payload = {
+        identifier: formData.identifier,
+        data: formData.data,
+        type: formData.type,
+        network: formData.network || undefined,
+        expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+        metadata: formData.metadata ? JSON.parse(formData.metadata) : undefined
+      };
+
+      const result = await this.vaultService.createVaultEntry(payload).toPromise();
+      console.log('Entry created:', result);
+      
+      // Reset form and close panel
+      this.createForm.reset({ type: 'private_key' });
+      this.showCreatePanel = false;
+      
+      // Refresh data
+      this.loadVaultEntries();
+      if (this.showStatistics) {
+        this.loadStatistics();
+      }
+      
+    } catch (error) {
+      console.error('Error creating entry:', error);
+      alert('Error creating entry. Please try again.');
+    } finally {
+      this.actionLoading.create = false;
+    }
+  }
+
   // Actions
   async deactivateEntry(entry: VaultEntry): Promise<void> {
-    if (!confirm(`Are you sure you want to deactivate the entry for transaction ${entry.transactionId}?`)) {
+    if (!confirm(`Are you sure you want to deactivate the entry with identifier "${entry.identifier}"?`)) {
       return;
     }
 
     this.actionLoading.deactivate = true;
     
     try {
-      const message = await this.vaultService.deactivateVaultEntry(entry.transactionId).toPromise();
+      const message = await this.vaultService.deactivateVaultEntry(entry.identifier).toPromise();
       console.log(message);
       
       // Update the entry in the local array
-      const index = this.vaultEntries.findIndex(e => e.transactionId === entry.transactionId);
+      const index = this.vaultEntries.findIndex(e => e.identifier === entry.identifier);
       if (index > -1) {
         this.vaultEntries[index] = { ...this.vaultEntries[index], isActive: false };
         this.applyFilters(); // Reapply filters to update display
@@ -379,29 +433,32 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatAddress(address: string): string {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  formatIdentifier(identifier: string): string {
+    if (identifier.length > 20) {
+      return `${identifier.slice(0, 8)}...${identifier.slice(-8)}`;
+    }
+    return identifier;
   }
 
-  getPurposeIcon(purpose: string): string {
+  getTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      deposit: '⬇️',
-      withdrawal: '⬆️',
-      escrow: '🔒',
-      fee_collection: '💰'
+      private_key: '🔑',
+      mnemonic: '📝'
     };
-    return icons[purpose] || '📝';
+    return icons[type] || '🔒';
   }
 
   getNetworkIcon(network: string): string {
     const icons: Record<string, string> = {
       BEP20: '🟡',
-      SOLANA: '🟣'
+      SOLANA: '🟣',
+      ETHEREUM: '💎',
+      BITCOIN: '🟠'
     };
     return icons[network] || '🌐';
   }
 
-  trackByTransactionId(index: number, entry: VaultEntry): string {
-    return entry.transactionId;
+  trackByIdentifier(index: number, entry: VaultEntry): string {
+    return entry.identifier;
   }
 }
