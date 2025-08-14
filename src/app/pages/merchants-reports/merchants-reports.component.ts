@@ -20,7 +20,6 @@ interface ReportFilters {
   status: string;
   merchantId: string;
   operator: string;
-  // merchantId: string;
   transaction_type: string;
   page: number;
   limit: number;
@@ -31,9 +30,9 @@ enum EOperator {
   PEOPLESPAY = 'PEOPLESPAY',
   FIDELITY = 'FIDELITY',
   SOLANA = 'SOLANA',
-  GTCARD = 'GTCARD', // GTBank card payment
+  GTCARD = 'GTCARD',
   MOOLRE = 'MOOLRE',
-  PCARD = 'PCARD', // Peoplespay Card payment
+  PCARD = 'PCARD',
   TRC20 = 'TRC20',
   ERC20 = 'ERC20',
   GTB = 'GTB',
@@ -70,29 +69,49 @@ interface Transaction {
   createdAt: string;
   merchantId: any;
   customerId: any;
-  walletType: string;
-  balanceBeforeCredit: number;
-  balanceAfterCredit: number;
-  balanceBeforeDebit: number;
-  balanceAfterDebit: number;
-  operator: string;
+  walletType?: string;
+  balanceBeforeCredit?: number;
+  balanceAfterCredit?: number;
+  balanceBeforeDebit?: number;
+  balanceAfterDebit?: number;
+  operator?: string;
+  creditOperator?: string;
   externalTransactionId: string;
   profitEarned: number;
-  callbackResponse: {
+  callbackResponse?: {
+    PartnerTransId: string;
+  };
+  transaction?: {
     PartnerTransId: string;
   };
 }
 
+// Updated interface to handle both old and new API response formats
 interface ReportResponse {
   success: boolean;
   message: string;
   data: {
-    _id: null;
-    count: number;
-    actualAmount: number;
-    amount: number;
-    charges: number;
+    // Old format
+    _id?: null;
+    count?: number;
+    actualAmount?: number;
+    amount?: number;
+    charges?: number;
     transactions: Transaction[];
+    
+    // New format
+    pagination?: {
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    };
+    totals?: {
+      _id: null;
+      totalActualAmount: number;
+      totalAmount: number;
+      totalCharges: number;
+    };
   };
 }
 
@@ -115,6 +134,7 @@ const paymentIssuerImages: { [key: string]: string } = {
   usdt: 'assets/images/usdt.svg',
   doron: 'assets/images/doron.png',
 };
+
 @Component({
   selector: 'app-reports',
   standalone: true,
@@ -158,13 +178,10 @@ const paymentIssuerImages: { [key: string]: string } = {
           <p class="text-2xl font-bold text-gray-900">
             {{ formatCurrency(reportStats.amount, 'FIAT') }}
           </p>
-          <div class="mt-2 text-green-600 text-sm">
-            <span
-              >{{
-                reportStats.amount / reportStats.count | currency
-              }}
-              avg/tx</span
-            >
+          <div class="mt-2 text-green-600 text-sm" *ngIf="reportStats.count > 0">
+            <span>{{
+              (reportStats.amount / reportStats.count) | currency: 'GHS'
+            }} avg/tx</span>
           </div>
         </div>
 
@@ -175,14 +192,10 @@ const paymentIssuerImages: { [key: string]: string } = {
           <p class="text-2xl font-bold text-gray-900">
             {{ formatCurrency(reportStats.actualAmount, 'FIAT') }}
           </p>
-          <div class="mt-2 text-indigo-600 text-sm">
-            <span
-              >{{
-                ((reportStats.actualAmount / reportStats.amount) * 100).toFixed(
-                  1
-                )
-              }}% of total</span
-            >
+          <div class="mt-2 text-indigo-600 text-sm" *ngIf="reportStats.amount > 0">
+            <span>{{
+              ((reportStats.actualAmount / reportStats.amount) * 100).toFixed(1)
+            }}% of total</span>
           </div>
         </div>
 
@@ -193,12 +206,10 @@ const paymentIssuerImages: { [key: string]: string } = {
           <p class="text-2xl font-bold text-gray-900">
             {{ formatCurrency(reportStats.charges, 'FIAT') }}
           </p>
-          <div class="mt-2 text-red-600 text-sm">
-            <span
-              >{{
-                ((reportStats.charges / reportStats.amount) * 100).toFixed(1)
-              }}% fee rate</span
-            >
+          <div class="mt-2 text-red-600 text-sm" *ngIf="reportStats.amount > 0">
+            <span>{{
+              ((reportStats.charges / reportStats.amount) * 100).toFixed(1)
+            }}% fee rate</span>
           </div>
         </div>
       </div>
@@ -215,6 +226,7 @@ const paymentIssuerImages: { [key: string]: string } = {
               >
               <input
                 [(ngModel)]="searchFilters.phone"
+                (ngModelChange)="onFilterChange()"
                 type="text"
                 placeholder="Search by phone number"
                 class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -229,6 +241,7 @@ const paymentIssuerImages: { [key: string]: string } = {
               >
               <input
                 [(ngModel)]="searchFilters.transactionRef"
+                (ngModelChange)="onFilterChange()"
                 type="text"
                 placeholder="Search by transaction reference"
                 class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -243,6 +256,7 @@ const paymentIssuerImages: { [key: string]: string } = {
               >
               <input
                 [(ngModel)]="searchFilters.customerName"
+                (ngModelChange)="onFilterChange()"
                 type="text"
                 placeholder="Search by customer name"
                 class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -296,6 +310,7 @@ const paymentIssuerImages: { [key: string]: string } = {
                   >
                   <select
                     [(ngModel)]="filters.status"
+                    (ngModelChange)="onFilterChange()"
                     class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
                   >
                     <option value="">All Status</option>
@@ -311,6 +326,7 @@ const paymentIssuerImages: { [key: string]: string } = {
                   >
                   <select
                     [(ngModel)]="filters.transaction_type"
+                    (ngModelChange)="onFilterChange()"
                     class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
                   >
                     <option value="">All Types</option>
@@ -322,7 +338,7 @@ const paymentIssuerImages: { [key: string]: string } = {
               </div>
             </div>
 
-            <!-- Add the new dropdowns for merchants and operators -->
+            <!-- Merchant Select -->
             <div class="bg-gray-50 p-4 rounded-xl">
               <label class="block text-sm font-medium text-gray-900 mb-3"
                 >Merchant</label
@@ -334,6 +350,7 @@ const paymentIssuerImages: { [key: string]: string } = {
                 >
                 <select
                   [(ngModel)]="filters.merchantId"
+                  (ngModelChange)="onFilterChange()"
                   class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
                 >
                   <option value="">All Merchants</option>
@@ -358,6 +375,7 @@ const paymentIssuerImages: { [key: string]: string } = {
                 >
                 <select
                   [(ngModel)]="filters.operator"
+                  (ngModelChange)="onFilterChange()"
                   class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 appearance-none"
                 >
                   <option value="">All Operators</option>
@@ -382,7 +400,7 @@ const paymentIssuerImages: { [key: string]: string } = {
 
             <button
               (click)="downloadReport()"
-              [disabled]="!transactions.length"
+              [disabled]="displayedTransactions.length === 0"
               class="inline-flex items-center px-6 h-12 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:ring-4 focus:ring-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i class="material-icons mr-2">download</i>
@@ -392,7 +410,7 @@ const paymentIssuerImages: { [key: string]: string } = {
         </div>
 
         <!-- Results Table -->
-        <div class="overflow-x-auto" *ngIf="transactions.length > 0">
+        <div class="overflow-x-auto" *ngIf="displayedTransactions.length > 0">
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
@@ -431,14 +449,10 @@ const paymentIssuerImages: { [key: string]: string } = {
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{
-                      tx.customerId?.merchant_tradeName ??
-                        tx.merchantId?.merchant_tradeName ??
-                        'Unknown'
-                    }}
+                    {{ getMerchantDisplayName(tx) }}
                   </div>
                   <div class="text-sm text-gray-500">
-                    {{ tx.customerId?.email ?? tx.merchantId?.email }}
+                    {{ getMerchantEmail(tx) }}
                   </div>
                 </td>
                 <td class="px-6 py-4">
@@ -471,13 +485,13 @@ const paymentIssuerImages: { [key: string]: string } = {
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ formatCurrency(tx.amount, tx.walletType) }}
+                  {{ formatCurrency(tx.amount, tx.walletType || 'FIAT') }}
                 </td>
                 <td class="px-6 py-4 text-sm text-red-600">
-                  {{ formatCurrency(tx.charges, tx.walletType) }}
+                  {{ formatCurrency(tx.charges, tx.walletType || 'FIAT') }}
                 </td>
                 <td class="px-6 py-4 text-sm font-medium text-green-600">
-                  {{ formatCurrency(tx.actualAmount, tx.walletType) }}
+                  {{ formatCurrency(tx.actualAmount, tx.walletType || 'FIAT') }}
                 </td>
                 <td class="px-6 py-4">
                   <span
@@ -505,13 +519,13 @@ const paymentIssuerImages: { [key: string]: string } = {
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ tx.operator }}
+                  {{ tx.operator || tx.creditOperator || 'N/A' }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ tx.payment_account_issuer }}
+                  {{ getAccountIssuer(tx) }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ tx.externalTransactionId }}
+                  {{ tx.externalTransactionId || 'N/A' }}
                 </td>
                 <td class="px-6 py-4 text-sm text-green-600">
                   {{ tx.profitEarned | currency : 'GHS' }}
@@ -545,12 +559,12 @@ const paymentIssuerImages: { [key: string]: string } = {
         <!-- Pagination -->
         <div
           class="px-6 py-4 border-t border-gray-100"
-          *ngIf="transactions.length > 0"
+          *ngIf="displayedTransactions.length > 0"
         >
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">
               Showing {{ startIndex + 1 }} to {{ endIndex }} of
-              {{ transactions.length }} entries
+              {{ displayedTransactions.length }} entries
             </span>
             <div class="flex items-center gap-2">
               <button
@@ -600,7 +614,7 @@ const paymentIssuerImages: { [key: string]: string } = {
       <!-- No Results -->
       <div
         class="text-center py-12"
-        *ngIf="!loading && !transactions.length && !error"
+        *ngIf="!loading && displayedTransactions.length === 0 && !error"
       >
         <i class="material-icons text-4xl text-gray-400 mb-2">search_off</i>
         <p class="text-gray-600">
@@ -619,7 +633,6 @@ const paymentIssuerImages: { [key: string]: string } = {
         class="bg-white rounded-2xl shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col"
         (click)="$event.stopPropagation()"
       >
-        <!-- Modal Header -->
         <div
           class="flex items-center justify-between p-6 border-b border-gray-200"
         >
@@ -648,8 +661,6 @@ const paymentIssuerImages: { [key: string]: string } = {
             </button>
           </div>
         </div>
-
-        <!-- Modal Content -->
         <div class="flex-1 overflow-auto p-6">
           <div class="bg-gray-50 rounded-lg p-4">
             <pre
@@ -658,8 +669,6 @@ const paymentIssuerImages: { [key: string]: string } = {
             >
           </div>
         </div>
-
-        <!-- Modal Footer -->
         <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
           <button
             (click)="closeJsonModal()"
@@ -689,7 +698,6 @@ export class ReportsComponent implements OnInit {
   selectedJsonData: any = null;
   showJsonModal = false;
 
-  // Add to your existing properties
   searchFilters: SearchFilters = {
     phone: '',
     transactionRef: '',
@@ -714,7 +722,9 @@ export class ReportsComponent implements OnInit {
     charges: 0,
   };
 
-  transactions: Transaction[] = [];
+  // Store all transactions and filtered separately
+  allTransactions: Transaction[] = [];
+  displayedTransactions: Transaction[] = [];
   loading = false;
   error = '';
 
@@ -722,19 +732,7 @@ export class ReportsComponent implements OnInit {
   pageSize = 5;
   maxVisiblePages = 5;
 
-  lastMonthStats: AnalyticsStats = {
-    totalCount: 0,
-    successfulCount: 0,
-    failedCount: 0,
-    pendingCount: 0,
-    growthRate: 0,
-    totalAmount: 0,
-    netAmount: 0,
-    charges: 0,
-  };
-
-  private _filteredTransactions: Transaction[] = [];
-  private _analytics: AnalyticsStats = {
+  analytics: AnalyticsStats = {
     totalCount: 0,
     successfulCount: 0,
     failedCount: 0,
@@ -747,33 +745,7 @@ export class ReportsComponent implements OnInit {
 
   constructor(private http: HttpClient, private store: Store) {}
 
-  closeTransactionModal(): void {
-    this.showModal = false;
-    this.selectedTransaction = null;
-  }
-
-  async fetchMerchants() {
-    try {
-      const response = await this.http
-        .get<any>('https://doronpay.com/api/merchants/get', {
-          headers: this.getHeaders(),
-        })
-        .toPromise();
-
-      if (response?.success) {
-        this.merchants = response.data;
-      } else {
-        console.error('Failed to fetch merchants:', response?.message);
-      }
-    } catch (err) {
-      console.error('Error fetching merchants:', err);
-    }
-  }
-
   ngOnInit() {
-    // this.filters.merchantId = this.store.selectSnapshot(
-    //   (state) => state.auth.user?.merchantId?._id
-    // );
     this.fetchMerchants();
 
     const today = new Date();
@@ -784,197 +756,128 @@ export class ReportsComponent implements OnInit {
     this.filters.startDate = sevenDaysAgo.toISOString().split('T')[0];
   }
 
-  get filteredTransactions(): Transaction[] {
-    let filtered = this.transactions;
+  // Separate method to apply filters
+  private applyFilters(): void {
+    let filtered = [...this.allTransactions];
 
-    // Apply merchant filter first if set
+    // Apply status filter
+    if (this.filters.status) {
+      filtered = filtered.filter(tx => tx.status === this.filters.status);
+    }
+
+    // Apply operator filter  
+    if (this.filters.operator) {
+      filtered = filtered.filter(tx => 
+        (tx.operator === this.filters.operator) || 
+        (tx.creditOperator === this.filters.operator)
+      );
+    }
+
+    // Apply transaction type filter
+    if (this.filters.transaction_type) {
+      filtered = filtered.filter(tx => tx.transaction_type === this.filters.transaction_type);
+    }
+
+    // Apply merchant filter - handle both old and new format
     if (this.filters.merchantId) {
-      filtered = filtered.filter(
-        (tx) => tx.merchantId?._id === this.filters.merchantId
+      filtered = filtered.filter(tx => {
+        // Handle old format (merchantId object)
+        if (tx.merchantId && typeof tx.merchantId === 'object' && tx.merchantId._id) {
+          return tx.merchantId._id === this.filters.merchantId;
+        }
+        // Handle new format (customerId string)
+        if (tx.customerId && typeof tx.customerId === 'string') {
+          return tx.customerId === this.filters.merchantId;
+        }
+        // Handle customerId object
+        if (tx.customerId && typeof tx.customerId === 'object' && tx.customerId._id) {
+          return tx.customerId._id === this.filters.merchantId;
+        }
+        return false;
+      });
+    }
+
+    // Apply search filters
+    if (this.searchFilters.phone) {
+      filtered = filtered.filter(tx =>
+        tx.payment_account_number?.includes(this.searchFilters.phone) ||
+        tx.recipient_account_number?.includes(this.searchFilters.phone)
       );
     }
 
-    // Then apply other search filters
-    filtered = filtered.filter((tx) => {
-      const phoneMatch =
-        !this.searchFilters.phone ||
-        tx.payment_account_number.includes(this.searchFilters.phone);
-      const refMatch =
-        !this.searchFilters.transactionRef ||
-        tx.transactionRef
-          .toLowerCase()
-          .includes(this.searchFilters.transactionRef.toLowerCase());
-      const nameMatch =
-        !this.searchFilters.customerName ||
-        tx.payment_account_name
-          .toLowerCase()
-          .includes(this.searchFilters.customerName.toLowerCase());
+    if (this.searchFilters.transactionRef) {
+      filtered = filtered.filter(tx =>
+        tx.transactionRef?.toLowerCase().includes(this.searchFilters.transactionRef.toLowerCase())
+      );
+    }
 
-      return phoneMatch && refMatch && nameMatch;
-    });
+    if (this.searchFilters.customerName) {
+      filtered = filtered.filter(tx =>
+        tx.payment_account_name?.toLowerCase().includes(this.searchFilters.customerName.toLowerCase()) ||
+        tx.recipient_account_name?.toLowerCase().includes(this.searchFilters.customerName.toLowerCase())
+      );
+    }
 
-    this._analytics = this.calculateAnalytics(filtered);
-    this.reportStats = {
-      count: this._analytics.totalCount,
-      amount: this._analytics.totalAmount,
-      actualAmount: this._analytics.netAmount,
-      charges: this._analytics.charges,
+    this.displayedTransactions = filtered;
+    this.updateAnalytics();
+    this.currentPage = 1; // Reset to first page
+  }
+
+  private updateAnalytics(): void {
+    const filtered = this.displayedTransactions;
+    
+    this.analytics = {
+      totalCount: filtered.length,
+      successfulCount: filtered.filter(tx => tx.status === 'PAID').length,
+      failedCount: filtered.filter(tx => tx.status === 'FAILED').length,
+      pendingCount: filtered.filter(tx => tx.status === 'PENDING').length,
+      totalAmount: filtered.reduce((sum, tx) => sum + (tx.amount || 0), 0),
+      netAmount: filtered.reduce((sum, tx) => sum + (tx.actualAmount || 0), 0),
+      charges: filtered.reduce((sum, tx) => sum + (tx.charges || 0), 0),
+      growthRate: 0 // Calculate if needed
     };
 
-    return filtered;
-  }
-
-  viewTransactionJson(transaction: any): void {
-    this.selectedJsonData = transaction;
-    this.showJsonModal = true;
-  }
-
-  closeJsonModal(): void {
-    this.showJsonModal = false;
-    this.selectedJsonData = null;
-  }
-
-  getAccountIssuer(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT'
-      ? tx.recipient_account_issuer
-      : tx.payment_account_issuer;
-  }
-
-  getAccountType(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT'
-      ? tx.recipient_account_type
-      : tx.payment_account_type;
-  }
-
-  getAccountName(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT'
-      ? this.getSafeValue(tx.recipient_account_name)
-      : this.getSafeValue(tx.payment_account_name);
-  }
-
-  getAccountNumber(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT'
-      ? this.getSafeValue(tx.recipient_account_number)
-      : this.getSafeValue(tx.payment_account_number);
-  }
-
-  // Helper method to format JSON for display
-  formatJson(obj: any): string {
-    return JSON.stringify(obj, null, 2);
-  }
-
-  // Helper method to copy JSON to clipboard
-  copyJsonToClipboard(): void {
-    if (this.selectedJsonData) {
-      const jsonText = this.formatJson(this.selectedJsonData);
-      navigator.clipboard
-        .writeText(jsonText)
-        .then(() => {
-          // You could add a toast notification here
-          console.log('JSON copied to clipboard');
-        })
-        .catch((err) => {
-          console.error('Failed to copy JSON: ', err);
-        });
+    // Only update reportStats from filtered data if we're using client-side filtering
+    // Keep API totals for stats cards when available
+    if (!this.hasApiTotals) {
+      this.reportStats = {
+        count: this.analytics.totalCount,
+        amount: this.analytics.totalAmount,
+        actualAmount: this.analytics.netAmount,
+        charges: this.analytics.charges,
+      };
     }
   }
 
-  get analytics(): AnalyticsStats {
-    return this._analytics;
+  private hasApiTotals = false;
+
+  onFilterChange(): void {
+    this.applyFilters();
   }
 
-  calculateAnalytics(transactions: Transaction[]): AnalyticsStats {
-    // Filter transactions by merchantId if it's set in filters
-    const filteredTransactions = this.filters.merchantId
-      ? transactions.filter(
-          (tx) => tx.merchantId?._id === this.filters.merchantId
-        )
-      : transactions;
-
-    const currentDate = new Date();
-    const lastMonthStart = new Date();
-    lastMonthStart.setMonth(currentDate.getMonth() - 1);
-
-    const lastMonthTransactions = filteredTransactions.filter((tx) => {
-      const txDate = new Date(tx.createdAt);
-      return (
-        txDate >= lastMonthStart && txDate < new Date(this.filters.startDate)
-      );
-    });
-
-    const currentStats = {
-      totalCount: filteredTransactions.length,
-      successfulCount: filteredTransactions.filter((tx) => tx.status === 'PAID')
-        .length,
-      failedCount: filteredTransactions.filter((tx) => tx.status === 'FAILED')
-        .length,
-      pendingCount: filteredTransactions.filter((tx) => tx.status === 'PENDING')
-        .length,
-      totalAmount: filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0),
-      netAmount: filteredTransactions.reduce(
-        (sum, tx) => sum + tx.actualAmount,
-        0
-      ),
-      charges: filteredTransactions.reduce((sum, tx) => sum + tx.charges, 0),
-    };
-
-    const lastMonthTotalCount = lastMonthTransactions.length;
-    const growthRate = lastMonthTotalCount
-      ? ((currentStats.totalCount - lastMonthTotalCount) /
-          lastMonthTotalCount) *
-        100
-      : 0;
-
-    return {
-      ...currentStats,
-      growthRate: Number(growthRate.toFixed(1)),
-    };
-  }
-
-  private getHeaders(): HttpHeaders {
-    const token = this.store.selectSnapshot(AuthState.token);
-    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
-  }
-
+  // Pagination getters
   get startIndex(): number {
     return (this.currentPage - 1) * this.pageSize;
   }
 
   get endIndex(): number {
-    return Math.min(this.startIndex + this.pageSize, this.transactions.length);
+    return Math.min(this.startIndex + this.pageSize, this.displayedTransactions.length);
   }
 
   get totalPages(): number {
-    return Math.ceil(this.filteredTransactions.length / this.pageSize);
+    return Math.ceil(this.displayedTransactions.length / this.pageSize);
   }
 
   get paginatedTransactions(): Transaction[] {
-    return this.filteredTransactions.slice(this.startIndex, this.endIndex);
-  }
-
-  getSafeValue(value: any, fallback: string = 'N/A'): string {
-    return value !== null && value !== undefined ? value.toString() : fallback;
-  }
-
-  getSafeImage(issuer: string | undefined): string | null {
-    if (!issuer) return null;
-    const key = issuer.toLowerCase();
-    return paymentIssuerImages[key] || null;
+    return this.displayedTransactions.slice(this.startIndex, this.endIndex);
   }
 
   get visiblePages(): number[] {
     const pages: number[] = [];
-    let start = Math.max(
-      1,
-      this.currentPage - Math.floor(this.maxVisiblePages / 2)
-    );
+    let start = Math.max(1, this.currentPage - Math.floor(this.maxVisiblePages / 2));
     let end = Math.min(this.totalPages, start + this.maxVisiblePages - 1);
 
-    // Adjust start if we're near the end
-    start = Math.max(
-      1,
-      Math.min(start, this.totalPages - this.maxVisiblePages + 1)
-    );
+    start = Math.max(1, Math.min(start, this.totalPages - this.maxVisiblePages + 1));
 
     for (let i = start; i <= end; i++) {
       pages.push(i);
@@ -988,22 +891,25 @@ export class ReportsComponent implements OnInit {
     }
   }
 
-  getPaymentIssuerImage(issuer: string): string | null {
-    const key = issuer.toLowerCase();
-    return paymentIssuerImages[key] || null;
+  async fetchMerchants() {
+    try {
+      const response = await this.http
+        .get<any>('https://doronpay.com/api/merchants/get', {
+          headers: this.getHeaders(),
+        })
+        .toPromise();
+
+      if (response?.success) {
+        this.merchants = response.data;
+      }
+    } catch (err) {
+      console.error('Error fetching merchants:', err);
+    }
   }
 
-  // Updated formatCurrency method to handle different wallet types
-  formatCurrency(
-    amount: number | undefined,
-    walletType: string | undefined
-  ): string {
-    if (amount === undefined) return 'N/A';
-    const currency = walletType === 'FIAT' ? 'GHS' : 'USD';
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+  private getHeaders(): HttpHeaders {
+    const token = this.store.selectSnapshot(AuthState.token);
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
   async generateReport() {
@@ -1013,14 +919,9 @@ export class ReportsComponent implements OnInit {
 
     this.loading = true;
     this.error = '';
-    this.transactions = [];
-    this.currentPage = 1;
-    this.reportStats = {
-      count: 0,
-      actualAmount: 0,
-      amount: 0,
-      charges: 0,
-    };
+    this.allTransactions = [];
+    this.displayedTransactions = [];
+    this.hasApiTotals = false;
 
     try {
       const response = await this.http
@@ -1031,27 +932,37 @@ export class ReportsComponent implements OnInit {
         )
         .toPromise();
 
-      if (response?.success) {
-        this.transactions = response.data.transactions.filter(
-          (tx) => tx && tx.payment_account_name && tx.transactionRef
-        );
-        this.reportStats = {
-          count: response.data.count,
-          actualAmount: response.data.actualAmount,
-          amount: response.data.amount,
-          charges: response.data.charges,
-        };
-      } else {
-        if (response?.message?.includes('memory')) {
-          this.error =
-            'Too much data requested. Please try a shorter date range or add more filters.';
-        } else {
-          this.error = response?.message || 'Failed to generate report';
+      if (response?.success && response.data) {
+        this.allTransactions = response.data.transactions || [];
+        
+        // Check if it's the new API format (has pagination and totals)
+        if (response.data.totals && response.data.pagination) {
+          // New API format
+          this.hasApiTotals = true;
+          this.reportStats = {
+            count: response.data.pagination.total,
+            actualAmount: response.data.totals.totalActualAmount,
+            amount: response.data.totals.totalAmount,
+            charges: response.data.totals.totalCharges,
+          };
+        } else if (response.data.count !== undefined) {
+          // Old API format
+          this.hasApiTotals = true;
+          this.reportStats = {
+            count: response.data.count,
+            actualAmount: response.data.actualAmount || 0,
+            amount: response.data.amount || 0,
+            charges: response.data.charges || 0,
+          };
         }
+
+        // Apply initial filters
+        this.applyFilters();
+      } else {
+        this.error = response?.message || 'Failed to generate report';
       }
     } catch (err: any) {
-      this.error =
-        err?.error?.message || 'Failed to generate report. Please try again.';
+      this.error = err?.error?.message || 'Failed to generate report. Please try again.';
       console.error('Report generation error:', err);
     } finally {
       this.loading = false;
@@ -1063,65 +974,110 @@ export class ReportsComponent implements OnInit {
       this.error = 'Please select both start and end dates';
       return false;
     }
-
-    const start = new Date(this.filters.startDate);
-    const end = new Date(this.filters.endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Limit to 7 days to prevent memory issues
-    // if (diffDays > 7) {
-    //   this.error =
-    //     'Date range cannot exceed 7 days due to data size limitations';
-    //   return false;
-    // }
-
     return true;
   }
 
   downloadReport() {
-    if (!this.transactions.length) return;
+    if (!this.displayedTransactions.length) return;
 
     const worksheet = XLSX.utils.json_to_sheet(
-      this.transactions.map((tx) => ({
+      this.displayedTransactions.map((tx) => ({
         Date: this.formatDate(tx.createdAt),
-        Merchant:
-          // tx.customerId?.merchant_tradeName ||-
-          tx.merchantId?._id,
-        'Merchant Email': tx.customerId?.email || tx.merchantId?.email,
+        Merchant: this.getMerchantDisplayName(tx),
+        'Merchant Email': this.getMerchantEmail(tx),
         'Customer Name': tx.payment_account_name,
         'Customer Account': tx.payment_account_number,
-        'Payment Method': `${tx.payment_account_issuer} ${tx.payment_account_type}`,
+        'Payment Method': `${this.getAccountIssuer(tx)} ${this.getAccountType(tx)}`,
         Amount: tx.amount,
         Charges: tx.charges,
         'Net Amount': tx.actualAmount,
         Type: tx.transaction_type,
         Status: tx.status,
-        Operator: tx.operator,
-        'Partner Transaction ID': tx.callbackResponse?.PartnerTransId ?? '',
-        'Account Issuer': tx.payment_account_issuer,
+        Operator: tx.operator || tx.creditOperator,
         'External Transaction ID': tx.externalTransactionId,
         Profit: tx.profitEarned,
         Reference: tx.transactionRef,
         Description: tx.description,
-        'Balance Before Debit':
-          tx.walletType === 'FIAT' ? tx.balanceBeforeCredit : '',
-        'Balance After Debit':
-          tx.walletType === 'FIAT' ? tx.balanceAfterCredit : '',
-        'Balance Before Credit':
-          tx.walletType === 'FIAT' ? tx.balanceBeforeDebit : '',
-        'Balance After Credit':
-          tx.walletType === 'FIAT' ? tx.balanceAfterDebit : '',
       }))
     );
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
 
-    const fileName = `transactions_report_${this.formatDateForFile(
-      new Date()
-    )}.xlsx`;
+    const fileName = `transactions_report_${this.formatDateForFile(new Date())}.xlsx`;
     XLSX.writeFile(workbook, fileName);
+  }
+
+  // Helper methods to handle both old and new data formats
+  getMerchantDisplayName(tx: Transaction): string {
+    // Handle old format with merchantId object
+    if (tx.merchantId && typeof tx.merchantId === 'object') {
+      return tx.merchantId.merchant_tradeName || 'Unknown';
+    }
+    
+    // Handle customerId object
+    if (tx.customerId && typeof tx.customerId === 'object') {
+      return tx.customerId.merchant_tradeName || 'Unknown';
+    }
+    
+    // Handle customerId string - lookup in merchants array
+    if (tx.customerId && typeof tx.customerId === 'string') {
+      const merchant = this.merchants.find(m => m._id === tx.customerId);
+      return merchant?.merchant_tradeName || 'Unknown';
+    }
+    
+    return 'Unknown';
+  }
+
+  getMerchantEmail(tx: Transaction): string {
+    // Handle old format with merchantId object
+    if (tx.merchantId && typeof tx.merchantId === 'object') {
+      return tx.merchantId.email || '';
+    }
+    
+    // Handle customerId object
+    if (tx.customerId && typeof tx.customerId === 'object') {
+      return tx.customerId.email || '';
+    }
+    
+    // Handle customerId string - lookup in merchants array
+    if (tx.customerId && typeof tx.customerId === 'string') {
+      const merchant = this.merchants.find(m => m._id === tx.customerId);
+      return merchant?.email || tx.customerId;
+    }
+    
+    return '';
+  }
+
+  getAccountIssuer(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT' 
+      ? tx.recipient_account_issuer 
+      : tx.payment_account_issuer || 'N/A';
+  }
+
+  getAccountType(tx: Transaction): string {
+    return tx.transaction_type === 'DEBIT' 
+      ? tx.recipient_account_type 
+      : tx.payment_account_type || 'N/A';
+  }
+
+  getSafeValue(value: any, fallback: string = 'N/A'): string {
+    return value !== null && value !== undefined ? value.toString() : fallback;
+  }
+
+  getSafeImage(issuer: string | undefined): string | null {
+    if (!issuer) return null;
+    const key = issuer.toLowerCase();
+    return paymentIssuerImages[key] || null;
+  }
+
+  formatCurrency(amount: number | undefined, walletType: string | undefined): string {
+    if (amount === undefined || amount === null) return 'N/A';
+    const currency = walletType === 'FIAT' ? 'GHS' : 'USD';
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
   }
 
   formatDate(date: string): string {
@@ -1138,17 +1094,38 @@ export class ReportsComponent implements OnInit {
     return date.toISOString().split('T')[0];
   }
 
-  // formatCurrency(amount: number): string {
-  //   return new Intl.NumberFormat('en-GH', {
-  //     style: 'currency',
-  //     currency: 'GHS',
-  //   }).format(amount);
-  // }
+  formatJson(obj: any): string {
+    return JSON.stringify(obj, null, 2);
+  }
+
+  copyJsonToClipboard(): void {
+    if (this.selectedJsonData) {
+      const jsonText = this.formatJson(this.selectedJsonData);
+      navigator.clipboard.writeText(jsonText).then(() => {
+        console.log('JSON copied to clipboard');
+      }).catch((err) => {
+        console.error('Failed to copy JSON: ', err);
+      });
+    }
+  }
+
+  viewTransactionJson(transaction: any): void {
+    this.selectedJsonData = transaction;
+    this.showJsonModal = true;
+  }
+
+  closeJsonModal(): void {
+    this.showJsonModal = false;
+    this.selectedJsonData = null;
+  }
 
   viewTransactionDetails(transaction: any) {
-    // Here you can implement the logic to show the transaction details modal
-    // For example:
     this.selectedTransaction = transaction;
     this.showModal = true;
+  }
+
+  closeTransactionModal(): void {
+    this.showModal = false;
+    this.selectedTransaction = null;
   }
 }

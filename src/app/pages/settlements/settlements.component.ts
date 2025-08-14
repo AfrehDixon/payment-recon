@@ -343,7 +343,7 @@ interface Merchant {
           <p class="mt-2 text-gray-500">No settlements found</p>
         </div>
 
-        <!-- OTP Verification Modal -->
+       <!-- OTP Verification Modal -->
 <div 
   *ngIf="showOtpModal" 
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -381,28 +381,14 @@ interface Merchant {
         {{ otpSuccessMessage }}
       </div>
 
-      <!-- Email Input (Show if OTP not sent) -->
-      <div *ngIf="!otpSent">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Email Address
-        </label>
-        <div class="relative">
-          <i class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">email</i>
-          <input
-            type="email"
-            [(ngModel)]="otpEmail"
-            placeholder="Enter your email address"
-            class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            [disabled]="otpLoading"
-          />
-        </div>
-        <p class="text-xs text-gray-500 mt-1">
-          An OTP will be sent to this email address
-        </p>
+      <!-- Loading State while sending OTP -->
+      <div class="flex justify-center items-center py-4" *ngIf="otpLoading && !otpSent">
+        <div class="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+        <span class="ml-2 text-sm text-gray-600">Sending OTP...</span>
       </div>
 
-      <!-- OTP Code Input (Show if OTP sent) -->
-      <div *ngIf="otpSent">
+      <!-- OTP Code Input (Show when OTP is sent) -->
+      <div *ngIf="otpSent && !otpLoading">
         <label class="block text-sm font-medium text-gray-700 mb-2">
           Enter OTP Code
         </label>
@@ -415,6 +401,7 @@ interface Merchant {
             maxlength="6"
             class="pl-10 w-full h-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             [disabled]="otpLoading"
+            (keyup.enter)="validateOtp()"
           />
         </div>
         <p class="text-xs text-gray-500 mt-1">
@@ -431,17 +418,6 @@ interface Merchant {
         [disabled]="otpLoading"
       >
         Cancel
-      </button>
-
-      <!-- Send OTP Button -->
-      <button
-        *ngIf="!otpSent"
-        (click)="sendOtp()"
-        [disabled]="otpLoading || !otpEmail"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <i class="material-icons text-sm mr-2" *ngIf="otpLoading">refresh</i>
-        <span>{{ otpLoading ? 'Sending...' : 'Send OTP' }}</span>
       </button>
 
       <!-- Validate OTP Button -->
@@ -462,7 +438,7 @@ interface Merchant {
         [disabled]="otpLoading"
         class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 disabled:opacity-50"
       >
-        Resend OTP
+        {{ otpLoading ? 'Sending...' : 'Resend OTP' }}
       </button>
     </div>
   </div>
@@ -577,6 +553,77 @@ export class SettlementsComponent implements OnInit {
     return merchant ? merchant.merchant_tradeName : 'Unknown Merchant';
   }
 
+  private getCurrentUserEmail(): string {
+  try {
+    // Try to get from localStorage first
+    const loginData = localStorage.getItem('PLOGIN');
+    if (loginData) {
+      const parsedData = JSON.parse(loginData);
+      return parsedData.user?.email || '';
+    }
+    
+    // If not in localStorage, you might want to get from your store
+    // Adjust this based on how your AuthState stores user data
+    // const user = this.store.selectSnapshot(AuthState.user);
+    // return user?.email || '';
+    
+    return '';
+  } catch (error) {
+    console.error('Error getting user email:', error);
+    return '';
+  }
+}
+
+openOtpModal(action: 'confirm' | 'unconfirm', settlementId: string) {
+  this.pendingAction = action;
+  this.pendingSettlementId = settlementId;
+  this.showOtpModal = true;
+  this.resetOtpForm();
+  
+  // Get the logged-in user's email and automatically send OTP
+  this.otpEmail = this.getCurrentUserEmail();
+  if (this.otpEmail) {
+    // Automatically send OTP when modal opens
+    this.sendOtp();
+  } else {
+    this.otpError = 'Unable to retrieve user email. Please try logging in again.';
+  }
+}
+
+// Updated sendOtp method
+async sendOtp() {
+  if (!this.otpEmail) {
+    this.otpError = 'User email not found. Please try logging in again.';
+    return;
+  }
+
+  this.otpLoading = true;
+  this.otpError = '';
+
+  try {
+    const response = await this.http
+      .post<any>(
+        `https://doronpay.com/api/otp/sendotp`,
+        { email: this.otpEmail },
+        { headers: this.getHeaders() }
+      )
+      .toPromise();
+
+    if (response?.success) {
+      this.otpSent = true;
+      this.otpSuccessMessage = 'OTP sent successfully to your registered email';
+    } else {
+      this.otpError = response?.message || 'Failed to send OTP';
+    }
+  } catch (err: any) {
+    this.otpError = err?.error?.message || 'Failed to send OTP';
+    console.error('Send OTP error:', err);
+  } finally {
+    this.otpLoading = false;
+  }
+}
+
+
   applyFilters() {
     this.filteredSettlements = this.settlements.filter(settlement => {
       let matches = true;
@@ -623,86 +670,54 @@ export class SettlementsComponent implements OnInit {
     this.currentPage = 1;
   }
 
-  async sendOtp() {
-    if (!this.otpEmail) {
-      this.otpError = 'Please enter your email address';
-      return;
-    }
-
-    this.otpLoading = true;
-    this.otpError = '';
-
-    try {
-      const response = await this.http
-        .post<any>(
-          `https://doronpay.com/api/otp/sendotp`,
-          { email: this.otpEmail },
-          { headers: this.getHeaders() }
-        )
-        .toPromise();
-
-      if (response?.success) {
-        this.otpSent = true;
-        this.otpSuccessMessage = 'OTP sent successfully to your email';
-      } else {
-        this.otpError = response?.message || 'Failed to send OTP';
-      }
-    } catch (err: any) {
-      this.otpError = err?.error?.message || 'Failed to send OTP';
-      console.error('Send OTP error:', err);
-    } finally {
-      this.otpLoading = false;
-    }
-  }
 
   async validateOtp() {
-    if (!this.otpCode) {
-      this.otpError = 'Please enter the OTP code';
-      return;
-    }
+  if (!this.otpCode) {
+    this.otpError = 'Please enter the OTP code';
+    return;
+  }
 
-    this.otpLoading = true;
-    this.otpError = '';
+  this.otpLoading = true;
+  this.otpError = '';
 
-    try {
-      const response = await this.http
-        .post<any>(
-          `https://doronpay.com/api/otp/validate`,
-          { 
-            email: this.otpEmail,
-            otp: this.otpCode 
-          },
-          { headers: this.getHeaders() }
-        )
-        .toPromise();
+  try {
+    const response = await this.http
+      .post<any>(
+        `https://doronpay.com/api/otp/validate`,
+        { 
+          email: this.otpEmail,
+          otp: this.otpCode 
+        },
+        { headers: this.getHeaders() }
+      )
+      .toPromise();
 
-      if (response?.success) {
-        this.otpSuccessMessage = 'OTP validated successfully';
-        this.closeOtpModal();
-        
-        // Proceed with the pending action
-        if (this.pendingAction === 'confirm') {
-          await this.proceedWithConfirm(this.pendingSettlementId);
-        } else if (this.pendingAction === 'unconfirm') {
-          await this.proceedWithUnconfirm(this.pendingSettlementId);
-        }
-      } else {
-        this.otpError = response?.message || 'Invalid OTP code';
+    if (response?.success) {
+      this.otpSuccessMessage = 'OTP validated successfully';
+      
+      // Store the pending action and settlement ID before closing modal
+      const actionToTake = this.pendingAction;
+      const settlementId = this.pendingSettlementId;
+      
+      // Close the modal first
+      this.closeOtpModal();
+      
+      // Then proceed with the action using the stored values
+      if (actionToTake === 'confirm') {
+        await this.proceedWithConfirm(settlementId);
+      } else if (actionToTake === 'unconfirm') {
+        await this.proceedWithUnconfirm(settlementId);
       }
-    } catch (err: any) {
-      this.otpError = err?.error?.message || 'Failed to validate OTP';
-      console.error('Validate OTP error:', err);
-    } finally {
-      this.otpLoading = false;
+    } else {
+      this.otpError = response?.message || 'Invalid OTP code';
     }
+  } catch (err: any) {
+    this.otpError = err?.error?.message || 'Failed to validate OTP';
+    console.error('Validate OTP error:', err);
+  } finally {
+    this.otpLoading = false;
   }
-
-  openOtpModal(action: 'confirm' | 'unconfirm', settlementId: string) {
-    this.pendingAction = action;
-    this.pendingSettlementId = settlementId;
-    this.showOtpModal = true;
-    this.resetOtpForm();
-  }
+}
 
   closeOtpModal() {
     this.showOtpModal = false;
