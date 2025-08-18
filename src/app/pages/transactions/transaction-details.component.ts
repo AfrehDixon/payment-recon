@@ -305,7 +305,7 @@ export class TransactionDetailsComponent {
   }
   
   canReverse(transaction: Transaction): boolean {
-    return transaction.description === 'Reversal transaction';
+    return transaction.description === 'Reversal transaction' && transaction.transaction_type !== 'DEBIT';
   }
   
   canComplete(transaction: Transaction): boolean {
