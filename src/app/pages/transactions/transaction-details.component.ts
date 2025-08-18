@@ -305,7 +305,7 @@ export class TransactionDetailsComponent {
   }
   
   canReverse(transaction: Transaction): boolean {
-    return transaction.status === 'FAILED';
+    return transaction.description === 'Reversal transaction';
   }
   
   canComplete(transaction: Transaction): boolean {
