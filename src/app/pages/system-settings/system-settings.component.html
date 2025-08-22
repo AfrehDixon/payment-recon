@@ -1,162 +1,238 @@
 <div class="settings-container">
-    <div class="header">
-      <h1>System Settings</h1>
-      <div class="header-actions">
-        <button (click)="toggleEdit()" class="edit-btn" [disabled]="loading" *ngIf="!isEditing">
-          <i class="fas fa-edit"></i>
-          Edit
-        </button>
-        <button (click)="refreshAll()" class="refresh-btn" [disabled]="loading || loadingBalance">
-          <i class="fas fa-sync-alt" [class.rotating]="loading || loadingBalance"></i>
-          Refresh All
-        </button>
+  <div class="header">
+    <h1>System Settings</h1>
+    <div class="header-actions">
+      <button (click)="toggleEdit()" class="edit-btn" [disabled]="loading" *ngIf="!isEditing">
+        <i class="fas fa-edit"></i>
+        Edit
+      </button>
+      <button (click)="refreshAll()" class="refresh-btn" [disabled]="loading || loadingBalance">
+        <i class="fas fa-sync-alt" [class.rotating]="loading || loadingBalance"></i>
+        Refresh All
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loader-container">
+    <div class="loader"></div>
+    <p>Loading system settings...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ error }}
+  </div>
+
+  <div *ngIf="balanceError" class="error-message">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ balanceError }}
+  </div>
+
+  <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
+    <div class="setting-card">
+      <h3>Pricing</h3>
+      <div class="setting-item">
+        <label>Markup Rate:</label>
+        <ng-container *ngIf="!isEditing">
+          <span>{{ settings.markupRate }}%</span>
+        </ng-container>
+        <input *ngIf="isEditing" type="number" formControlName="markupRate" class="form-input">
       </div>
-    </div>
-  
-    <div *ngIf="loading" class="loader-container">
-      <div class="loader"></div>
-      <p>Loading system settings...</p>
-    </div>
-  
-    <div *ngIf="error" class="error-message">
-      <i class="fas fa-exclamation-circle"></i>
-      {{ error }}
+      <div class="setting-item">
+        <label>Exchange Rate:</label>
+        <span>${{ formatCurrency(settings.exchangeRate) }}</span>
+      </div>
+      <div class="setting-item">
+        <label>Transaction Fee:</label>
+        <ng-container *ngIf="!isEditing">
+          <span>${{ settings.transactionFee }}</span>
+        </ng-container>
+        <input *ngIf="isEditing" type="number" formControlName="transactionFee" class="form-input">
+      </div>
     </div>
 
-    <div *ngIf="balanceError" class="error-message">
-      <i class="fas fa-exclamation-circle"></i>
-      {{ balanceError }}
+    <div class="setting-card">
+      <h3>Transaction Limits</h3>
+      <div class="setting-item">
+        <label>Minimum Amount:</label>
+        <ng-container *ngIf="!isEditing">
+          <span>${{ settings.minTransactionAmount }}</span>
+        </ng-container>
+        <input *ngIf="isEditing" type="number" formControlName="minTransactionAmount" class="form-input">
+      </div>
+      <div class="setting-item">
+        <label>Maximum Amount:</label>
+        <ng-container *ngIf="!isEditing">
+          <span>${{ settings.maxTransactionAmount }}</span>
+        </ng-container>
+        <input *ngIf="isEditing" type="number" formControlName="maxTransactionAmount" class="form-input">
+      </div>
     </div>
-  
-    <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
-      <div class="setting-card">
-        <h3>Pricing</h3>
-        <div class="setting-item">
-          <label>Markup Rate:</label>
+
+    <div class="setting-card">
+      <h3>Features</h3>
+      <div class="setting-item">
+          <label>Dynamic Pricing:</label>
           <ng-container *ngIf="!isEditing">
-            <span>{{ settings.markupRate }}%</span>
+            <span [class.enabled]="settings.dynamicPricingEnabled">
+              {{ settings.dynamicPricingEnabled ? 'Enabled' : 'Disabled' }}
+            </span>
           </ng-container>
-          <input *ngIf="isEditing" type="number" formControlName="markupRate" class="form-input">
-        </div>
-        <div class="setting-item">
-          <label>Exchange Rate:</label>
-          <span>${{ formatCurrency(settings.exchangeRate) }}</span>
-        </div>
-        <div class="setting-item">
-          <label>Transaction Fee:</label>
-          <ng-container *ngIf="!isEditing">
-            <span>${{ settings.transactionFee }}</span>
-          </ng-container>
-          <input *ngIf="isEditing" type="number" formControlName="transactionFee" class="form-input">
-        </div>
-      </div>
-  
-      <div class="setting-card">
-        <h3>Transaction Limits</h3>
-        <div class="setting-item">
-          <label>Minimum Amount:</label>
-          <ng-container *ngIf="!isEditing">
-            <span>${{ settings.minTransactionAmount }}</span>
-          </ng-container>
-          <input *ngIf="isEditing" type="number" formControlName="minTransactionAmount" class="form-input">
-        </div>
-        <div class="setting-item">
-          <label>Maximum Amount:</label>
-          <ng-container *ngIf="!isEditing">
-            <span>${{ settings.maxTransactionAmount }}</span>
-          </ng-container>
-          <input *ngIf="isEditing" type="number" formControlName="maxTransactionAmount" class="form-input">
-        </div>
-      </div>
-  
-      <div class="setting-card">
-        <h3>Features</h3>
-        <div class="setting-item">
-            <label>Dynamic Pricing:</label>
-            <ng-container *ngIf="!isEditing">
-              <span [class.enabled]="settings.dynamicPricingEnabled">
-                {{ settings.dynamicPricingEnabled ? 'Enabled' : 'Disabled' }}
-              </span>
-            </ng-container>
-            <div *ngIf="isEditing" class="toggle-switch">
-              <input type="checkbox" id="dynamicPricing" formControlName="dynamicPricingEnabled">
-              <label for="dynamicPricing"></label>
-            </div>
+          <div *ngIf="isEditing" class="toggle-switch">
+            <input type="checkbox" id="dynamicPricing" formControlName="dynamicPricingEnabled">
+            <label for="dynamicPricing"></label>
           </div>
+        </div>
+      <div class="setting-item">
+        <label>Last Updated:</label>
+        <span>{{ formatDate(settings.lastUpdated) }}</span>
+      </div>
+    </div>
+
+    <div class="setting-card">
+      <h3>Market Rates</h3>
+      <div class="setting-item">
+        <label>Market Price:</label>
+        <span>${{ formatCurrency(settings.marketPrice) }}</span>
+      </div>
+      <div class="setting-item">
+        <label>BTC Network Fee:</label>
+        <span>${{ settings.btcNetworkFee }} USD</span>
+      </div>
+      <div class="setting-item">
+        <label>BTC Exchange Rate:</label>
+        <span>${{ formatCurrency(settings.btcExchangeRate) }}</span>
+      </div>
+      <div class="setting-item">
+        <label>USDT Exchange Rate:</label>
+        <span>${{ settings.usdtExchangeRate }}</span>
+      </div>
+      <div class="setting-item">
+        <label>SOL Exchange Rate:</label>
+        <span>${{ formatCurrency(settings.solExchangeRate) }}</span>
+      </div>
+      <div class="setting-item">
+        <label>GHS Exchange Rate:</label>
+        <span>GHS {{ settings.ghsExchangeRate }}</span>
+      </div>
+      <div class="setting-item">
+        <label>BEP Exchange Rate:</label>
+        <span>${{ formatCurrency(settings.bepExchangeRate) }}</span>
+      </div>
+    </div>
+
+    <!-- BTC Balance Card -->
+    <!-- <div class="setting-card">
+      <h3>
+        BTC Chain Balance 
+        <button (click)="fetchBtcBalance()" class="refresh-balance-btn" [disabled]="loadingBalance" title="Refresh Balance">
+          <i class="fas fa-sync-alt" [class.rotating]="loadingBalance"></i>
+        </button>
+      </h3>
+      
+      <div *ngIf="loadingBalance" class="balance-loader">
+        <div class="mini-loader"></div>
+        <span>Loading balance...</span>
+      </div>
+
+      <div *ngIf="!loadingBalance && btcBalance" class="balance-details">
+        <div class="setting-item">
+          <label>Total Balance:</label>
+          <span class="balance-amount">{{ formatBtc(btcBalance.total) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Confirmed:</label>
+          <span>{{ formatBtc(btcBalance.confirmed) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Unconfirmed:</label>
+          <span>{{ formatBtc(btcBalance.unconfirmed) }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loadingBalance && !btcBalance && !balanceError" class="no-balance">
+        <i class="fas fa-info-circle"></i>
+        <span>No balance data available</span>
+      </div>
+    </div> -->
+
+    <!-- New Network Balances Card -->
+    <div class="setting-card network-balances-card">
+      <h3>Network Balances</h3>
+      
+      <!-- BTC Balances -->
+      <div class="network-section">
+        <h4>Bitcoin</h4>
+        <div class="setting-item">
+          <label>Confirmed Balance:</label>
+          <span>{{ formatBtc(settings.btcBalances.totalConfirmedBalance) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Unconfirmed Balance:</label>
+          <span>{{ formatBtc(settings.btcBalances.totalUnconfirmedBalance) }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Total USD Value:</label>
+          <span>${{ formatCurrency(settings.btcBalances.totalUsdValue) }}</span>
+        </div>
         <div class="setting-item">
           <label>Last Updated:</label>
-          <span>{{ formatDate(settings.lastUpdated) }}</span>
+          <span>{{ formatDate(settings.btcBalances.lastBalanceUpdate) }}</span>
         </div>
       </div>
 
-      <div class="setting-card">
-        <h3>Market Rates</h3>
+      <!-- BEP20 Balances -->
+      <div class="network-section">
+        <h4>BSC (BEP20) - {{ settings.bep20Balances.tokenInfo.symbol }}</h4>
         <div class="setting-item">
-          <label>Market Price:</label>
-          <span>${{ formatCurrency(settings.marketPrice) }}</span>
+          <label>Token Balance:</label>
+          <span>{{ settings.bep20Balances.totalTokenBalance | number:'1.2-6' }} {{ settings.bep20Balances.tokenInfo.symbol }}</span>
         </div>
         <div class="setting-item">
-          <label>BTC Network Fee:</label>
-          <span>${{ settings.btcNetworkFee }} USD</span>
+          <label>BNB Balance:</label>
+          <span>{{ formatSmallCurrency(settings.bep20Balances.totalBnbBalance) }} BNB</span>
         </div>
         <div class="setting-item">
-          <label>BTC Exchange Rate:</label>
-          <span>${{ formatCurrency(settings.btcExchangeRate) }}</span>
+          <label>Token USD Value:</label>
+          <span>${{ formatCurrency(settings.bep20Balances.totalTokenUsdValue) }}</span>
         </div>
         <div class="setting-item">
-          <label>USDT Exchange Rate:</label>
-          <span>${{ settings.usdtExchangeRate }}</span>
+          <label>BNB USD Value:</label>
+          <span>${{ formatCurrency(settings.bep20Balances.totalBnbUsdValue) }}</span>
         </div>
         <div class="setting-item">
-          <label>SOL Exchange Rate:</label>
-          <span>${{ formatCurrency(settings.solExchangeRate) }}</span>
+          <label>Total USD Value:</label>
+          <span>${{ formatCurrency(settings.bep20Balances.totalUsdValue) }}</span>
         </div>
         <div class="setting-item">
-          <label>GHS Exchange Rate:</label>
-          <span>GHS {{ settings.ghsExchangeRate }}</span>
+          <label>Last Updated:</label>
+          <span>{{ formatDate(settings.bep20Balances.lastBalanceUpdate) }}</span>
         </div>
       </div>
 
-      <!-- New BTC Balance Card -->
-      <div class="setting-card">
-        <h3>
-          BTC Chain Balance 
-          <button (click)="fetchBtcBalance()" class="refresh-balance-btn" [disabled]="loadingBalance" title="Refresh Balance">
-            <i class="fas fa-sync-alt" [class.rotating]="loadingBalance"></i>
-          </button>
-        </h3>
-        
-        <div *ngIf="loadingBalance" class="balance-loader">
-          <div class="mini-loader"></div>
-          <span>Loading balance...</span>
+      <!-- Solana Balances -->
+      <div class="network-section">
+        <h4>Solana</h4>
+        <div class="setting-item">
+          <label>SOL Balance:</label>
+          <span>{{ formatSmallCurrency(settings.solanaBalances.totalSolBalance) }} SOL</span>
         </div>
-
-        <div *ngIf="!loadingBalance && btcBalance" class="balance-details">
-          <div class="setting-item">
-            <label>Total Balance:</label>
-            <span class="balance-amount">{{ formatBtc(btcBalance.total) }}</span>
-          </div>
-          <div class="setting-item">
-            <label>Confirmed:</label>
-            <span>{{ formatBtc(btcBalance.confirmed) }}</span>
-          </div>
-          <div class="setting-item">
-            <label>Unconfirmed:</label>
-            <span>{{ formatBtc(btcBalance.unconfirmed) }}</span>
-          </div>
+        <div class="setting-item">
+          <label>Total USD Value:</label>
+          <span>${{ formatCurrency(settings.solanaBalances.totalUsdValue) }}</span>
         </div>
-
-        <div *ngIf="!loadingBalance && !btcBalance && !balanceError" class="no-balance">
-          <i class="fas fa-info-circle"></i>
-          <span>No balance data available</span>
+        <div class="setting-item">
+          <label>Last Updated:</label>
+          <span>{{ formatDate(settings.solanaBalances.lastBalanceUpdate) }}</span>
         </div>
       </div>
-  
-      <div class="actions" *ngIf="isEditing">
-        <button type="button" class="cancel-btn" (click)="toggleEdit()">Cancel</button>
-        <button type="submit" class="save-btn" (click)="saveSettings()" [disabled]="settingsForm.invalid || loading">
-          Save Changes
-        </button>
-      </div>
-    </form>
-  </div>
+    </div>
+
+    <div class="actions" *ngIf="isEditing">
+      <button type="button" class="cancel-btn" (click)="toggleEdit()">Cancel</button>
+      <button type="submit" class="save-btn" (click)="saveSettings()" [disabled]="settingsForm.invalid || loading">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>

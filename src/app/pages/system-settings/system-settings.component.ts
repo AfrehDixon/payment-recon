@@ -110,6 +110,13 @@ export class SystemSettingsComponent implements OnInit {
     return value?.toFixed(8) + ' BTC';
   }
 
+  formatSmallCurrency(value: number): string {
+    return value?.toLocaleString('en-US', {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6
+    });
+  }
+
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
     if (!this.isEditing) {

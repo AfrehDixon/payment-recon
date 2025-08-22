@@ -1,6 +1,6 @@
 .settings-container {
     padding: 2rem;
-    max-width: 1200px;
+    // max-width: 1200px;
     margin: 0 auto;
     margin-left: 200px;
   }
@@ -135,6 +135,28 @@
       border-bottom: 2px solid #e2e8f0;
     }
   }
+
+  .network-balances-card {
+  grid-column: span 2;
+  
+  .network-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    
+    h4 {
+      margin: 0 0 0.75rem 0;
+      color: #555;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+  }
+}
   
   .setting-item {
     display: flex;
