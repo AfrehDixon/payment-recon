@@ -34,6 +34,33 @@
   flex-wrap: wrap;
 }
 
+.export-excel-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+
+  &:hover:not(:disabled) {
+    background: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+  }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
 .search-box {
   flex: 1;
   min-width: 300px;
@@ -116,6 +143,33 @@
 
   &:active {
     transform: translateY(0);
+  }
+}
+
+.export-all-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  width: 150px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
@@ -1378,10 +1432,11 @@
     }
   }
 
-  .bulk-action-buttons {
-    display: flex;
-    gap: 0.75rem;
-  }
+.bulk-action-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
 
   .bulk-approve-btn {
     background: #10b981;

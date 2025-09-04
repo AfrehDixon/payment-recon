@@ -5,24 +5,25 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { AuthState } from '../../state/apps/app.states';
+import * as XLSX from 'xlsx';
 
 const BASE_URL = 'https://doronpay.com/api';
 
 enum EOperator {
-  DORON = "DORON",
-  PEOPLESPAY = "PEOPLESPAY",
-  FIDELITY = "FIDELITY",
-  SOLANA = "SOLANA",
-  GTCARD = "GTCARD",
-  MOOLRE = "MOOLRE",
-  PCARD = "PCARD",
-  TRC20 = "TRC20",
-  ERC20 = "ERC20",
-  GTB = "GTB",
-  FAB = "FAB",
-  BTC = "BTC",
-  GIP = "GIP",
-  BEP20 = "BEP20",
+  DORON = 'DORON',
+  PEOPLESPAY = 'PEOPLESPAY',
+  FIDELITY = 'FIDELITY',
+  SOLANA = 'SOLANA',
+  GTCARD = 'GTCARD',
+  MOOLRE = 'MOOLRE',
+  PCARD = 'PCARD',
+  TRC20 = 'TRC20',
+  ERC20 = 'ERC20',
+  GTB = 'GTB',
+  FAB = 'FAB',
+  BTC = 'BTC',
+  GIP = 'GIP',
+  BEP20 = 'BEP20',
 }
 
 interface Merchant {
@@ -69,7 +70,13 @@ interface PendingReversal {
     reason: string;
   };
   originalTransactionRef: string;
-  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'PROCESSED' | 'FAILED';
+  status:
+    | 'PENDING'
+    | 'UNDER_REVIEW'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'PROCESSED'
+    | 'FAILED';
   reversalTransactionData: {
     reversalTransactionId: string;
     transaction_type: string;
@@ -117,7 +124,7 @@ interface PendingReversal {
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './pending-reversals.component.html',
-  styleUrls: ['./pending-reversals.component.scss']
+  styleUrls: ['./pending-reversals.component.scss'],
 })
 export class PendingReversalsComponent implements OnInit {
   reversals: PendingReversal[] = [];
@@ -125,10 +132,10 @@ export class PendingReversalsComponent implements OnInit {
   merchants: Merchant[] = [];
   loading = false;
   error: string | null = null;
-  
+
   // Auth user data
   currentUser: any;
-  
+
   // Bulk Selection
   selectedReversals: Set<string> = new Set();
   isAllSelected = false;
@@ -136,18 +143,18 @@ export class PendingReversalsComponent implements OnInit {
   bulkProcessProgress = 0;
   bulkProcessTotal = 0;
   showBulkConfirm = false;
-  
+
   // Transaction verification
   verifyingTransaction = false;
   verifiedTransaction: TransactionData | null = null;
   transactionVerificationError: string | null = null;
-  
+
   // Forms
   createReversalForm: FormGroup;
   reviewForm: FormGroup;
   processForm: FormGroup;
   bulkReviewForm: FormGroup;
-  
+
   // Modal states
   showCreateReversalModal = false;
   showReviewModal = false;
@@ -155,25 +162,25 @@ export class PendingReversalsComponent implements OnInit {
   showDetailsModal = false;
   showBulkReviewModal = false;
   selectedReversal: PendingReversal | null = null;
-  
+
   // Filters and search
   searchTerm: string = '';
   statusFilter: string = '';
   merchantFilter: string = '';
-  
+
   // Pagination
   currentPage = 1;
   pageSize = 10;
   totalItems = 0;
   totalPages = 0;
-  
+
   // Sort
   sortBy = 'createdAt';
   sortOrder = 'desc';
 
   // Operators enum for dropdown
   operators = Object.values(EOperator);
-  
+
   // Math utility for template
   Math = Math;
 
@@ -184,7 +191,7 @@ export class PendingReversalsComponent implements OnInit {
   ) {
     // Get current user from auth state
     this.currentUser = this.store.selectSnapshot(AuthState.user);
-    
+
     this.createReversalForm = this.fb.group({
       originalTransactionRef: ['', Validators.required],
     });
@@ -193,17 +200,17 @@ export class PendingReversalsComponent implements OnInit {
       action: ['', Validators.required],
       reviewedBy: [this.currentUser?.name || this.currentUser?._id],
       rejectionReason: [''],
-      notes: ['']
+      notes: [''],
     });
 
     this.processForm = this.fb.group({
-      processedBy: [this.currentUser?.name || this.currentUser?._id]
+      processedBy: [this.currentUser?.name || this.currentUser?._id],
     });
 
     // Bulk review form
     this.bulkReviewForm = this.fb.group({
       action: ['APPROVE', Validators.required],
-      notes: ['']
+      notes: [''],
     });
   }
 
@@ -219,7 +226,7 @@ export class PendingReversalsComponent implements OnInit {
     if (this.isAllSelected) {
       this.selectedReversals.clear();
     } else {
-      this.getSelectableReversals().forEach(reversal => {
+      this.getSelectableReversals().forEach((reversal) => {
         this.selectedReversals.add(reversal.reversalId);
       });
     }
@@ -237,12 +244,17 @@ export class PendingReversalsComponent implements OnInit {
 
   updateSelectAllState(): void {
     const selectableReversals = this.getSelectableReversals();
-    this.isAllSelected = selectableReversals.length > 0 && 
-      selectableReversals.every(reversal => this.selectedReversals.has(reversal.reversalId));
+    this.isAllSelected =
+      selectableReversals.length > 0 &&
+      selectableReversals.every((reversal) =>
+        this.selectedReversals.has(reversal.reversalId)
+      );
   }
 
   getSelectableReversals(): PendingReversal[] {
-    return this.filteredReversals.filter(reversal => this.canReview(reversal));
+    return this.filteredReversals.filter((reversal) =>
+      this.canReview(reversal)
+    );
   }
 
   getSelectedReversalsCount(): number {
@@ -250,7 +262,9 @@ export class PendingReversalsComponent implements OnInit {
   }
 
   getSelectedReversals(): PendingReversal[] {
-    return this.filteredReversals.filter(reversal => this.selectedReversals.has(reversal.reversalId));
+    return this.filteredReversals.filter((reversal) =>
+      this.selectedReversals.has(reversal.reversalId)
+    );
   }
 
   isReversalSelected(reversalId: string): boolean {
@@ -268,7 +282,7 @@ export class PendingReversalsComponent implements OnInit {
     this.showBulkReviewModal = true;
     this.bulkReviewForm.reset({
       action: 'APPROVE',
-      notes: ''
+      notes: '',
     });
   }
 
@@ -283,72 +297,94 @@ export class PendingReversalsComponent implements OnInit {
     this.isBulkProcessing = true;
     this.bulkProcessProgress = 0;
     this.bulkProcessTotal = this.selectedReversals.size;
-    
+
     const formValue = this.bulkReviewForm.value;
     const selectedReversals = this.getSelectedReversals();
-    
+
     let successCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
     for (let i = 0; i < selectedReversals.length; i++) {
       const reversal = selectedReversals[i];
-      
+
       try {
         const reviewData = {
           action: formValue.action,
-          reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER',
-          notes: formValue.notes
+          reviewedBy:
+            this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER',
+          notes: formValue.notes,
         };
 
-        const response = await this.http.put<any>(
-          `${BASE_URL}/reversals/pending/${reversal.reversalId}/review`, 
-          reviewData
-        ).toPromise();
+        const response = await this.http
+          .put<any>(
+            `${BASE_URL}/reversals/pending/${reversal.reversalId}/review`,
+            reviewData
+          )
+          .toPromise();
 
         if (response.success) {
           successCount++;
-          
+
           // If approved, also process the reversal
           if (formValue.action === 'APPROVE') {
             try {
               const processData = {
-                processedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
+                processedBy:
+                  this.currentUser?._id ||
+                  this.currentUser?.name ||
+                  'UNKNOWN_USER',
               };
-              
-              await this.http.post<any>(
-                `${BASE_URL}/reversals/pending/${reversal.reversalId}/process`, 
-                processData
-              ).toPromise();
+
+              await this.http
+                .post<any>(
+                  `${BASE_URL}/reversals/pending/${reversal.reversalId}/process`,
+                  processData
+                )
+                .toPromise();
             } catch (processError) {
-              console.error(`Failed to process reversal ${reversal.reversalId}:`, processError);
+              console.error(
+                `Failed to process reversal ${reversal.reversalId}:`,
+                processError
+              );
               // Don't count this as an error since the approval succeeded
             }
           }
         } else {
           errorCount++;
-          errors.push(`${reversal.reversalId}: ${response.message || 'Unknown error'}`);
+          errors.push(
+            `${reversal.reversalId}: ${response.message || 'Unknown error'}`
+          );
         }
       } catch (error: any) {
         errorCount++;
-        errors.push(`${reversal.reversalId}: ${error.message || 'Network error'}`);
+        errors.push(
+          `${reversal.reversalId}: ${error.message || 'Network error'}`
+        );
       }
 
       this.bulkProcessProgress = i + 1;
     }
 
     this.isBulkProcessing = false;
-    
+
     // Show results
     if (successCount > 0) {
-      const action = formValue.action === 'APPROVE' ? 'approved and processed' : 'reviewed';
-      alert(`Successfully ${action} ${successCount} reversal${successCount !== 1 ? 's' : ''}${errorCount > 0 ? `. ${errorCount} failed.` : '.'}`);
+      const action =
+        formValue.action === 'APPROVE' ? 'approved and processed' : 'reviewed';
+      alert(
+        `Successfully ${action} ${successCount} reversal${
+          successCount !== 1 ? 's' : ''
+        }${errorCount > 0 ? `. ${errorCount} failed.` : '.'}`
+      );
     }
-    
+
     if (errorCount > 0 && errors.length > 0) {
       console.error('Bulk operation errors:', errors);
       if (successCount === 0) {
-        this.error = `Failed to process reversals: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`;
+        this.error = `Failed to process reversals: ${errors
+          .slice(0, 3)
+          .join(', ')}${errors.length > 3 ? '...' : ''}`;
       }
     }
 
@@ -360,26 +396,30 @@ export class PendingReversalsComponent implements OnInit {
 
   // Existing methods remain the same...
   loadMerchants(): void {
-    this.http.get<any>(`${BASE_URL}/merchants/get`)
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.merchants = response.data.filter((merchant: Merchant) => merchant.active);
-          } else {
-            this.error = 'Failed to load merchants';
-          }
-        },
-        error: (error) => {
-          this.error = 'An error occurred while loading merchants';
+    this.http.get<any>(`${BASE_URL}/merchants/get`).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.merchants = response.data.filter(
+            (merchant: Merchant) => merchant.active
+          );
+        } else {
+          this.error = 'Failed to load merchants';
         }
-      });
+      },
+      error: (error) => {
+        this.error = 'An error occurred while loading merchants';
+      },
+    });
   }
 
   verifyTransaction(): void {
-    const transactionRef = this.createReversalForm.get('originalTransactionRef')?.value;
-    
+    const transactionRef = this.createReversalForm.get(
+      'originalTransactionRef'
+    )?.value;
+
     if (!transactionRef || !transactionRef.trim()) {
-      this.transactionVerificationError = 'Please enter a transaction reference';
+      this.transactionVerificationError =
+        'Please enter a transaction reference';
       return;
     }
 
@@ -387,35 +427,40 @@ export class PendingReversalsComponent implements OnInit {
     this.transactionVerificationError = null;
     this.verifiedTransaction = null;
 
-    this.http.get<any>(`${BASE_URL}/transactions/get/${transactionRef.trim()}`)
+    this.http
+      .get<any>(`${BASE_URL}/transactions/get/${transactionRef.trim()}`)
       .subscribe({
         next: (response) => {
           this.verifyingTransaction = false;
-          
+
           if (response.success && response.data && response.data.length > 0) {
             this.verifiedTransaction = response.data[0];
             this.transactionVerificationError = null;
-            
+
             if (this.verifiedTransaction) {
               this.populateFormWithTransactionData(this.verifiedTransaction);
             }
           } else {
-            this.transactionVerificationError = 'Transaction not found or no data available';
+            this.transactionVerificationError =
+              'Transaction not found or no data available';
             this.verifiedTransaction = null;
           }
         },
         error: (error) => {
           this.verifyingTransaction = false;
-          this.transactionVerificationError = 'Failed to verify transaction. Please check the reference and try again.';
+          this.transactionVerificationError =
+            'Failed to verify transaction. Please check the reference and try again.';
           this.verifiedTransaction = null;
           console.error('Transaction verification error:', error);
-        }
+        },
       });
   }
 
   populateFormWithTransactionData(transaction: TransactionData): void {
-    const reversalData = this.createReversalForm.get('reversalTransactionData') as FormGroup;
-    
+    const reversalData = this.createReversalForm.get(
+      'reversalTransactionData'
+    ) as FormGroup;
+
     if (reversalData) {
       reversalData.patchValue({
         merchantId: transaction.merchantId,
@@ -434,30 +479,200 @@ export class PendingReversalsComponent implements OnInit {
         payment_account_name: transaction.payment_account_name,
         payment_account_type: transaction.payment_account_type,
         description: `Reversal for transaction ${transaction.transactionRef}`,
-        reason: transaction.reason || 'Transaction failed'
+        reason: transaction.reason || 'Transaction failed',
       });
     }
+  }
+
+  exportSelectedToExcel(): void {
+    if (this.selectedReversals.size === 0) {
+      alert('Please select at least one reversal to export.');
+      return;
+    }
+
+    const selectedData = this.getSelectedReversals();
+
+    // Transform the data for Excel export
+    const excelData = selectedData.map((reversal) => ({
+      'Reversal ID': reversal.reversalId,
+      Status: reversal.status,
+      'Original Transaction Ref': reversal.originalTransactionRef,
+      Merchant: this.getMerchantName(
+        reversal.reversalTransactionData.merchantId
+      ),
+      Amount: reversal.reversalTransactionData.amount,
+      Currency: reversal.reversalTransactionData.currency,
+      'Actual Amount': reversal.reversalTransactionData.actualAmount,
+      Charges: reversal.reversalTransactionData.charges,
+      Operator: reversal.reversalTransactionData.operator,
+      Channel: reversal.reversalTransactionData.channel,
+      Reason: reversal.originalTransactionId.reason,
+      Description: reversal.reversalTransactionData.description,
+      'Recipient Account Name':
+        reversal.reversalTransactionData.recipient_account_name,
+      'Recipient Account Number':
+        reversal.reversalTransactionData.recipient_account_number,
+      'Recipient Account Issuer':
+        reversal.reversalTransactionData.recipient_account_issuer,
+      'Payment Account Name':
+        reversal.reversalTransactionData.payment_account_name,
+      'Payment Account Number':
+        reversal.reversalTransactionData.payment_account_number,
+      'Payment Account Issuer':
+        reversal.reversalTransactionData.payment_account_issuer,
+      'Created By': reversal.createdBy,
+      'Created At': this.formatDate(reversal.createdAt),
+      'Reviewed By': reversal.reviewedBy || '',
+      'Reviewed At': reversal.reviewedAt
+        ? this.formatDate(reversal.reviewedAt)
+        : '',
+      'Rejection Reason': reversal.rejectionReason || '',
+      'Processing Error': reversal.processingError || '',
+    }));
+
+    // Create workbook and worksheet
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+
+    // Add some styling and formatting
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+
+    // Auto-size columns
+    const colWidths: { wch: number }[] = [];
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      let maxWidth = 10;
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cellAddress];
+        if (cell && cell.v) {
+          const cellLength = cell.v.toString().length;
+          maxWidth = Math.max(maxWidth, cellLength);
+        }
+      }
+      colWidths.push({ wch: Math.min(maxWidth + 2, 50) });
+    }
+    ws['!cols'] = colWidths;
+
+    // Add the worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Pending Reversals');
+
+    // Generate filename with current date
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const filename = `pending-reversals-${dateStr}.xlsx`;
+
+    // Save the file
+    XLSX.writeFile(wb, filename);
+
+    // Show success message
+    alert(
+      `Successfully exported ${selectedData.length} reversal${
+        selectedData.length !== 1 ? 's' : ''
+      } to ${filename}`
+    );
+  }
+
+  // Optional: Export all (not just selected)
+  exportAllToExcel(): void {
+    if (this.filteredReversals.length === 0) {
+      alert('No reversals to export.');
+      return;
+    }
+
+    // Use the same logic but with all filtered reversals
+    const excelData = this.filteredReversals.map((reversal) => ({
+      'Reversal ID': reversal.reversalId,
+      Status: reversal.status,
+      'Original Transaction Ref': reversal.originalTransactionRef,
+      Merchant: this.getMerchantName(
+        reversal.reversalTransactionData.merchantId
+      ),
+      Amount: reversal.reversalTransactionData.amount,
+      Currency: reversal.reversalTransactionData.currency,
+      'Actual Amount': reversal.reversalTransactionData.actualAmount,
+      Charges: reversal.reversalTransactionData.charges,
+      Operator: reversal.reversalTransactionData.operator,
+      Channel: reversal.reversalTransactionData.channel,
+      Reason: reversal.originalTransactionId.reason,
+      Description: reversal.reversalTransactionData.description,
+      'Recipient Account Name':
+        reversal.reversalTransactionData.recipient_account_name,
+      'Recipient Account Number':
+        reversal.reversalTransactionData.recipient_account_number,
+      'Recipient Account Issuer':
+        reversal.reversalTransactionData.recipient_account_issuer,
+      'Payment Account Name':
+        reversal.reversalTransactionData.payment_account_name,
+      'Payment Account Number':
+        reversal.reversalTransactionData.payment_account_number,
+      'Payment Account Issuer':
+        reversal.reversalTransactionData.payment_account_issuer,
+      'Created By': reversal.createdBy,
+      'Created At': this.formatDate(reversal.createdAt),
+      'Reviewed By': reversal.reviewedBy || '',
+      'Reviewed At': reversal.reviewedAt
+        ? this.formatDate(reversal.reviewedAt)
+        : '',
+      'Rejection Reason': reversal.rejectionReason || '',
+      'Processing Error': reversal.processingError || '',
+    }));
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+
+    // Auto-size columns (same as above)
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+    const colWidths: { wch: number }[] = [];
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      let maxWidth = 10;
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cellAddress];
+        if (cell && cell.v) {
+          const cellLength = cell.v.toString().length;
+          maxWidth = Math.max(maxWidth, cellLength);
+        }
+      }
+      colWidths.push({ wch: Math.min(maxWidth + 2, 50) });
+    }
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Pending Reversals');
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const filename = `all-pending-reversals-${dateStr}.xlsx`;
+
+    XLSX.writeFile(wb, filename);
+
+    alert(
+      `Successfully exported ${excelData.length} reversal${
+        excelData.length !== 1 ? 's' : ''
+      } to ${filename}`
+    );
   }
 
   resetTransactionVerification(): void {
     this.verifiedTransaction = null;
     this.transactionVerificationError = null;
-    
-    const currentRef = this.createReversalForm.get('originalTransactionRef')?.value;
+
+    const currentRef = this.createReversalForm.get(
+      'originalTransactionRef'
+    )?.value;
     this.createReversalForm.reset();
     this.createReversalForm.patchValue({
       originalTransactionRef: currentRef,
-      createdBy: this.currentUser?.name || this.currentUser?._id
+      createdBy: this.currentUser?.name || this.currentUser?._id,
     });
   }
 
   loadReversals(): void {
     this.loading = true;
     const params: any = {
-      page: this.currentPage,  
-      limit: this.pageSize,   
+      page: this.currentPage,
+      limit: this.pageSize,
       sortBy: this.sortBy,
-      sortOrder: this.sortOrder
+      sortOrder: this.sortOrder,
     };
 
     if (this.statusFilter) {
@@ -473,16 +688,17 @@ export class PendingReversalsComponent implements OnInit {
     }
 
     const queryString = Object.keys(params)
-      .map(key => `${key}=${encodeURIComponent(params[key])}`)
+      .map((key) => `${key}=${encodeURIComponent(params[key])}`)
       .join('&');
 
-    this.http.get<any>(`${BASE_URL}/reversals/pending?${queryString}`)
+    this.http
+      .get<any>(`${BASE_URL}/reversals/pending?${queryString}`)
       .subscribe({
         next: (response) => {
           if (response.success) {
             this.reversals = response.data.reversals || response.data;
             this.filteredReversals = this.reversals;
-            
+
             if (response.data.pagination) {
               this.totalItems = response.data.pagination.total;
               this.totalPages = response.data.pagination.pages;
@@ -490,13 +706,13 @@ export class PendingReversalsComponent implements OnInit {
               this.totalItems = this.reversals.length;
               this.totalPages = Math.ceil(this.totalItems / this.pageSize);
             }
-            
+
             // Update selection state after loading
             this.updateSelectAllState();
-            
+
             // Clear invalid selections
-            const validIds = new Set(this.reversals.map(r => r.reversalId));
-            this.selectedReversals.forEach(id => {
+            const validIds = new Set(this.reversals.map((r) => r.reversalId));
+            this.selectedReversals.forEach((id) => {
               if (!validIds.has(id)) {
                 this.selectedReversals.delete(id);
               }
@@ -509,7 +725,7 @@ export class PendingReversalsComponent implements OnInit {
         error: (error) => {
           this.error = 'An error occurred while loading reversals';
           this.loading = false;
-        }
+        },
       });
   }
 
@@ -524,22 +740,35 @@ export class PendingReversalsComponent implements OnInit {
     let filtered = [...this.reversals];
 
     if (this.searchTerm.trim()) {
-      filtered = filtered.filter(reversal => {
-        const merchantName = this.getMerchantName(reversal.reversalTransactionData.merchantId);
+      filtered = filtered.filter((reversal) => {
+        const merchantName = this.getMerchantName(
+          reversal.reversalTransactionData.merchantId
+        );
         return (
           reversal.reversalId.toLowerCase().includes(this.searchTerm) ||
-          reversal.originalTransactionRef.toLowerCase().includes(this.searchTerm) ||
-          reversal.reversalTransactionData.merchantId.toLowerCase().includes(this.searchTerm) ||
+          reversal.originalTransactionRef
+            .toLowerCase()
+            .includes(this.searchTerm) ||
+          reversal.reversalTransactionData.merchantId
+            .toLowerCase()
+            .includes(this.searchTerm) ||
           merchantName.toLowerCase().includes(this.searchTerm) ||
-          reversal.reversalTransactionData.reason.toLowerCase().includes(this.searchTerm) ||
-          reversal.reversalTransactionData.description.toLowerCase().includes(this.searchTerm)
+          reversal.reversalTransactionData.reason
+            .toLowerCase()
+            .includes(this.searchTerm) ||
+          reversal.reversalTransactionData.description
+            .toLowerCase()
+            .includes(this.searchTerm)
         );
       });
     }
 
     const startIndex = (this.currentPage - 1) * this.pageSize;
-    this.filteredReversals = filtered.slice(startIndex, startIndex + this.pageSize);
-    
+    this.filteredReversals = filtered.slice(
+      startIndex,
+      startIndex + this.pageSize
+    );
+
     this.totalItems = filtered.length;
     this.totalPages = Math.ceil(this.totalItems / this.pageSize);
 
@@ -597,7 +826,7 @@ export class PendingReversalsComponent implements OnInit {
     this.reviewForm.reset({
       action: '',
       rejectionReason: '',
-      notes: ''
+      notes: '',
     });
     this.showReviewModal = true;
   }
@@ -608,7 +837,7 @@ export class PendingReversalsComponent implements OnInit {
     this.reviewForm.reset({
       action: '',
       rejectionReason: '',
-      notes: ''
+      notes: '',
     });
   }
 
@@ -636,7 +865,8 @@ export class PendingReversalsComponent implements OnInit {
   submitCreateReversal(): void {
     if (this.createReversalForm.valid && this.verifiedTransaction) {
       this.loading = true;
-      this.http.post(`${BASE_URL}/reversals/pending`, this.createReversalForm.value)
+      this.http
+        .post(`${BASE_URL}/reversals/pending`, this.createReversalForm.value)
         .subscribe({
           next: (response: any) => {
             if (response.success) {
@@ -648,9 +878,10 @@ export class PendingReversalsComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            this.error = error.message || 'An error occurred while creating the reversal';
+            this.error =
+              error.message || 'An error occurred while creating the reversal';
             this.loading = false;
-          }
+          },
         });
     }
   }
@@ -666,7 +897,8 @@ export class PendingReversalsComponent implements OnInit {
       const action = this.reviewForm.value.action;
       const reviewData: any = {
         ...this.reviewForm.value,
-        reviewedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
+        reviewedBy:
+          this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER',
       };
       // Ensure rejectionReason is included only when action is 'REJECT'
       if (action !== 'REJECT') {
@@ -679,7 +911,11 @@ export class PendingReversalsComponent implements OnInit {
         delete reviewData.notes;
       }
 
-      this.http.put(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/review`, reviewData)
+      this.http
+        .put(
+          `${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/review`,
+          reviewData
+        )
         .subscribe({
           next: (response: any) => {
             if (response.success) {
@@ -693,7 +929,7 @@ export class PendingReversalsComponent implements OnInit {
           error: (error) => {
             this.error = 'An error occurred while reviewing the reversal';
             this.loading = false;
-          }
+          },
         });
     }
   }
@@ -701,12 +937,17 @@ export class PendingReversalsComponent implements OnInit {
   submitProcess(): void {
     if (this.selectedReversal) {
       this.loading = true;
-      
+
       const processData = {
-        processedBy: this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER'
+        processedBy:
+          this.currentUser?._id || this.currentUser?.name || 'UNKNOWN_USER',
       };
-      
-      this.http.post(`${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/process`, processData)
+
+      this.http
+        .post(
+          `${BASE_URL}/reversals/pending/${this.selectedReversal.reversalId}/process`,
+          processData
+        )
         .subscribe({
           next: (response: any) => {
             if (response.success) {
@@ -720,7 +961,7 @@ export class PendingReversalsComponent implements OnInit {
           error: (error) => {
             this.error = 'An error occurred while processing the reversal';
             this.loading = false;
-          }
+          },
         });
     }
   }
@@ -729,7 +970,7 @@ export class PendingReversalsComponent implements OnInit {
   formatCurrency(amount: number, currency: string = 'GHS'): string {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
-      currency: currency
+      currency: currency,
     }).format(amount);
   }
 
@@ -739,18 +980,18 @@ export class PendingReversalsComponent implements OnInit {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
   getStatusClass(status: string): string {
     const statusClasses: { [key: string]: string } = {
-      'PENDING': 'status-pending',
-      'UNDER_REVIEW': 'status-under-review',
-      'APPROVED': 'status-approved',
-      'REJECTED': 'status-rejected',
-      'PROCESSED': 'status-processed',
-      'FAILED': 'status-failed'
+      PENDING: 'status-pending',
+      UNDER_REVIEW: 'status-under-review',
+      APPROVED: 'status-approved',
+      REJECTED: 'status-rejected',
+      PROCESSED: 'status-processed',
+      FAILED: 'status-failed',
     };
     return statusClasses[status] || 'status-default';
   }
@@ -765,22 +1006,22 @@ export class PendingReversalsComponent implements OnInit {
 
   getActionButtons(reversal: PendingReversal): string[] {
     const actions = ['view'];
-    
+
     if (this.canReview(reversal)) {
       actions.push('review');
     }
-    
+
     if (this.canProcess(reversal)) {
       actions.push('process');
     }
-    
+
     return actions;
   }
 
   onReviewActionChange(): void {
     const action = this.reviewForm.get('action')?.value;
     const rejectionReasonControl = this.reviewForm.get('rejectionReason');
-    
+
     if (action === 'REJECT') {
       rejectionReasonControl?.setValidators([Validators.required]);
     } else {
@@ -790,19 +1031,21 @@ export class PendingReversalsComponent implements OnInit {
   }
 
   getMerchantName(merchantId: string): string {
-    const merchant = this.merchants.find(m => m._id === merchantId);
+    const merchant = this.merchants.find((m) => m._id === merchantId);
     return merchant?.merchant_tradeName || merchant?.name || 'Unknown Merchant';
   }
 
   getMerchantDisplayName(merchant: Merchant): string {
-    return merchant.merchant_tradeName || merchant.name || `Merchant ${merchant._id}`;
+    return (
+      merchant.merchant_tradeName || merchant.name || `Merchant ${merchant._id}`
+    );
   }
 
   // Pagination methods
   getPageNumbers(): (number | string)[] {
     const pages: (number | string)[] = [];
     const maxVisiblePages = 5;
-    
+
     if (this.totalPages <= maxVisiblePages) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
@@ -830,7 +1073,7 @@ export class PendingReversalsComponent implements OnInit {
         pages.push(this.totalPages);
       }
     }
-    
+
     return pages;
   }
 

@@ -3,32 +3,74 @@
   <div class="header">
     <div class="header-content">
       <h1>Pending Reversals</h1>
-      
+
       <!-- Bulk Actions Bar - Only show when items are selected -->
       <div class="bulk-actions-bar" *ngIf="selectedReversals.size > 0">
         <div class="selection-info">
-          <span class="selected-count">{{ selectedReversals.size }} item{{ selectedReversals.size !== 1 ? 's' : '' }} selected</span>
-          <button class="clear-selection-btn" (click)="clearSelection()" title="Clear Selection">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+          <span class="selected-count"
+            >{{ selectedReversals.size }} item{{
+              selectedReversals.size !== 1 ? "s" : ""
+            }}
+            selected</span
+          >
+          <button
+            class="clear-selection-btn"
+            (click)="clearSelection()"
+            title="Clear Selection"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              stroke="currentColor"
+              fill="none"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
             Clear
           </button>
         </div>
-        
+
         <div class="bulk-action-buttons">
-          <button 
-            class="bulk-approve-btn" 
+          <button
+            class="bulk-approve-btn"
             (click)="openBulkReviewModal()"
             [disabled]="isBulkProcessing"
             title="Approve and Process Selected"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-              <path d="M22 4L12 14.01l-3-3"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              stroke="currentColor"
+              fill="none"
+            >
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+              <path d="M22 4L12 14.01l-3-3" />
             </svg>
             Bulk Approve & Process
+          </button>
+          <button
+            class="export-excel-btn"
+            (click)="exportSelectedToExcel()"
+            [disabled]="selectedReversals.size === 0"
+            title="Export Selected to Excel"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              stroke="currentColor"
+              fill="none"
+            >
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10,9 9,9 8,9" />
+            </svg>
+            Export to Excel
           </button>
         </div>
       </div>
@@ -37,7 +79,14 @@
       <div class="search-section">
         <!-- Existing search and filter controls remain the same -->
         <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+          <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            stroke="currentColor"
+            fill="none"
+          >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -48,9 +97,13 @@
             class="search-input"
           />
         </div>
-        
+
         <div class="filters">
-          <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" class="filter-select">
+          <select
+            [(ngModel)]="statusFilter"
+            (change)="onStatusFilterChange()"
+            class="filter-select"
+          >
             <option value="">All Statuses</option>
             <option value="PENDING">Pending</option>
             <option value="UNDER_REVIEW">Under Review</option>
@@ -59,20 +112,37 @@
             <option value="PROCESSED">Processed</option>
             <option value="FAILED">Failed</option>
           </select>
-          
-          <select [(ngModel)]="merchantFilter" (change)="onMerchantFilterChange()" class="filter-select">
+
+          <select
+            [(ngModel)]="merchantFilter"
+            (change)="onMerchantFilterChange()"
+            class="filter-select"
+          >
             <option value="">All Merchants</option>
             <option *ngFor="let merchant of merchants" [value]="merchant._id">
               {{ getMerchantDisplayName(merchant) }}
             </option>
           </select>
         </div>
-        
+
         <div class="reversals-count" *ngIf="!loading">
-          {{ filteredReversals.length }} reversal{{ filteredReversals.length !== 1 ? "s" : "" }}
+          {{ filteredReversals.length }} reversal{{
+            filteredReversals.length !== 1 ? "s" : ""
+          }}
         </div>
-        <button class="refresh-btn" (click)="loadReversals()" [disabled]="loading" title="Refresh">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+        <button
+          class="refresh-btn"
+          (click)="loadReversals()"
+          [disabled]="loading"
+          title="Refresh"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            stroke="currentColor"
+            fill="none"
+          >
             <path d="M4 4v5h.582M20 20v-5h-.581M5.07 19A9 9 0 1 1 19 5.07" />
           </svg>
           <span *ngIf="!loading">Refresh</span>
@@ -82,12 +152,39 @@
           </span>
         </button>
       </div>
-      
+
       <button class="add-reversal-btn" (click)="openCreateReversalModal()">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none">
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          stroke="currentColor"
+          fill="none"
+        >
           <path d="M12 5v14m-7-7h14" />
         </svg>
         Create Reversal
+      </button>
+      <button
+        class="export-all-btn"
+        (click)="exportAllToExcel()"
+        [disabled]="loading || filteredReversals.length === 0"
+        title="Export All Visible Results to Excel"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          stroke="currentColor"
+          fill="none"
+        >
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14,2 14,8 20,8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10,9 9,9 8,9" />
+        </svg>
+        Export All
       </button>
     </div>
   </div>
@@ -96,10 +193,15 @@
   <div *ngIf="isBulkProcessing" class="bulk-progress">
     <div class="progress-header">
       <h3>Processing Reversals...</h3>
-      <span class="progress-text">{{ bulkProcessProgress }} of {{ bulkProcessTotal }}</span>
+      <span class="progress-text"
+        >{{ bulkProcessProgress }} of {{ bulkProcessTotal }}</span
+      >
     </div>
     <div class="progress-bar">
-      <div class="progress-fill" [style.width.%]="(bulkProcessProgress / bulkProcessTotal) * 100"></div>
+      <div
+        class="progress-fill"
+        [style.width.%]="(bulkProcessProgress / bulkProcessTotal) * 100"
+      ></div>
     </div>
   </div>
 
@@ -123,8 +225,8 @@
           <!-- Select All Checkbox -->
           <th class="checkbox-column">
             <label class="checkbox-wrapper">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 [checked]="isAllSelected"
                 [indeterminate]="selectedReversals.size > 0 && !isAllSelected"
                 (change)="toggleSelectAll()"
@@ -136,26 +238,29 @@
           <th (click)="changeSort('reversalId')" class="sortable">
             Reversal ID
             <span class="sort-indicator" *ngIf="sortBy === 'reversalId'">
-              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              {{ sortOrder === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th (click)="changeSort('originalTransactionRef')" class="sortable">
             Original Tx Ref
-            <span class="sort-indicator" *ngIf="sortBy === 'originalTransactionRef'">
-              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+            <span
+              class="sort-indicator"
+              *ngIf="sortBy === 'originalTransactionRef'"
+            >
+              {{ sortOrder === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th>Merchant</th>
           <th (click)="changeSort('status')" class="sortable">
             Status
             <span class="sort-indicator" *ngIf="sortBy === 'status'">
-              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              {{ sortOrder === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th (click)="changeSort('amount')" class="sortable">
             Amount
             <span class="sort-indicator" *ngIf="sortBy === 'amount'">
-              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              {{ sortOrder === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th>Reason</th>
@@ -163,7 +268,7 @@
           <th (click)="changeSort('createdAt')" class="sortable">
             Created
             <span class="sort-indicator" *ngIf="sortBy === 'createdAt'">
-              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              {{ sortOrder === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th>Reviewed By</th>
@@ -175,8 +280,8 @@
           <!-- Individual Row Checkbox -->
           <td class="checkbox-column">
             <label class="checkbox-wrapper" *ngIf="canReview(reversal)">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 [checked]="isReversalSelected(reversal.reversalId)"
                 (change)="toggleReversalSelection(reversal.reversalId)"
               />
@@ -185,47 +290,82 @@
           </td>
           <td class="reversal-id">{{ reversal.reversalId }}</td>
           <td class="transaction-ref">{{ reversal.originalTransactionRef }}</td>
-          <td class="merchant-name">{{ getMerchantName(reversal.reversalTransactionData.merchantId) }}</td>
+          <td class="merchant-name">
+            {{ getMerchantName(reversal.reversalTransactionData.merchantId) }}
+          </td>
           <td>
             <span [class]="'status-badge ' + getStatusClass(reversal.status)">
               {{ reversal.status }}
             </span>
           </td>
-          <td class="amount">{{ formatCurrency(reversal.reversalTransactionData.amount, reversal.reversalTransactionData.currency) }}</td>
+          <td class="amount">
+            {{
+              formatCurrency(
+                reversal.reversalTransactionData.amount,
+                reversal.reversalTransactionData.currency
+              )
+            }}
+          </td>
           <td class="reason">{{ reversal.originalTransactionId.reason }}</td>
-          <td class="channel">{{ reversal.reversalTransactionData.operator }}</td>
+          <td class="channel">
+            {{ reversal.reversalTransactionData.operator }}
+          </td>
           <td class="date">{{ formatDate(reversal.createdAt) }}</td>
-          <td class="reviewed-by">{{ reversal.reviewedBy || '-' }}</td>
+          <td class="reviewed-by">{{ reversal.reviewedBy || "-" }}</td>
           <td class="actions">
             <div class="action-buttons">
-              <button class="action-btn view-btn" (click)="openDetailsModal(reversal)" title="View Details">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+              <button
+                class="action-btn view-btn"
+                (click)="openDetailsModal(reversal)"
+                title="View Details"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  stroke="currentColor"
+                  fill="none"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
                 </svg>
               </button>
-              
-              <button 
-                *ngIf="canReview(reversal)" 
-                class="action-btn review-btn" 
+
+              <button
+                *ngIf="canReview(reversal)"
+                class="action-btn review-btn"
                 (click)="openReviewModal(reversal)"
                 title="Review"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
-                  <path d="M9 11l3 3L22 4"/>
-                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  stroke="currentColor"
+                  fill="none"
+                >
+                  <path d="M9 11l3 3L22 4" />
+                  <path
+                    d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+                  />
                 </svg>
               </button>
-              
-              <button 
-                *ngIf="canProcess(reversal)" 
-                class="action-btn process-btn" 
+
+              <button
+                *ngIf="canProcess(reversal)"
+                class="action-btn process-btn"
                 (click)="openProcessModal(reversal)"
                 title="Process"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
-                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                  <path d="M22 4L12 14.01l-3-3"/>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  stroke="currentColor"
+                  fill="none"
+                >
+                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                  <path d="M22 4L12 14.01l-3-3" />
                 </svg>
               </button>
             </div>
@@ -238,31 +378,33 @@
   <!-- Pagination -->
   <div class="pagination" *ngIf="!loading && totalPages > 1">
     <div class="pagination-info">
-      Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} entries
+      Showing {{ (currentPage - 1) * pageSize + 1 }} to
+      {{ Math.min(currentPage * pageSize, totalItems) }} of
+      {{ totalItems }} entries
     </div>
-    
+
     <div class="pagination-controls">
-      <button 
-        class="page-btn" 
-        [disabled]="currentPage === 1" 
+      <button
+        class="page-btn"
+        [disabled]="currentPage === 1"
         (click)="changePage(1)"
         title="First Page"
       >
         ««
       </button>
-      
-      <button 
-        class="page-btn" 
-        [disabled]="currentPage === 1" 
+
+      <button
+        class="page-btn"
+        [disabled]="currentPage === 1"
         (click)="changePage(currentPage - 1)"
         title="Previous Page"
       >
         ‹
       </button>
-      
+
       <span class="page-numbers">
-        <button 
-          *ngFor="let page of getPageNumbers()" 
+        <button
+          *ngFor="let page of getPageNumbers()"
           class="page-btn"
           [class.active]="page === currentPage"
           (click)="isNumber(page) ? changePage(page) : null"
@@ -271,26 +413,26 @@
           {{ page }}
         </button>
       </span>
-      
-      <button 
-        class="page-btn" 
-        [disabled]="currentPage === totalPages" 
+
+      <button
+        class="page-btn"
+        [disabled]="currentPage === totalPages"
         (click)="changePage(currentPage + 1)"
         title="Next Page"
       >
         ›
       </button>
-      
-      <button 
-        class="page-btn" 
-        [disabled]="currentPage === totalPages" 
+
+      <button
+        class="page-btn"
+        [disabled]="currentPage === totalPages"
         (click)="changePage(totalPages)"
         title="Last Page"
       >
         »»
       </button>
     </div>
-    
+
     <div class="page-size-selector">
       <label>Show:</label>
       <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
@@ -305,143 +447,212 @@
 
   <!-- Empty State -->
   <div *ngIf="!loading && reversals.length === 0" class="empty-state">
-    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none">
-      <path d="M3 6h18l-2 13H5L3 6z"/>
-      <path d="M3 6L2 2H0"/>
-      <circle cx="9" cy="20" r="1"/>
-      <circle cx="20" cy="20" r="1"/>
+    <svg
+      viewBox="0 0 24 24"
+      width="48"
+      height="48"
+      stroke="currentColor"
+      fill="none"
+    >
+      <path d="M3 6h18l-2 13H5L3 6z" />
+      <path d="M3 6L2 2H0" />
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="20" cy="20" r="1" />
     </svg>
     <p>No reversals found. Click "Create Reversal" to add one.</p>
   </div>
 
-<!-- Create Reversal Modal -->
-<div class="modal" *ngIf="showCreateReversalModal">
-  <div class="modal-content large-modal">
-    <div class="modal-header">
-      <h2>Create New Reversal</h2>
-      <button class="close-btn" (click)="closeCreateReversalModal()">&times;</button>
-    </div>
+  <!-- Create Reversal Modal -->
+  <div class="modal" *ngIf="showCreateReversalModal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>Create New Reversal</h2>
+        <button class="close-btn" (click)="closeCreateReversalModal()">
+          &times;
+        </button>
+      </div>
 
-    <form [formGroup]="createReversalForm" (ngSubmit)="submitCreateReversal()">
-      <!-- Transaction Reference Section -->
-      <div class="form-section">
-        <h3>Transaction Reference</h3>
-        <div class="form-grid">
-          <div class="form-group full-width">
-            <label for="originalTransactionRef">Transaction Reference *</label>
-            <div class="input-with-button">
-              <input 
-                id="originalTransactionRef" 
-                formControlName="originalTransactionRef" 
-                placeholder="Enter transaction reference"
-                (input)="resetTransactionVerification()"
-              />
-              <button 
-                type="button" 
-                class="verify-btn"
-                (click)="verifyTransaction()"
-                [disabled]="verifyingTransaction || !createReversalForm.get('originalTransactionRef')?.value?.trim()"
+      <form
+        [formGroup]="createReversalForm"
+        (ngSubmit)="submitCreateReversal()"
+      >
+        <!-- Transaction Reference Section -->
+        <div class="form-section">
+          <h3>Transaction Reference</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="originalTransactionRef"
+                >Transaction Reference *</label
               >
-                <span *ngIf="!verifyingTransaction">Verify</span>
-                <span *ngIf="verifyingTransaction">
-                  <div class="mini-spinner"></div>
-                  Verifying...
+              <div class="input-with-button">
+                <input
+                  id="originalTransactionRef"
+                  formControlName="originalTransactionRef"
+                  placeholder="Enter transaction reference"
+                  (input)="resetTransactionVerification()"
+                />
+                <button
+                  type="button"
+                  class="verify-btn"
+                  (click)="verifyTransaction()"
+                  [disabled]="
+                    verifyingTransaction ||
+                    !createReversalForm
+                      .get('originalTransactionRef')
+                      ?.value?.trim()
+                  "
+                >
+                  <span *ngIf="!verifyingTransaction">Verify</span>
+                  <span *ngIf="verifyingTransaction">
+                    <div class="mini-spinner"></div>
+                    Verifying...
+                  </span>
+                </button>
+              </div>
+
+              <!-- Verification Error -->
+              <div
+                *ngIf="transactionVerificationError"
+                class="verification-error"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  stroke="currentColor"
+                  fill="none"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                {{ transactionVerificationError }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Verification Results -->
+        <div class="form-section" *ngIf="verifiedTransaction">
+          <h3>
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              stroke="currentColor"
+              fill="none"
+              class="success-icon"
+            >
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+              <path d="M22 4L12 14.01l-3-3" />
+            </svg>
+            Verified Transaction Details
+          </h3>
+          <div class="transaction-details">
+            <div class="details-grid">
+              <div class="detail-item">
+                <label>Transaction ID</label>
+                <span>{{ verifiedTransaction._id }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Reference</label>
+                <span>{{ verifiedTransaction.transactionRef }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Status</label>
+                <span
+                  [class]="
+                    'status-badge ' + getStatusClass(verifiedTransaction.status)
+                  "
+                >
+                  {{ verifiedTransaction.status }}
                 </span>
-              </button>
-            </div>
-            
-            <!-- Verification Error -->
-            <div *ngIf="transactionVerificationError" class="verification-error">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
-              {{ transactionVerificationError }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Transaction Verification Results -->
-      <div class="form-section" *ngIf="verifiedTransaction">
-        <h3>
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" class="success-icon">
-            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-            <path d="M22 4L12 14.01l-3-3"/>
-          </svg>
-          Verified Transaction Details
-        </h3>
-        <div class="transaction-details">
-          <div class="details-grid">
-            <div class="detail-item">
-              <label>Transaction ID</label>
-              <span>{{ verifiedTransaction._id }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Reference</label>
-              <span>{{ verifiedTransaction.transactionRef }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Status</label>
-              <span [class]="'status-badge ' + getStatusClass(verifiedTransaction.status)">
-                {{ verifiedTransaction.status }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label>Type</label>
-              <span>{{ verifiedTransaction.transaction_type }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Merchant</label>
-              <span>{{ getMerchantName(verifiedTransaction.merchantId) }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Amount</label>
-              <span class="amount-highlight">{{ formatCurrency(verifiedTransaction.amount, verifiedTransaction.currency) }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Actual Amount</label>
-              <span>{{ formatCurrency(verifiedTransaction.actualAmount, verifiedTransaction.currency) }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Charges</label>
-              <span>{{ formatCurrency(verifiedTransaction.charges, verifiedTransaction.currency) }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Operator</label>
-              <span>{{ verifiedTransaction.operator }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Channel</label>
-              <span>{{ verifiedTransaction.channel }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Recipient</label>
-              <span>{{ verifiedTransaction.recipient_account_name }} ({{ verifiedTransaction.recipient_account_number }})</span>
-            </div>
-            <div class="detail-item">
-              <label>Payment Account</label>
-              <span>{{ verifiedTransaction.payment_account_name }} ({{ verifiedTransaction.payment_account_number }})</span>
-            </div>
-            <div class="detail-item">
-              <label>Date</label>
-              <span>{{ formatDate(verifiedTransaction.createdAt) }}</span>
-            </div>
-            <div class="detail-item full-width" *ngIf="verifiedTransaction.description">
-              <label>Description</label>
-              <span>{{ verifiedTransaction.description }}</span>
-            </div>
-            <div class="detail-item full-width" *ngIf="verifiedTransaction.reason">
-              <label>Reason</label>
-              <span>{{ verifiedTransaction.reason }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Type</label>
+                <span>{{ verifiedTransaction.transaction_type }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Merchant</label>
+                <span>{{
+                  getMerchantName(verifiedTransaction.merchantId)
+                }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Amount</label>
+                <span class="amount-highlight">{{
+                  formatCurrency(
+                    verifiedTransaction.amount,
+                    verifiedTransaction.currency
+                  )
+                }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Actual Amount</label>
+                <span>{{
+                  formatCurrency(
+                    verifiedTransaction.actualAmount,
+                    verifiedTransaction.currency
+                  )
+                }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Charges</label>
+                <span>{{
+                  formatCurrency(
+                    verifiedTransaction.charges,
+                    verifiedTransaction.currency
+                  )
+                }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Operator</label>
+                <span>{{ verifiedTransaction.operator }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Channel</label>
+                <span>{{ verifiedTransaction.channel }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Recipient</label>
+                <span
+                  >{{ verifiedTransaction.recipient_account_name }} ({{
+                    verifiedTransaction.recipient_account_number
+                  }})</span
+                >
+              </div>
+              <div class="detail-item">
+                <label>Payment Account</label>
+                <span
+                  >{{ verifiedTransaction.payment_account_name }} ({{
+                    verifiedTransaction.payment_account_number
+                  }})</span
+                >
+              </div>
+              <div class="detail-item">
+                <label>Date</label>
+                <span>{{ formatDate(verifiedTransaction.createdAt) }}</span>
+              </div>
+              <div
+                class="detail-item full-width"
+                *ngIf="verifiedTransaction.description"
+              >
+                <label>Description</label>
+                <span>{{ verifiedTransaction.description }}</span>
+              </div>
+              <div
+                class="detail-item full-width"
+                *ngIf="verifiedTransaction.reason"
+              >
+                <label>Reason</label>
+                <span>{{ verifiedTransaction.reason }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Reversal Details Form - Only shown after verification -->
-      <!-- <div class="form-section" *ngIf="verifiedTransaction" formGroupName="reversalTransactionData">
+        <!-- Reversal Details Form - Only shown after verification -->
+        <!-- <div class="form-section" *ngIf="verifiedTransaction" formGroupName="reversalTransactionData">
         <h3>Reversal Details</h3>
         <div class="form-grid">
           <div class="form-group">
@@ -539,38 +750,61 @@
         </div>
       </div> -->
 
-      <div class="modal-actions">
-        <button type="button" class="cancel-btn" (click)="closeCreateReversalModal()">Cancel</button>
-        <button 
-          type="submit" 
-          class="submit-btn" 
-          [disabled]="!createReversalForm.valid || !verifiedTransaction || loading"
-        >
-          <span *ngIf="!loading">Create Reversal</span>
-          <span *ngIf="loading">
-            <div class="mini-spinner"></div>
-            Creating...
-          </span>
-        </button>
-      </div>
-    </form>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeCreateReversalModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="
+              !createReversalForm.valid || !verifiedTransaction || loading
+            "
+          >
+            <span *ngIf="!loading">Create Reversal</span>
+            <span *ngIf="loading">
+              <div class="mini-spinner"></div>
+              Creating...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 
-<!-- Bulk Review Modal -->
+  <!-- Bulk Review Modal -->
   <div class="modal" *ngIf="showBulkReviewModal">
     <div class="modal-content">
       <div class="modal-header">
         <h2>Bulk Review Reversals</h2>
-        <button class="close-btn" (click)="closeBulkReviewModal()">&times;</button>
+        <button class="close-btn" (click)="closeBulkReviewModal()">
+          &times;
+        </button>
       </div>
 
       <div class="bulk-summary">
-        <p><strong>{{ selectedReversals.size }}</strong> reversal{{ selectedReversals.size !== 1 ? 's' : '' }} selected for bulk processing</p>
+        <p>
+          <strong>{{ selectedReversals.size }}</strong> reversal{{
+            selectedReversals.size !== 1 ? "s" : ""
+          }}
+          selected for bulk processing
+        </p>
         <div class="selected-items-preview">
-          <div *ngFor="let reversal of getSelectedReversals().slice(0, 5)" class="selected-item">
+          <div
+            *ngFor="let reversal of getSelectedReversals().slice(0, 5)"
+            class="selected-item"
+          >
             <span class="reversal-id">{{ reversal.reversalId }}</span>
-            <span class="amount">{{ formatCurrency(reversal.reversalTransactionData.amount, reversal.reversalTransactionData.currency) }}</span>
+            <span class="amount">{{
+              formatCurrency(
+                reversal.reversalTransactionData.amount,
+                reversal.reversalTransactionData.currency
+              )
+            }}</span>
           </div>
           <p *ngIf="selectedReversals.size > 5" class="more-items">
             + {{ selectedReversals.size - 5 }} more items...
@@ -589,27 +823,55 @@
 
         <div class="form-group">
           <label for="bulkNotes">Notes (Optional)</label>
-          <textarea id="bulkNotes" formControlName="notes" placeholder="Add notes for all selected reversals" rows="3"></textarea>
+          <textarea
+            id="bulkNotes"
+            formControlName="notes"
+            placeholder="Add notes for all selected reversals"
+            rows="3"
+          ></textarea>
         </div>
 
         <div class="warning-section">
-          <p><strong>Warning:</strong> This action will {{ bulkReviewForm.get('action')?.value === 'APPROVE' ? 'approve and process' : 'reject' }} all selected reversals and cannot be undone.</p>
+          <p>
+            <strong>Warning:</strong> This action will
+            {{
+              bulkReviewForm.get("action")?.value === "APPROVE"
+                ? "approve and process"
+                : "reject"
+            }}
+            all selected reversals and cannot be undone.
+          </p>
         </div>
 
         <div class="user-info">
-          <p><strong>Processing as:</strong> {{ currentUser?.name || currentUser?._id || 'Unknown User' }}</p>
+          <p>
+            <strong>Processing as:</strong>
+            {{ currentUser?.name || currentUser?._id || "Unknown User" }}
+          </p>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="cancel-btn" (click)="closeBulkReviewModal()">Cancel</button>
-          <button 
-            type="submit" 
-            class="submit-btn" 
-            [class.process-btn]="bulkReviewForm.get('action')?.value === 'APPROVE'"
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeBulkReviewModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="submit-btn"
+            [class.process-btn]="
+              bulkReviewForm.get('action')?.value === 'APPROVE'
+            "
             [disabled]="!bulkReviewForm.valid || isBulkProcessing"
           >
             <span *ngIf="!isBulkProcessing">
-              {{ bulkReviewForm.get('action')?.value === 'APPROVE' ? 'Approve & Process All' : 'Reject All' }}
+              {{
+                bulkReviewForm.get("action")?.value === "APPROVE"
+                  ? "Approve & Process All"
+                  : "Reject All"
+              }}
             </span>
             <span *ngIf="isBulkProcessing">
               <div class="mini-spinner"></div>
@@ -620,7 +882,6 @@
       </form>
     </div>
   </div>
-
 
   <!-- Review Modal -->
   <div class="modal" *ngIf="showReviewModal">
@@ -637,22 +898,35 @@
         </div>
         <div class="info-row">
           <span class="label">Original Transaction:</span>
-          <span class="value">{{ selectedReversal.originalTransactionRef }}</span>
+          <span class="value">{{
+            selectedReversal.originalTransactionRef
+          }}</span>
         </div>
         <div class="info-row">
           <span class="label">Amount:</span>
-          <span class="value">{{ formatCurrency(selectedReversal.reversalTransactionData.amount, selectedReversal.reversalTransactionData.currency) }}</span>
+          <span class="value">{{
+            formatCurrency(
+              selectedReversal.reversalTransactionData.amount,
+              selectedReversal.reversalTransactionData.currency
+            )
+          }}</span>
         </div>
         <div class="info-row">
           <span class="label">Reason:</span>
-          <span class="value">{{ selectedReversal.originalTransactionId.reason }}</span>
+          <span class="value">{{
+            selectedReversal.originalTransactionId.reason
+          }}</span>
         </div>
       </div>
 
       <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
         <div class="form-group">
           <label for="action">Action</label>
-          <select id="action" formControlName="action" (change)="onReviewActionChange()">
+          <select
+            id="action"
+            formControlName="action"
+            (change)="onReviewActionChange()"
+          >
             <option value="">Select action</option>
             <option value="APPROVE">Approve</option>
             <option value="REJECT">Reject</option>
@@ -664,23 +938,45 @@
           <input id="reviewedBy" formControlName="reviewedBy" placeholder="Your name/ID" />
         </div> -->
 
-        <div class="form-group" *ngIf="reviewForm.get('action')?.value === 'REJECT'">
+        <div
+          class="form-group"
+          *ngIf="reviewForm.get('action')?.value === 'REJECT'"
+        >
           <label for="rejectionReason">Rejection Reason</label>
-          <textarea id="rejectionReason" formControlName="rejectionReason" placeholder="Reason for rejection" rows="3"></textarea>
+          <textarea
+            id="rejectionReason"
+            formControlName="rejectionReason"
+            placeholder="Reason for rejection"
+            rows="3"
+          ></textarea>
         </div>
 
         <div class="form-group">
           <label for="notes">Notes (Optional)</label>
-          <textarea id="notes" formControlName="notes" placeholder="Additional notes" rows="2"></textarea>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            placeholder="Additional notes"
+            rows="2"
+          ></textarea>
         </div>
 
-                <div class="user-info">
-          <p><strong>Reviewing as:</strong> {{ currentUser?.name || currentUser?._id || 'Unknown User' }}</p>
+        <div class="user-info">
+          <p>
+            <strong>Reviewing as:</strong>
+            {{ currentUser?.name || currentUser?._id || "Unknown User" }}
+          </p>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="cancel-btn" (click)="closeReviewModal()">Cancel</button>
-          <button type="submit" class="submit-btn" [disabled]="!reviewForm.valid || loading">
+          <button type="button" class="cancel-btn" (click)="closeReviewModal()">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="!reviewForm.valid || loading"
+          >
             Submit Review
           </button>
         </div>
@@ -707,7 +1003,9 @@
         </div>
         <div class="info-row">
           <span class="label">Approved By:</span>
-          <span class="value">{{ selectedReversal.approvedBy || selectedReversal.reviewedBy }}</span>
+          <span class="value">{{
+            selectedReversal.approvedBy || selectedReversal.reviewedBy
+          }}</span>
         </div>
       </div>
 
@@ -718,16 +1016,32 @@
         </div> -->
 
         <div class="warning-section">
-          <p><strong>Warning:</strong> This action will move the reversal to the transactions database and cannot be undone.</p>
+          <p>
+            <strong>Warning:</strong> This action will move the reversal to the
+            transactions database and cannot be undone.
+          </p>
         </div>
 
-                <div class="user-info">
-          <p><strong>Processing as:</strong> {{ currentUser?.name || currentUser?._id || 'Unknown User' }}</p>
+        <div class="user-info">
+          <p>
+            <strong>Processing as:</strong>
+            {{ currentUser?.name || currentUser?._id || "Unknown User" }}
+          </p>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="cancel-btn" (click)="closeProcessModal()">Cancel</button>
-          <button type="submit" class="submit-btn process-btn" [disabled]="!processForm.valid || loading">
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeProcessModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="submit-btn process-btn"
+            [disabled]="!processForm.valid || loading"
+          >
             Process Reversal
           </button>
         </div>
@@ -753,7 +1067,12 @@
             </div>
             <div class="detail-item">
               <label>Status</label>
-              <span [class]="'status-text ' + getStatusClass(selectedReversal.status)">{{ selectedReversal.status }}</span>
+              <span
+                [class]="
+                  'status-text ' + getStatusClass(selectedReversal.status)
+                "
+                >{{ selectedReversal.status }}</span
+              >
             </div>
             <div class="detail-item">
               <label>Original Transaction</label>
@@ -775,27 +1094,47 @@
           <div class="details-grid">
             <div class="detail-item">
               <label>Merchant</label>
-              <span>{{ getMerchantName(selectedReversal.reversalTransactionData.merchantId) }}</span>
+              <span>{{
+                getMerchantName(
+                  selectedReversal.reversalTransactionData.merchantId
+                )
+              }}</span>
             </div>
             <div class="detail-item">
               <label>Amount</label>
-              <span>{{ formatCurrency(selectedReversal.reversalTransactionData.amount, selectedReversal.reversalTransactionData.currency) }}</span>
+              <span>{{
+                formatCurrency(
+                  selectedReversal.reversalTransactionData.amount,
+                  selectedReversal.reversalTransactionData.currency
+                )
+              }}</span>
             </div>
             <div class="detail-item">
               <label>Actual Amount</label>
-              <span>{{ formatCurrency(selectedReversal.reversalTransactionData.actualAmount, selectedReversal.reversalTransactionData.currency) }}</span>
+              <span>{{
+                formatCurrency(
+                  selectedReversal.reversalTransactionData.actualAmount,
+                  selectedReversal.reversalTransactionData.currency
+                )
+              }}</span>
             </div>
             <div class="detail-item">
               <label>Currency</label>
-              <span>{{ selectedReversal.reversalTransactionData.currency }}</span>
+              <span>{{
+                selectedReversal.reversalTransactionData.currency
+              }}</span>
             </div>
             <div class="detail-item">
               <label>Channel</label>
-              <span>{{ selectedReversal.reversalTransactionData.channel }}</span>
+              <span>{{
+                selectedReversal.reversalTransactionData.channel
+              }}</span>
             </div>
             <div class="detail-item">
               <label>Operator</label>
-              <span>{{ selectedReversal.reversalTransactionData.operator }}</span>
+              <span>{{
+                selectedReversal.reversalTransactionData.operator
+              }}</span>
             </div>
           </div>
         </div>
@@ -834,7 +1173,9 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="cancel-btn" (click)="closeDetailsModal()">Close</button>
+        <button type="button" class="cancel-btn" (click)="closeDetailsModal()">
+          Close
+        </button>
       </div>
     </div>
   </div>
