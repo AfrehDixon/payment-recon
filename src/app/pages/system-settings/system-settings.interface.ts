@@ -43,6 +43,7 @@ export interface SolanaBalanceInfo {
   network: string;
   totalSolBalance: number;
   totalUsdValue: number;
+  totalUsdtValue: number;
 }
 
 export interface SystemSettings {
