@@ -41,11 +41,31 @@ export class SystemSettingsComponent implements OnInit {
 
   private createForm(): FormGroup {
     return this.fb.group({
+      // Basic settings
       markupRate: ['', [Validators.required, Validators.min(0)]],
       transactionFee: ['', [Validators.required, Validators.min(0)]],
       minTransactionAmount: ['', [Validators.required, Validators.min(0)]],
       maxTransactionAmount: ['', [Validators.required, Validators.min(0)]],
-      dynamicPricingEnabled: [false]
+      dynamicPricingEnabled: [false],
+      
+      // BTC Reserve Config
+      btcReserveEnabled: [false],
+      btcReserveTargetPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveLowerPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveUpperPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveMaxDailyUsd: ['', [Validators.min(0)]],
+      btcReserveMaxTradeUsd: ['', [Validators.min(0)]],
+      btcReserveMinTradeUsd: ['', [Validators.min(0)]],
+      btcReserveSlippageBps: ['', [Validators.min(0)]],
+      btcReserveCooldownSec: ['', [Validators.min(0)]],
+      
+      // BTC Sweep Config
+      btcSweepEnabled: [false],
+      btcSweepMaxSweepUsd: ['', [Validators.min(0)]],
+      btcSweepMinSweepUsd: ['', [Validators.min(0)]],
+      btcSweepReserveBtc: ['', [Validators.min(0)]],
+      btcSweepPctOfAvail: ['', [Validators.min(0), Validators.max(1)]],
+      btcSweepSlippageBps: ['', [Validators.min(0)]]
     });
   }
 
@@ -66,9 +86,39 @@ export class SystemSettingsComponent implements OnInit {
       .subscribe(response => {
         if (response.success && response.data) {
           this.settings = response.data;
-          this.settingsForm.patchValue(response.data);
+          this.populateForm(response.data);
         }
       });
+  }
+
+  private populateForm(settings: SystemSettings): void {
+    this.settingsForm.patchValue({
+      // Basic settings
+      markupRate: settings.markupRate,
+      transactionFee: settings.transactionFee,
+      minTransactionAmount: settings.minTransactionAmount,
+      maxTransactionAmount: settings.maxTransactionAmount,
+      dynamicPricingEnabled: settings.dynamicPricingEnabled,
+      
+      // BTC Reserve Config
+      btcReserveEnabled: settings.btcReserveConfig.enabled,
+      btcReserveTargetPct: settings.btcReserveConfig.targetPct,
+      btcReserveLowerPct: settings.btcReserveConfig.lowerPct,
+      btcReserveUpperPct: settings.btcReserveConfig.upperPct,
+      btcReserveMaxDailyUsd: settings.btcReserveConfig.maxDailyUsd,
+      btcReserveMaxTradeUsd: settings.btcReserveConfig.maxTradeUsd,
+      btcReserveMinTradeUsd: settings.btcReserveConfig.minTradeUsd,
+      btcReserveSlippageBps: settings.btcReserveConfig.slippageBps,
+      btcReserveCooldownSec: settings.btcReserveConfig.cooldownSec,
+      
+      // BTC Sweep Config
+      btcSweepEnabled: settings.btcSweepConfig.enabled,
+      btcSweepMaxSweepUsd: settings.btcSweepConfig.maxSweepUsd,
+      btcSweepMinSweepUsd: settings.btcSweepConfig.minSweepUsd,
+      btcSweepReserveBtc: settings.btcSweepConfig.reserveBtc,
+      btcSweepPctOfAvail: settings.btcSweepConfig.sweepPctOfAvail,
+      btcSweepSlippageBps: settings.btcSweepConfig.slippageBps
+    });
   }
 
   fetchBtcBalance(): void {
@@ -103,52 +153,83 @@ export class SystemSettingsComponent implements OnInit {
     return value?.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    });
+    }) || '0.00';
   }
 
   formatBtc(value: number): string {
-    return value?.toFixed(8) + ' BTC';
+    return (value?.toFixed(8) || '0.00000000') + ' BTC';
   }
 
   formatSmallCurrency(value: number): string {
     return value?.toLocaleString('en-US', {
       minimumFractionDigits: 6,
       maximumFractionDigits: 6
-    });
+    }) || '0.000000';
   }
 
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
-    if (!this.isEditing) {
-      this.settingsForm.patchValue(this.settings!);
+    if (!this.isEditing && this.settings) {
+      this.populateForm(this.settings);
     }
   }
 
-  saveSettings(): void {
-    if (this.settingsForm.invalid) {
-      return;
-    }
+  // saveSettings(): void {
+  //   if (this.settingsForm.invalid) {
+  //     return;
+  //   }
 
-    this.loading = true;
-    const updatedSettings: Partial<EditableSystemSettings> = this.settingsForm.value;
+  //   this.loading = true;
+  //   const formValue = this.settingsForm.value;
+    
+  //   const updatedSettings: Partial<EditableSystemSettings> = {
+  //     markupRate: formValue.markupRate,
+  //     transactionFee: formValue.transactionFee,
+  //     minTransactionAmount: formValue.minTransactionAmount,
+  //     maxTransactionAmount: formValue.maxTransactionAmount,
+  //     dynamicPricingEnabled: formValue.dynamicPricingEnabled,
+  //     btcReserveConfig: {
+  //       enabled: formValue.btcReserveEnabled,
+  //       targetPct: formValue.btcReserveTargetPct,
+  //       lowerPct: formValue.btcReserveLowerPct,
+  //       upperPct: formValue.btcReserveUpperPct,
+  //       maxDailyUsd: formValue.btcReserveMaxDailyUsd,
+  //       maxTradeUsd: formValue.btcReserveMaxTradeUsd,
+  //       minTradeUsd: formValue.btcReserveMinTradeUsd,
+  //       slippageBps: formValue.btcReserveSlippageBps,
+  //       cooldownSec: formValue.btcReserveCooldownSec
+  //     },
+  //     btcSweepConfig: {
+  //       enabled: formValue.btcSweepEnabled,
+  //       maxSweepUsd: formValue.btcSweepMaxSweepUsd,
+  //       minSweepUsd: formValue.btcSweepMinSweepUsd,
+  //       reserveBtc: formValue.btcSweepReserveBtc,
+  //       sweepPctOfAvail: formValue.btcSweepPctOfAvail,
+  //       slippageBps: formValue.btcSweepSlippageBps
+  //     }
+  //   };
 
-    this.systemSettingsService.updateSettings(updatedSettings)
-      .pipe(
-        catchError(error => {
-          this.error = 'Failed to update settings. Please try again later.';
-          return of({ success: false, message: error.message, data: null });
-        }),
-        finalize(() => {
-          this.loading = false;
-        })
-      )
-      .subscribe(response => {
-        if (response.success && response.data) {
-          this.settings = response.data;
-          this.isEditing = false;
-        }
-      });
-  }
+  //   this.systemSettingsService.updateSettings(updatedSettings)
+  //     .pipe(
+  //       catchError(error => {
+  //         this.error = 'Failed to update settings. Please try again later.';
+  //         return of({ success: false, message: error.message, data: null });
+  //       }),
+  //       finalize(() => {
+  //         this.loading = false;
+  //       })
+  //     )
+  //     .subscribe(response => {
+  //       if (response.success && response.data) {
+  //         this.settings = response.data;
+  //         this.isEditing = false;
+  //         this.error = 'Settings updated successfully!';
+  //         setTimeout(() => {
+  //           this.error = null;
+  //         }, 3000);
+  //       }
+  //     });
+  // }
 
   formatDate(date: string): string {
     return new Date(date).toLocaleString();

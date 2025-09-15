@@ -46,6 +46,86 @@ export interface SolanaBalanceInfo {
   totalUsdtValue: number;
 }
 
+export interface BtcReserveConfig {
+  lastRebalanceAt: string | null;
+  lastDailyReset: string | null;
+  bscRecipient: string;
+  bscRouterAddr: string;
+  bscVaultAddr: string;
+  btcRecipient: string;
+  cooldownSec: number;
+  dailyUsdUsed: number;
+  enabled: boolean;
+  lowerPct: number;
+  maxDailyUsd: number;
+  maxTradeUsd: number;
+  minTradeUsd: number;
+  slippageBps: number;
+  targetPct: number;
+  upperPct: number;
+  usdtTokenAddr: string;
+}
+
+export interface BtcSweepConfig {
+  lastRunAt: string | null;
+  enabled: boolean;
+  lastInboundRef: string;
+  maxSweepUsd: number;
+  minSweepUsd: number;
+  reserveBtc: number;
+  slippageBps: number;
+  sweepPctOfAvail: number;
+  treasuryBep20: string;
+}
+
+export interface BtcBalances {
+  activeAddresses: number;
+  addressBalances: any[];
+  lastBalanceUpdate: string;
+  totalConfirmedBalance: number;
+  totalUnconfirmedBalance: number;
+  totalUsdValue: number;
+  totalUtxos: number;
+}
+
+export interface TokenInfo {
+  name: string;
+  symbol: string;
+  decimals: number;
+  address: string;
+  network: string;
+  chainId: number;
+}
+
+export interface Bep20Balances {
+  tokenInfo: TokenInfo;
+  activeAddresses: number;
+  addressBalances: any[];
+  lastBalanceUpdate: string;
+  totalBnbBalance: number;
+  totalBnbUsdValue: number;
+  totalTokenBalance: number;
+  totalTokenUsdValue: number;
+  totalUsdValue: number;
+}
+
+export interface SolanaTokenInfo {
+  address: string;
+  decimals: number;
+  name: string;
+  symbol: string;
+}
+
+export interface SolanaBalances {
+  tokenInfo: SolanaTokenInfo;
+  activeAddresses: number;
+  lastBalanceUpdate: string;
+  network: string;
+  totalSolBalance: number;
+  totalUsdValue: number;
+  totalUsdtValue: number;
+}
+
 export interface SystemSettings {
   _id: string;
   markupRate: number;
@@ -55,7 +135,6 @@ export interface SystemSettings {
   maxTransactionAmount: number;
   dynamicPricingEnabled: boolean;
   lastUpdated: string;
-  __v: number;
   marketPrice: number;
   btcNetworkFee: number;
   btcExchangeRate: number;
@@ -63,9 +142,28 @@ export interface SystemSettings {
   solExchangeRate: number;
   ghsExchangeRate: number;
   bepExchangeRate: number;
-  btcBalances: BtcBalanceInfo;
-  bep20Balances: Bep20BalanceInfo;
-  solanaBalances: SolanaBalanceInfo;
+  btcReserveConfig: BtcReserveConfig;
+  btcSweepConfig: BtcSweepConfig;
+  btcBalances: BtcBalances;
+  bep20Balances: Bep20Balances;
+  solanaBalances: SolanaBalances;
+  __v: number;
+}
+
+export interface EditableSystemSettings {
+  markupRate: number;
+  transactionFee: number;
+  minTransactionAmount: number;
+  maxTransactionAmount: number;
+  dynamicPricingEnabled: boolean;
+  btcReserveConfig: Partial<BtcReserveConfig>;
+  btcSweepConfig: Partial<BtcSweepConfig>;
+}
+
+export interface BtcBalanceData {
+  total: number;
+  confirmed: number;
+  unconfirmed: number;
 }
 
 export interface ApiResponse {
@@ -86,4 +184,3 @@ export interface BtcBalanceResponse {
   data: BtcBalanceData;
 }
 
-export type EditableSystemSettings = Omit<SystemSettings, 'exchangeRate' | 'lastUpdated' | '__v' | '_id' | 'btcBalances' | 'bep20Balances' | 'solanaBalances'>;
