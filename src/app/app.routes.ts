@@ -36,6 +36,7 @@ import { PermissionGuard } from './guard/permissions.guard';
 import { AdminTicketManagementComponent } from './pages/admin-ticket/admin-ticket-management.component';
 import { VaultManagementComponent } from './pages/vault-management/vault-management.component';
 import { PendingReversalsComponent } from './pages/pending-reversals/pending-reversals.component';
+import { CardWalletsComponent } from './pages/card-wallets/card-wallets.component';
 
 export const routes: Routes = [
   {
@@ -199,6 +200,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SystemSettingsComponent,
+      },
+      {
+        path: 'card-wallets',
+        component: CardWalletsComponent,
       },
       {
         path: 'operator-config',
