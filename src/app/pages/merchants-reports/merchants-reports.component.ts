@@ -98,7 +98,7 @@ interface ReportResponse {
     amount?: number;
     charges?: number;
     transactions: Transaction[];
-    
+
     // New format
     pagination?: {
       total: number;
@@ -178,10 +178,16 @@ const paymentIssuerImages: { [key: string]: string } = {
           <p class="text-2xl font-bold text-gray-900">
             {{ formatCurrency(reportStats.amount, 'FIAT') }}
           </p>
-          <div class="mt-2 text-green-600 text-sm" *ngIf="reportStats.count > 0">
-            <span>{{
-              (reportStats.amount / reportStats.count) | currency: 'GHS'
-            }} avg/tx</span>
+          <div
+            class="mt-2 text-green-600 text-sm"
+            *ngIf="reportStats.count > 0"
+          >
+            <span
+              >{{
+                reportStats.amount / reportStats.count | currency : 'GHS'
+              }}
+              avg/tx</span
+            >
           </div>
         </div>
 
@@ -192,10 +198,17 @@ const paymentIssuerImages: { [key: string]: string } = {
           <p class="text-2xl font-bold text-gray-900">
             {{ formatCurrency(reportStats.actualAmount, 'FIAT') }}
           </p>
-          <div class="mt-2 text-indigo-600 text-sm" *ngIf="reportStats.amount > 0">
-            <span>{{
-              ((reportStats.actualAmount / reportStats.amount) * 100).toFixed(1)
-            }}% of total</span>
+          <div
+            class="mt-2 text-indigo-600 text-sm"
+            *ngIf="reportStats.amount > 0"
+          >
+            <span
+              >{{
+                ((reportStats.actualAmount / reportStats.amount) * 100).toFixed(
+                  1
+                )
+              }}% of total</span
+            >
           </div>
         </div>
 
@@ -207,9 +220,11 @@ const paymentIssuerImages: { [key: string]: string } = {
             {{ formatCurrency(reportStats.charges, 'FIAT') }}
           </p>
           <div class="mt-2 text-red-600 text-sm" *ngIf="reportStats.amount > 0">
-            <span>{{
-              ((reportStats.charges / reportStats.amount) * 100).toFixed(1)
-            }}% fee rate</span>
+            <span
+              >{{
+                ((reportStats.charges / reportStats.amount) * 100).toFixed(1)
+              }}% fee rate</span
+            >
           </div>
         </div>
       </div>
@@ -500,7 +515,9 @@ const paymentIssuerImages: { [key: string]: string } = {
                       'bg-blue-100 text-blue-800':
                         tx.transaction_type === 'CREDIT',
                       'bg-purple-100 text-purple-800':
-                        tx.transaction_type === 'DEBIT'
+                        tx.transaction_type === 'DEBIT',
+                      'bg-yellow-100 text-green-800':
+                        tx.transaction_type === 'TRANSFER'
                     }"
                   >
                     {{ tx.transaction_type }}
@@ -510,9 +527,38 @@ const paymentIssuerImages: { [key: string]: string } = {
                   <span
                     [ngClass]="{
                       'px-3 py-1 text-xs font-medium rounded-full': true,
-                      'bg-green-100 text-green-800': tx.status === 'PAID',
-                      'bg-yellow-100 text-yellow-800': tx.status === 'PENDING',
-                      'bg-red-100 text-red-800': tx.status === 'FAILED'
+                      'bg-green-100 text-green-800': [
+                        'PAID',
+                        'COMPLETED',
+                        'CONFIRMED',
+                        'DEBIT_SUCCESS',
+                        'CREDIT_SUCCESS',
+                        'APPROVED',
+                        'CONSOLIDATED'
+                      ].includes(tx.status),
+                      'bg-yellow-100 text-yellow-800': [
+                        'PENDING',
+                        'INITIATED',
+                        'QUEUED',
+                        'UNCONFIRMED',
+                        'PROCESSING',
+                        'DEBIT_PENDING',
+                        'CREDIT_PENDING',
+                        'PENDING_APPROVAL',
+                        'DETECTED',
+                        'PARTIAL'
+                      ].includes(tx.status),
+                      'bg-red-100 text-red-800': [
+                        'FAILED',
+                        'TIMEOUT',
+                        'EXPIRED',
+                        'DEBIT_FAILED',
+                        'CREDIT_FAILED',
+                        'REJECTED'
+                      ].includes(tx.status),
+                      'bg-blue-100 text-blue-800': tx.status === 'OVERPAID',
+                      'bg-gray-100 text-gray-800':
+                        tx.status === 'TIMEOUT' || !tx.status
                     }"
                   >
                     {{ tx.status }}
@@ -762,27 +808,34 @@ export class ReportsComponent implements OnInit {
 
     // Apply status filter
     if (this.filters.status) {
-      filtered = filtered.filter(tx => tx.status === this.filters.status);
+      filtered = filtered.filter((tx) => tx.status === this.filters.status);
     }
 
-    // Apply operator filter  
+    // Apply operator filter
     if (this.filters.operator) {
-      filtered = filtered.filter(tx => 
-        (tx.operator === this.filters.operator) || 
-        (tx.creditOperator === this.filters.operator)
+      filtered = filtered.filter(
+        (tx) =>
+          tx.operator === this.filters.operator ||
+          tx.creditOperator === this.filters.operator
       );
     }
 
     // Apply transaction type filter
     if (this.filters.transaction_type) {
-      filtered = filtered.filter(tx => tx.transaction_type === this.filters.transaction_type);
+      filtered = filtered.filter(
+        (tx) => tx.transaction_type === this.filters.transaction_type
+      );
     }
 
     // Apply merchant filter - handle both old and new format
     if (this.filters.merchantId) {
-      filtered = filtered.filter(tx => {
+      filtered = filtered.filter((tx) => {
         // Handle old format (merchantId object)
-        if (tx.merchantId && typeof tx.merchantId === 'object' && tx.merchantId._id) {
+        if (
+          tx.merchantId &&
+          typeof tx.merchantId === 'object' &&
+          tx.merchantId._id
+        ) {
           return tx.merchantId._id === this.filters.merchantId;
         }
         // Handle new format (customerId string)
@@ -790,7 +843,11 @@ export class ReportsComponent implements OnInit {
           return tx.customerId === this.filters.merchantId;
         }
         // Handle customerId object
-        if (tx.customerId && typeof tx.customerId === 'object' && tx.customerId._id) {
+        if (
+          tx.customerId &&
+          typeof tx.customerId === 'object' &&
+          tx.customerId._id
+        ) {
           return tx.customerId._id === this.filters.merchantId;
         }
         return false;
@@ -799,22 +856,30 @@ export class ReportsComponent implements OnInit {
 
     // Apply search filters
     if (this.searchFilters.phone) {
-      filtered = filtered.filter(tx =>
-        tx.payment_account_number?.includes(this.searchFilters.phone) ||
-        tx.recipient_account_number?.includes(this.searchFilters.phone)
+      filtered = filtered.filter(
+        (tx) =>
+          tx.payment_account_number?.includes(this.searchFilters.phone) ||
+          tx.recipient_account_number?.includes(this.searchFilters.phone)
       );
     }
 
     if (this.searchFilters.transactionRef) {
-      filtered = filtered.filter(tx =>
-        tx.transactionRef?.toLowerCase().includes(this.searchFilters.transactionRef.toLowerCase())
+      filtered = filtered.filter((tx) =>
+        tx.transactionRef
+          ?.toLowerCase()
+          .includes(this.searchFilters.transactionRef.toLowerCase())
       );
     }
 
     if (this.searchFilters.customerName) {
-      filtered = filtered.filter(tx =>
-        tx.payment_account_name?.toLowerCase().includes(this.searchFilters.customerName.toLowerCase()) ||
-        tx.recipient_account_name?.toLowerCase().includes(this.searchFilters.customerName.toLowerCase())
+      filtered = filtered.filter(
+        (tx) =>
+          tx.payment_account_name
+            ?.toLowerCase()
+            .includes(this.searchFilters.customerName.toLowerCase()) ||
+          tx.recipient_account_name
+            ?.toLowerCase()
+            .includes(this.searchFilters.customerName.toLowerCase())
       );
     }
 
@@ -825,16 +890,16 @@ export class ReportsComponent implements OnInit {
 
   private updateAnalytics(): void {
     const filtered = this.displayedTransactions;
-    
+
     this.analytics = {
       totalCount: filtered.length,
-      successfulCount: filtered.filter(tx => tx.status === 'PAID').length,
-      failedCount: filtered.filter(tx => tx.status === 'FAILED').length,
-      pendingCount: filtered.filter(tx => tx.status === 'PENDING').length,
+      successfulCount: filtered.filter((tx) => tx.status === 'PAID').length,
+      failedCount: filtered.filter((tx) => tx.status === 'FAILED').length,
+      pendingCount: filtered.filter((tx) => tx.status === 'PENDING').length,
       totalAmount: filtered.reduce((sum, tx) => sum + (tx.amount || 0), 0),
       netAmount: filtered.reduce((sum, tx) => sum + (tx.actualAmount || 0), 0),
       charges: filtered.reduce((sum, tx) => sum + (tx.charges || 0), 0),
-      growthRate: 0 // Calculate if needed
+      growthRate: 0, // Calculate if needed
     };
 
     // Only update reportStats from filtered data if we're using client-side filtering
@@ -861,7 +926,10 @@ export class ReportsComponent implements OnInit {
   }
 
   get endIndex(): number {
-    return Math.min(this.startIndex + this.pageSize, this.displayedTransactions.length);
+    return Math.min(
+      this.startIndex + this.pageSize,
+      this.displayedTransactions.length
+    );
   }
 
   get totalPages(): number {
@@ -874,10 +942,16 @@ export class ReportsComponent implements OnInit {
 
   get visiblePages(): number[] {
     const pages: number[] = [];
-    let start = Math.max(1, this.currentPage - Math.floor(this.maxVisiblePages / 2));
+    let start = Math.max(
+      1,
+      this.currentPage - Math.floor(this.maxVisiblePages / 2)
+    );
     let end = Math.min(this.totalPages, start + this.maxVisiblePages - 1);
 
-    start = Math.max(1, Math.min(start, this.totalPages - this.maxVisiblePages + 1));
+    start = Math.max(
+      1,
+      Math.min(start, this.totalPages - this.maxVisiblePages + 1)
+    );
 
     for (let i = start; i <= end; i++) {
       pages.push(i);
@@ -934,7 +1008,7 @@ export class ReportsComponent implements OnInit {
 
       if (response?.success && response.data) {
         this.allTransactions = response.data.transactions || [];
-        
+
         // Check if it's the new API format (has pagination and totals)
         if (response.data.totals && response.data.pagination) {
           // New API format
@@ -962,7 +1036,8 @@ export class ReportsComponent implements OnInit {
         this.error = response?.message || 'Failed to generate report';
       }
     } catch (err: any) {
-      this.error = err?.error?.message || 'Failed to generate report. Please try again.';
+      this.error =
+        err?.error?.message || 'Failed to generate report. Please try again.';
       console.error('Report generation error:', err);
     } finally {
       this.loading = false;
@@ -987,7 +1062,9 @@ export class ReportsComponent implements OnInit {
         'Merchant Email': this.getMerchantEmail(tx),
         'Customer Name': tx.payment_account_name,
         'Customer Account': tx.payment_account_number,
-        'Payment Method': `${this.getAccountIssuer(tx)} ${this.getAccountType(tx)}`,
+        'Payment Method': `${this.getAccountIssuer(tx)} ${this.getAccountType(
+          tx
+        )}`,
         Amount: tx.amount,
         Charges: tx.charges,
         'Net Amount': tx.actualAmount,
@@ -1004,7 +1081,9 @@ export class ReportsComponent implements OnInit {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
 
-    const fileName = `transactions_report_${this.formatDateForFile(new Date())}.xlsx`;
+    const fileName = `transactions_report_${this.formatDateForFile(
+      new Date()
+    )}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   }
 
@@ -1014,18 +1093,18 @@ export class ReportsComponent implements OnInit {
     if (tx.merchantId && typeof tx.merchantId === 'object') {
       return tx.merchantId.merchant_tradeName || 'Unknown';
     }
-    
+
     // Handle customerId object
     if (tx.customerId && typeof tx.customerId === 'object') {
       return tx.customerId.merchant_tradeName || 'Unknown';
     }
-    
+
     // Handle customerId string - lookup in merchants array
     if (tx.customerId && typeof tx.customerId === 'string') {
-      const merchant = this.merchants.find(m => m._id === tx.customerId);
+      const merchant = this.merchants.find((m) => m._id === tx.customerId);
       return merchant?.merchant_tradeName || 'Unknown';
     }
-    
+
     return 'Unknown';
   }
 
@@ -1034,30 +1113,30 @@ export class ReportsComponent implements OnInit {
     if (tx.merchantId && typeof tx.merchantId === 'object') {
       return tx.merchantId.email || '';
     }
-    
+
     // Handle customerId object
     if (tx.customerId && typeof tx.customerId === 'object') {
       return tx.customerId.email || '';
     }
-    
+
     // Handle customerId string - lookup in merchants array
     if (tx.customerId && typeof tx.customerId === 'string') {
-      const merchant = this.merchants.find(m => m._id === tx.customerId);
+      const merchant = this.merchants.find((m) => m._id === tx.customerId);
       return merchant?.email || tx.customerId;
     }
-    
+
     return '';
   }
 
   getAccountIssuer(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT' 
-      ? tx.recipient_account_issuer 
+    return tx.transaction_type === 'DEBIT'
+      ? tx.recipient_account_issuer
       : tx.payment_account_issuer || 'N/A';
   }
 
   getAccountType(tx: Transaction): string {
-    return tx.transaction_type === 'DEBIT' 
-      ? tx.recipient_account_type 
+    return tx.transaction_type === 'DEBIT'
+      ? tx.recipient_account_type
       : tx.payment_account_type || 'N/A';
   }
 
@@ -1071,7 +1150,10 @@ export class ReportsComponent implements OnInit {
     return paymentIssuerImages[key] || null;
   }
 
-  formatCurrency(amount: number | undefined, walletType: string | undefined): string {
+  formatCurrency(
+    amount: number | undefined,
+    walletType: string | undefined
+  ): string {
     if (amount === undefined || amount === null) return 'N/A';
     const currency = walletType === 'FIAT' ? 'GHS' : 'USD';
     return new Intl.NumberFormat('en-GH', {
@@ -1101,11 +1183,14 @@ export class ReportsComponent implements OnInit {
   copyJsonToClipboard(): void {
     if (this.selectedJsonData) {
       const jsonText = this.formatJson(this.selectedJsonData);
-      navigator.clipboard.writeText(jsonText).then(() => {
-        console.log('JSON copied to clipboard');
-      }).catch((err) => {
-        console.error('Failed to copy JSON: ', err);
-      });
+      navigator.clipboard
+        .writeText(jsonText)
+        .then(() => {
+          console.log('JSON copied to clipboard');
+        })
+        .catch((err) => {
+          console.error('Failed to copy JSON: ', err);
+        });
     }
   }
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponse, BtcBalanceResponse, SystemSettings } from './system-settings.interface';
+import { ApiResponse, BtcBalanceResponse, SystemSettings, UpdateSystemSettingsRequest } from './system-settings.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +16,7 @@ export class SystemSettingsService {
     return this.http.get<ApiResponse>(`${this.baseUrl}/get`);
   }
 
-  updateSettings(settings: Partial<SystemSettings>): Observable<ApiResponse> {
+  updateSettings(settings: UpdateSystemSettingsRequest): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/update`, settings);
   }
 

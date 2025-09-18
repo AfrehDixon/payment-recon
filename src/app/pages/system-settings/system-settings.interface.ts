@@ -150,6 +150,16 @@ export interface SystemSettings {
   __v: number;
 }
 
+export interface UpdateSystemSettingsRequest {
+  markupRate?: number;
+  transactionFee?: number;
+  minTransactionAmount?: number;
+  maxTransactionAmount?: number;
+  dynamicPricingEnabled?: boolean;
+  btcReserveConfig?: Partial<BtcReserveConfig>;
+  btcSweepConfig?: Partial<BtcSweepConfig>;
+}
+
 export interface EditableSystemSettings {
   markupRate: number;
   transactionFee: number;
