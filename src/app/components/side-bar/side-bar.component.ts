@@ -49,7 +49,8 @@ export const Routes: RouteInfo[] = [
   { path: 'settings', title: "System Settings", class: 'false', permission: 'can view system settings module' },
   { path: 'permission-management', title: "Permission Management", class: 'false', permission: 'can view system settings module' },
   { path: 'tickets', title: "Admin Ticket Management", class: 'false', permission: 'can view admins module' },
-  { path: 'card-wallets', title: "Customer Wallets", class: 'false', permission: 'can view admins module' }
+  { path: 'card-wallets', title: "Customer Wallets", class: 'false', permission: 'can view admins module' },
+  { path: 'consolidations', title: "Consolidations", class: 'false', permission: 'can view admins module' }
 ];
 
 @Component({
@@ -184,7 +185,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'balance-summary': 'bi bi-graph-up',
       'payment-links': 'bi bi-link-45deg',
       'account-blacklist': 'bi bi-shield-lock',
-      'card-wallets': 'bi bi-credit-card-2-back'
+      'card-wallets': 'bi bi-credit-card-2-back',
+      'consolidations': 'bi bi-shuffle'
     };
 
     return iconMap[path] || 'bi bi-circle';

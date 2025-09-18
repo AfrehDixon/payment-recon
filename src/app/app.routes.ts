@@ -37,6 +37,7 @@ import { AdminTicketManagementComponent } from './pages/admin-ticket/admin-ticke
 import { VaultManagementComponent } from './pages/vault-management/vault-management.component';
 import { PendingReversalsComponent } from './pages/pending-reversals/pending-reversals.component';
 import { CardWalletsComponent } from './pages/card-wallets/card-wallets.component';
+import { ConsolidationsComponent } from './pages/consolidations/consolidations.component';
 
 export const routes: Routes = [
   {
@@ -200,6 +201,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SystemSettingsComponent,
+      },
+      {
+        path: 'consolidations',
+        component: ConsolidationsComponent,
       },
       {
         path: 'card-wallets',
