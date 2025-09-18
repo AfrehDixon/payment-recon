@@ -68,6 +68,8 @@ interface PendingReversal {
   reversalId: string;
   originalTransactionId: {
     reason: string;
+    externalTransactionId: string;
+    partnerTransactionId: string;
   };
   originalTransactionRef: string;
   status:
@@ -507,6 +509,8 @@ export class PendingReversalsComponent implements OnInit {
       Operator: reversal.reversalTransactionData.operator,
       Channel: reversal.reversalTransactionData.channel,
       Reason: reversal.originalTransactionId.reason,
+      ExternalTransactionId:
+        reversal.originalTransactionId.partnerTransactionId,
       Description: reversal.reversalTransactionData.description,
       'Recipient Account Name':
         reversal.reversalTransactionData.recipient_account_name,
@@ -594,6 +598,9 @@ export class PendingReversalsComponent implements OnInit {
       Operator: reversal.reversalTransactionData.operator,
       Channel: reversal.reversalTransactionData.channel,
       Reason: reversal.originalTransactionId.reason,
+      ExternalTransactionId:
+        reversal.originalTransactionId.partnerTransactionId,
+
       Description: reversal.reversalTransactionData.description,
       'Recipient Account Name':
         reversal.reversalTransactionData.recipient_account_name,
