@@ -2,12 +2,24 @@
   <div class="header">
     <h1>System Settings</h1>
     <div class="header-actions">
-      <button (click)="toggleEdit()" class="edit-btn" [disabled]="loading" *ngIf="!isEditing">
+      <button
+        (click)="toggleEdit()"
+        class="edit-btn"
+        [disabled]="loading"
+        *ngIf="!isEditing"
+      >
         <i class="fas fa-edit"></i>
         Edit Settings
       </button>
-      <button (click)="refreshAll()" class="refresh-btn" [disabled]="loading || loadingBalance">
-        <i class="fas fa-sync-alt" [class.rotating]="loading || loadingBalance"></i>
+      <button
+        (click)="refreshAll()"
+        class="refresh-btn"
+        [disabled]="loading || loadingBalance"
+      >
+        <i
+          class="fas fa-sync-alt"
+          [class.rotating]="loading || loadingBalance"
+        ></i>
         Refresh All
       </button>
     </div>
@@ -37,14 +49,21 @@
   </div>
 
   <!-- Form Validation Errors -->
-  <div *ngIf="isEditing && getFormErrors().length > 0" class="validation-errors">
+  <div
+    *ngIf="isEditing && getFormErrors().length > 0"
+    class="validation-errors"
+  >
     <h4>Please fix the following errors:</h4>
     <ul>
       <li *ngFor="let error of getFormErrors()">{{ error }}</li>
     </ul>
   </div>
 
-  <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
+  <form
+    [formGroup]="settingsForm"
+    *ngIf="settings && !loading"
+    class="settings-grid"
+  >
     <div class="setting-card">
       <h3>Pricing</h3>
       <div class="setting-item">
@@ -53,8 +72,17 @@
           <span>{{ settings.markupRate }}%</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.1" min="0" max="100" formControlName="markupRate" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('markupRate')">{{ getFieldError('markupRate') }}</div>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="100"
+            formControlName="markupRate"
+            class="form-input"
+          />
+          <div class="field-error" *ngIf="getFieldError('markupRate')">
+            {{ getFieldError("markupRate") }}
+          </div>
         </div>
       </div>
       <div class="setting-item">
@@ -67,8 +95,16 @@
           <span>${{ settings.transactionFee }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.01" min="0" formControlName="transactionFee" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('transactionFee')">{{ getFieldError('transactionFee') }}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            formControlName="transactionFee"
+            class="form-input"
+          />
+          <div class="field-error" *ngIf="getFieldError('transactionFee')">
+            {{ getFieldError("transactionFee") }}
+          </div>
         </div>
       </div>
     </div>
@@ -81,8 +117,19 @@
           <span>${{ settings.minTransactionAmount }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1" min="1" formControlName="minTransactionAmount" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('minTransactionAmount')">{{ getFieldError('minTransactionAmount') }}</div>
+          <input
+            type="number"
+            step="1"
+            min="1"
+            formControlName="minTransactionAmount"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('minTransactionAmount')"
+          >
+            {{ getFieldError("minTransactionAmount") }}
+          </div>
         </div>
       </div>
       <div class="setting-item">
@@ -91,8 +138,19 @@
           <span>${{ settings.maxTransactionAmount }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1" min="1" formControlName="maxTransactionAmount" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('maxTransactionAmount')">{{ getFieldError('maxTransactionAmount') }}</div>
+          <input
+            type="number"
+            step="1"
+            min="1"
+            formControlName="maxTransactionAmount"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('maxTransactionAmount')"
+          >
+            {{ getFieldError("maxTransactionAmount") }}
+          </div>
         </div>
       </div>
     </div>
@@ -100,17 +158,21 @@
     <div class="setting-card">
       <h3>Features</h3>
       <div class="setting-item">
-          <label>Dynamic Pricing:</label>
-          <ng-container *ngIf="!isEditing">
-            <span [class.enabled]="settings.dynamicPricingEnabled">
-              {{ settings.dynamicPricingEnabled ? 'Enabled' : 'Disabled' }}
-            </span>
-          </ng-container>
-          <div *ngIf="isEditing" class="toggle-switch">
-            <input type="checkbox" id="dynamicPricing" formControlName="dynamicPricingEnabled">
-            <label for="dynamicPricing"></label>
-          </div>
+        <label>Dynamic Pricing:</label>
+        <ng-container *ngIf="!isEditing">
+          <span [class.enabled]="settings.dynamicPricingEnabled">
+            {{ settings.dynamicPricingEnabled ? "Enabled" : "Disabled" }}
+          </span>
+        </ng-container>
+        <div *ngIf="isEditing" class="toggle-switch">
+          <input
+            type="checkbox"
+            id="dynamicPricing"
+            formControlName="dynamicPricingEnabled"
+          />
+          <label for="dynamicPricing"></label>
         </div>
+      </div>
       <div class="setting-item">
         <label>Last Updated:</label>
         <span>{{ formatDate(settings.lastUpdated) }}</span>
@@ -153,20 +215,27 @@
     <div class="setting-card">
       <h3>
         BTC Reserve Configuration
-        <span class="status-indicator" [class.enabled]="settings.btcReserveConfig.enabled">
-          {{ settings.btcReserveConfig.enabled ? 'Enabled' : 'Disabled' }}
+        <span
+          class="status-indicator"
+          [class.enabled]="settings.btcReserveConfig.enabled"
+        >
+          {{ settings.btcReserveConfig.enabled ? "Enabled" : "Disabled" }}
         </span>
       </h3>
-      
+
       <div class="setting-item">
         <label>Status:</label>
         <ng-container *ngIf="!isEditing">
           <span [class.enabled]="settings.btcReserveConfig.enabled">
-            {{ settings.btcReserveConfig.enabled ? 'Enabled' : 'Disabled' }}
+            {{ settings.btcReserveConfig.enabled ? "Enabled" : "Disabled" }}
           </span>
         </ng-container>
         <div *ngIf="isEditing" class="toggle-switch">
-          <input type="checkbox" id="btcReserveEnabled" formControlName="btcReserveEnabled">
+          <input
+            type="checkbox"
+            id="btcReserveEnabled"
+            formControlName="btcReserveEnabled"
+          />
           <label for="btcReserveEnabled"></label>
         </div>
       </div>
@@ -174,75 +243,164 @@
       <div class="setting-item">
         <label>Target Percentage:</label>
         <ng-container *ngIf="!isEditing">
-          <span>{{ (settings.btcReserveConfig.targetPct * 100) | number:'1.1-1' }}%</span>
+          <span
+            >{{
+              settings.btcReserveConfig.targetPct * 100 | number : "1.1-1"
+            }}%</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.01" min="0" max="1" formControlName="btcReserveTargetPct" class="form-input" placeholder="0.15">
-          <small class="field-help">Enter as decimal (e.g., 0.15 for 15%)</small>
-          <div class="field-error" *ngIf="getFieldError('btcReserveTargetPct')">{{ getFieldError('btcReserveTargetPct') }}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            formControlName="btcReserveTargetPct"
+            class="form-input"
+            placeholder="0.15"
+          />
+          <small class="field-help"
+            >Enter as decimal (e.g., 0.15 for 15%)</small
+          >
+          <div class="field-error" *ngIf="getFieldError('btcReserveTargetPct')">
+            {{ getFieldError("btcReserveTargetPct") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Lower Threshold:</label>
         <ng-container *ngIf="!isEditing">
-          <span>{{ (settings.btcReserveConfig.lowerPct * 100) | number:'1.1-1' }}%</span>
+          <span
+            >{{
+              settings.btcReserveConfig.lowerPct * 100 | number : "1.1-1"
+            }}%</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.01" min="0" max="1" formControlName="btcReserveLowerPct" class="form-input" placeholder="0.12">
-          <small class="field-help">Enter as decimal (e.g., 0.12 for 12%)</small>
-          <div class="field-error" *ngIf="getFieldError('btcReserveLowerPct')">{{ getFieldError('btcReserveLowerPct') }}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            formControlName="btcReserveLowerPct"
+            class="form-input"
+            placeholder="0.12"
+          />
+          <small class="field-help"
+            >Enter as decimal (e.g., 0.12 for 12%)</small
+          >
+          <div class="field-error" *ngIf="getFieldError('btcReserveLowerPct')">
+            {{ getFieldError("btcReserveLowerPct") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Upper Threshold:</label>
         <ng-container *ngIf="!isEditing">
-          <span>{{ (settings.btcReserveConfig.upperPct * 100) | number:'1.1-1' }}%</span>
+          <span
+            >{{
+              settings.btcReserveConfig.upperPct * 100 | number : "1.1-1"
+            }}%</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.01" min="0" max="1" formControlName="btcReserveUpperPct" class="form-input" placeholder="0.18">
-          <small class="field-help">Enter as decimal (e.g., 0.18 for 18%)</small>
-          <div class="field-error" *ngIf="getFieldError('btcReserveUpperPct')">{{ getFieldError('btcReserveUpperPct') }}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            formControlName="btcReserveUpperPct"
+            class="form-input"
+            placeholder="0.18"
+          />
+          <small class="field-help"
+            >Enter as decimal (e.g., 0.18 for 18%)</small
+          >
+          <div class="field-error" *ngIf="getFieldError('btcReserveUpperPct')">
+            {{ getFieldError("btcReserveUpperPct") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Max Daily USD:</label>
         <ng-container *ngIf="!isEditing">
-          <span>${{ formatCurrency(settings.btcReserveConfig.maxDailyUsd) }}</span>
+          <span
+            >${{ formatCurrency(settings.btcReserveConfig.maxDailyUsd) }}</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1000" min="0" formControlName="btcReserveMaxDailyUsd" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcReserveMaxDailyUsd')">{{ getFieldError('btcReserveMaxDailyUsd') }}</div>
+          <input
+            type="number"
+            step="1000"
+            min="0"
+            formControlName="btcReserveMaxDailyUsd"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('btcReserveMaxDailyUsd')"
+          >
+            {{ getFieldError("btcReserveMaxDailyUsd") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Daily USD Used:</label>
-        <span>${{ formatCurrency(settings.btcReserveConfig.dailyUsdUsed) }}</span>
+        <span
+          >${{ formatCurrency(settings.btcReserveConfig.dailyUsdUsed) }}</span
+        >
         <small class="read-only-note">Read-only field</small>
       </div>
 
       <div class="setting-item">
         <label>Max Trade USD:</label>
         <ng-container *ngIf="!isEditing">
-          <span>${{ formatCurrency(settings.btcReserveConfig.maxTradeUsd) }}</span>
+          <span
+            >${{ formatCurrency(settings.btcReserveConfig.maxTradeUsd) }}</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1000" min="0" formControlName="btcReserveMaxTradeUsd" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcReserveMaxTradeUsd')">{{ getFieldError('btcReserveMaxTradeUsd') }}</div>
+          <input
+            type="number"
+            step="1000"
+            min="0"
+            formControlName="btcReserveMaxTradeUsd"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('btcReserveMaxTradeUsd')"
+          >
+            {{ getFieldError("btcReserveMaxTradeUsd") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Min Trade USD:</label>
         <ng-container *ngIf="!isEditing">
-          <span>${{ formatCurrency(settings.btcReserveConfig.minTradeUsd) }}</span>
+          <span
+            >${{ formatCurrency(settings.btcReserveConfig.minTradeUsd) }}</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="100" min="0" formControlName="btcReserveMinTradeUsd" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcReserveMinTradeUsd')">{{ getFieldError('btcReserveMinTradeUsd') }}</div>
+          <input
+            type="number"
+            step="100"
+            min="0"
+            formControlName="btcReserveMinTradeUsd"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('btcReserveMinTradeUsd')"
+          >
+            {{ getFieldError("btcReserveMinTradeUsd") }}
+          </div>
         </div>
       </div>
 
@@ -252,9 +410,21 @@
           <span>{{ settings.btcReserveConfig.slippageBps }} BPS</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1" min="0" max="10000" formControlName="btcReserveSlippageBps" class="form-input">
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="10000"
+            formControlName="btcReserveSlippageBps"
+            class="form-input"
+          />
           <small class="field-help">1 BPS = 0.01%</small>
-          <div class="field-error" *ngIf="getFieldError('btcReserveSlippageBps')">{{ getFieldError('btcReserveSlippageBps') }}</div>
+          <div
+            class="field-error"
+            *ngIf="getFieldError('btcReserveSlippageBps')"
+          >
+            {{ getFieldError("btcReserveSlippageBps") }}
+          </div>
         </div>
       </div>
 
@@ -264,8 +434,19 @@
           <span>{{ settings.btcReserveConfig.cooldownSec }}s</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1" min="0" formControlName="btcReserveCooldownSec" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcReserveCooldownSec')">{{ getFieldError('btcReserveCooldownSec') }}</div>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            formControlName="btcReserveCooldownSec"
+            class="form-input"
+          />
+          <div
+            class="field-error"
+            *ngIf="getFieldError('btcReserveCooldownSec')"
+          >
+            {{ getFieldError("btcReserveCooldownSec") }}
+          </div>
         </div>
       </div>
 
@@ -273,63 +454,106 @@
       <div class="setting-item">
         <label>BTC Recipient:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcReserveConfig.btcRecipient || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcReserveConfig.btcRecipient || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="btcRecipient" class="form-input address-input" placeholder="Bitcoin address">
+          <input
+            type="text"
+            formControlName="btcRecipient"
+            class="form-input address-input"
+            placeholder="Bitcoin address"
+          />
         </div>
       </div>
 
       <div class="setting-item">
         <label>BSC Recipient:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcReserveConfig.bscRecipient || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcReserveConfig.bscRecipient || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="bscRecipient" class="form-input address-input" placeholder="BSC address">
+          <input
+            type="text"
+            formControlName="bscRecipient"
+            class="form-input address-input"
+            placeholder="BSC address"
+          />
         </div>
       </div>
 
       <div class="setting-item">
         <label>BSC Router Address:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcReserveConfig.bscRouterAddr || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcReserveConfig.bscRouterAddr || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="bscRouterAddr" class="form-input address-input" placeholder="BSC router address">
+          <input
+            type="text"
+            formControlName="bscRouterAddr"
+            class="form-input address-input"
+            placeholder="BSC router address"
+          />
         </div>
       </div>
 
       <div class="setting-item">
         <label>BSC Vault Address:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcReserveConfig.bscVaultAddr || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcReserveConfig.bscVaultAddr || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="bscVaultAddr" class="form-input address-input" placeholder="BSC vault address">
+          <input
+            type="text"
+            formControlName="bscVaultAddr"
+            class="form-input address-input"
+            placeholder="BSC vault address"
+          />
         </div>
       </div>
 
       <div class="setting-item">
         <label>USDT Token Address:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcReserveConfig.usdtTokenAddr || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcReserveConfig.usdtTokenAddr || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="usdtTokenAddr" class="form-input address-input" placeholder="USDT token address">
+          <input
+            type="text"
+            formControlName="usdtTokenAddr"
+            class="form-input address-input"
+            placeholder="USDT token address"
+          />
         </div>
       </div>
 
       <!-- Read-only Status Fields -->
       <div class="setting-item">
         <label>Last Rebalance:</label>
-        <span>{{ settings.btcReserveConfig.lastRebalanceAt ? formatDate(settings.btcReserveConfig.lastRebalanceAt) : 'Never' }}</span>
+        <span>{{
+          settings.btcReserveConfig.lastRebalanceAt
+            ? formatDate(settings.btcReserveConfig.lastRebalanceAt)
+            : "Never"
+        }}</span>
         <small class="read-only-note">Read-only field</small>
       </div>
 
       <div class="setting-item">
         <label>Last Daily Reset:</label>
-        <span>{{ settings.btcReserveConfig.lastDailyReset ? formatDate(settings.btcReserveConfig.lastDailyReset) : 'Never' }}</span>
+        <span>{{
+          settings.btcReserveConfig.lastDailyReset
+            ? formatDate(settings.btcReserveConfig.lastDailyReset)
+            : "Never"
+        }}</span>
         <small class="read-only-note">Read-only field</small>
       </div>
     </div>
@@ -338,20 +562,27 @@
     <div class="setting-card">
       <h3>
         BTC Sweep Configuration
-        <span class="status-indicator" [class.enabled]="settings.btcSweepConfig.enabled">
-          {{ settings.btcSweepConfig.enabled ? 'Enabled' : 'Disabled' }}
+        <span
+          class="status-indicator"
+          [class.enabled]="settings.btcSweepConfig.enabled"
+        >
+          {{ settings.btcSweepConfig.enabled ? "Enabled" : "Disabled" }}
         </span>
       </h3>
-      
+
       <div class="setting-item">
         <label>Status:</label>
         <ng-container *ngIf="!isEditing">
           <span [class.enabled]="settings.btcSweepConfig.enabled">
-            {{ settings.btcSweepConfig.enabled ? 'Enabled' : 'Disabled' }}
+            {{ settings.btcSweepConfig.enabled ? "Enabled" : "Disabled" }}
           </span>
         </ng-container>
         <div *ngIf="isEditing" class="toggle-switch">
-          <input type="checkbox" id="btcSweepEnabled" formControlName="btcSweepEnabled">
+          <input
+            type="checkbox"
+            id="btcSweepEnabled"
+            formControlName="btcSweepEnabled"
+          />
           <label for="btcSweepEnabled"></label>
         </div>
       </div>
@@ -359,22 +590,42 @@
       <div class="setting-item">
         <label>Max Sweep USD:</label>
         <ng-container *ngIf="!isEditing">
-          <span>${{ formatCurrency(settings.btcSweepConfig.maxSweepUsd) }}</span>
+          <span
+            >${{ formatCurrency(settings.btcSweepConfig.maxSweepUsd) }}</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1000" min="0" formControlName="btcSweepMaxSweepUsd" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcSweepMaxSweepUsd')">{{ getFieldError('btcSweepMaxSweepUsd') }}</div>
+          <input
+            type="number"
+            step="1000"
+            min="0"
+            formControlName="btcSweepMaxSweepUsd"
+            class="form-input"
+          />
+          <div class="field-error" *ngIf="getFieldError('btcSweepMaxSweepUsd')">
+            {{ getFieldError("btcSweepMaxSweepUsd") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Min Sweep USD:</label>
         <ng-container *ngIf="!isEditing">
-          <span>${{ formatCurrency(settings.btcSweepConfig.minSweepUsd) }}</span>
+          <span
+            >${{ formatCurrency(settings.btcSweepConfig.minSweepUsd) }}</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="100" min="0" formControlName="btcSweepMinSweepUsd" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcSweepMinSweepUsd')">{{ getFieldError('btcSweepMinSweepUsd') }}</div>
+          <input
+            type="number"
+            step="100"
+            min="0"
+            formControlName="btcSweepMinSweepUsd"
+            class="form-input"
+          />
+          <div class="field-error" *ngIf="getFieldError('btcSweepMinSweepUsd')">
+            {{ getFieldError("btcSweepMinSweepUsd") }}
+          </div>
         </div>
       </div>
 
@@ -384,20 +635,44 @@
           <span>{{ settings.btcSweepConfig.reserveBtc }} BTC</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.00000001" min="0" formControlName="btcSweepReserveBtc" class="form-input">
-          <div class="field-error" *ngIf="getFieldError('btcSweepReserveBtc')">{{ getFieldError('btcSweepReserveBtc') }}</div>
+          <input
+            type="number"
+            step="0.00000001"
+            min="0"
+            formControlName="btcSweepReserveBtc"
+            class="form-input"
+          />
+          <div class="field-error" *ngIf="getFieldError('btcSweepReserveBtc')">
+            {{ getFieldError("btcSweepReserveBtc") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Sweep Percentage:</label>
         <ng-container *ngIf="!isEditing">
-          <span>{{ (settings.btcSweepConfig.sweepPctOfAvail * 100) | number:'1.0-0' }}%</span>
+          <span
+            >{{
+              settings.btcSweepConfig.sweepPctOfAvail * 100 | number : "1.0-0"
+            }}%</span
+          >
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="0.01" min="0" max="1" formControlName="btcSweepPctOfAvail" class="form-input" placeholder="1.0">
-          <small class="field-help">Enter as decimal (e.g., 1.0 for 100%)</small>
-          <div class="field-error" *ngIf="getFieldError('btcSweepPctOfAvail')">{{ getFieldError('btcSweepPctOfAvail') }}</div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            formControlName="btcSweepPctOfAvail"
+            class="form-input"
+            placeholder="1.0"
+          />
+          <small class="field-help"
+            >Enter as decimal (e.g., 1.0 for 100%)</small
+          >
+          <div class="field-error" *ngIf="getFieldError('btcSweepPctOfAvail')">
+            {{ getFieldError("btcSweepPctOfAvail") }}
+          </div>
         </div>
       </div>
 
@@ -407,32 +682,52 @@
           <span>{{ settings.btcSweepConfig.slippageBps }} BPS</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="number" step="1" min="0" max="10000" formControlName="btcSweepSlippageBps" class="form-input">
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="10000"
+            formControlName="btcSweepSlippageBps"
+            class="form-input"
+          />
           <small class="field-help">1 BPS = 0.01%</small>
-          <div class="field-error" *ngIf="getFieldError('btcSweepSlippageBps')">{{ getFieldError('btcSweepSlippageBps') }}</div>
+          <div class="field-error" *ngIf="getFieldError('btcSweepSlippageBps')">
+            {{ getFieldError("btcSweepSlippageBps") }}
+          </div>
         </div>
       </div>
 
       <div class="setting-item">
         <label>Treasury BEP20:</label>
         <ng-container *ngIf="!isEditing">
-          <span class="address-field">{{ settings.btcSweepConfig.treasuryBep20 || 'Not set' }}</span>
+          <span class="address-field">{{
+            settings.btcSweepConfig.treasuryBep20 || "Not set"
+          }}</span>
         </ng-container>
         <div *ngIf="isEditing" class="input-wrapper">
-          <input type="text" formControlName="treasuryBep20" class="form-input address-input" placeholder="BEP20 treasury address">
+          <input
+            type="text"
+            formControlName="treasuryBep20"
+            class="form-input address-input"
+            placeholder="BEP20 treasury address"
+          />
         </div>
       </div>
 
       <!-- Read-only Status Fields -->
       <div class="setting-item">
         <label>Last Run:</label>
-        <span>{{ settings.btcSweepConfig.lastRunAt ? formatDate(settings.btcSweepConfig.lastRunAt) : 'Never' }}</span>
+        <span>{{
+          settings.btcSweepConfig.lastRunAt
+            ? formatDate(settings.btcSweepConfig.lastRunAt)
+            : "Never"
+        }}</span>
         <small class="read-only-note">Read-only field</small>
       </div>
 
       <div class="setting-item">
         <label>Last Inbound Ref:</label>
-        <span>{{ settings.btcSweepConfig.lastInboundRef || 'None' }}</span>
+        <span>{{ settings.btcSweepConfig.lastInboundRef || "None" }}</span>
         <small class="read-only-note">Read-only field</small>
       </div>
     </div>
@@ -440,17 +735,21 @@
     <!-- Network Balances Card (Read-only) -->
     <div class="setting-card network-balances-card">
       <h3>Network Balances <small>(Read-only)</small></h3>
-      
+
       <!-- BTC Balances -->
       <div class="network-section">
         <h4>Bitcoin</h4>
         <div class="setting-item">
           <label>Confirmed Balance:</label>
-          <span>{{ formatBtc(settings.btcBalances.totalConfirmedBalance) }}</span>
+          <span>{{
+            formatBtc(settings.btcBalances.totalConfirmedBalance)
+          }}</span>
         </div>
         <div class="setting-item">
           <label>Unconfirmed Balance:</label>
-          <span>{{ formatBtc(settings.btcBalances.totalUnconfirmedBalance) }}</span>
+          <span>{{
+            formatBtc(settings.btcBalances.totalUnconfirmedBalance)
+          }}</span>
         </div>
         <div class="setting-item">
           <label>Total USD Value:</label>
@@ -475,23 +774,41 @@
         <h4>BSC (BEP20) - {{ settings.bep20Balances.tokenInfo.symbol }}</h4>
         <div class="setting-item">
           <label>Token Balance:</label>
-          <span>{{ settings.bep20Balances.totalTokenBalance | number:'1.2-6' }} {{ settings.bep20Balances.tokenInfo.symbol }}</span>
+          <span
+            >{{ settings.bep20Balances.totalTokenBalance | number : "1.2-6" }}
+            {{ settings.bep20Balances.tokenInfo.symbol }}</span
+          >
         </div>
         <div class="setting-item">
           <label>BNB Balance:</label>
-          <span>{{ formatSmallCurrency(settings.bep20Balances.totalBnbBalance) }} BNB</span>
+          <span
+            >{{
+              formatSmallCurrency(settings.bep20Balances.totalBnbBalance)
+            }}
+            BNB</span
+          >
         </div>
         <div class="setting-item">
           <label>Token USD Value:</label>
-          <span>${{ formatCurrency(settings.bep20Balances.totalTokenUsdValue) }}</span>
+          <span
+            >${{
+              formatCurrency(settings.bep20Balances.totalTokenUsdValue)
+            }}</span
+          >
         </div>
         <div class="setting-item">
           <label>BNB USD Value:</label>
-          <span>${{ formatCurrency(settings.bep20Balances.totalBnbUsdValue) }}</span>
+          <span
+            >${{
+              formatCurrency(settings.bep20Balances.totalBnbUsdValue)
+            }}</span
+          >
         </div>
         <div class="setting-item">
           <label>Total USD Value:</label>
-          <span>${{ formatCurrency(settings.bep20Balances.totalUsdValue) }}</span>
+          <span
+            >${{ formatCurrency(settings.bep20Balances.totalUsdValue) }}</span
+          >
         </div>
         <div class="setting-item">
           <label>Active Addresses:</label>
@@ -499,7 +816,9 @@
         </div>
         <div class="setting-item">
           <label>Last Updated:</label>
-          <span>{{ formatDate(settings.bep20Balances.lastBalanceUpdate) }}</span>
+          <span>{{
+            formatDate(settings.bep20Balances.lastBalanceUpdate)
+          }}</span>
         </div>
       </div>
 
@@ -508,15 +827,24 @@
         <h4>Solana</h4>
         <div class="setting-item">
           <label>SOL Balance:</label>
-          <span>{{ formatSmallCurrency(settings.solanaBalances.totalSolBalance) }} SOL</span>
+          <span
+            >{{
+              formatSmallCurrency(settings.solanaBalances.totalSolBalance)
+            }}
+            SOL</span
+          >
         </div>
         <div class="setting-item">
           <label>Total USD Value:</label>
-          <span>${{ formatCurrency(settings.solanaBalances.totalUsdValue) }}</span>
+          <span
+            >${{ formatCurrency(settings.solanaBalances.totalUsdValue) }}</span
+          >
         </div>
         <div class="setting-item">
           <label>Total USDT Value:</label>
-          <span>${{ formatCurrency(settings.solanaBalances.totalUsdtValue) }}</span>
+          <span
+            >${{ formatCurrency(settings.solanaBalances.totalUsdtValue) }}</span
+          >
         </div>
         <div class="setting-item">
           <label>Active Addresses:</label>
@@ -528,7 +856,65 @@
         </div>
         <div class="setting-item">
           <label>Last Updated:</label>
-          <span>{{ formatDate(settings.solanaBalances.lastBalanceUpdate) }}</span>
+          <span>{{
+            formatDate(settings.solanaBalances.lastBalanceUpdate)
+          }}</span>
+        </div>
+      </div>
+
+      <!-- TRC20 Balances -->
+      <div class="network-section">
+        <h4>
+          TRON (TRC-20) -
+          {{ settings.trc20Balances.tokenInfo.symbol || "USDT" }}
+        </h4>
+        <div class="setting-item">
+          <label>Token Balance:</label>
+          <span
+            >{{ settings.trc20Balances.totalTokenBalance | number : "1.2-6" }}
+            {{ settings.trc20Balances.tokenInfo.symbol || "USDT" }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>TRX Balance:</label>
+          <span
+            >{{
+              formatSmallCurrency(settings.trc20Balances.totalTrxBalance)
+            }}
+            TRX</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Token USD Value:</label>
+          <span
+            >${{
+              formatCurrency(settings.trc20Balances.totalTokenUsdValue)
+            }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>TRX USD Value:</label>
+          <span
+            >${{
+              formatCurrency(settings.trc20Balances.totalTrxUsdValue)
+            }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Total USD Value:</label>
+          <span
+            >${{ formatCurrency(settings.trc20Balances.totalUsdValue) }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Network:</label>
+          <span>{{ settings.trc20Balances.network }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Last Updated:</label>
+          <span>{{
+            formatDate(settings.trc20Balances.lastBalanceUpdate)
+          }}</span>
         </div>
       </div>
     </div>
@@ -538,9 +924,14 @@
         <i class="fas fa-times"></i>
         Cancel
       </button>
-      <button type="submit" class="save-btn" (click)="saveSettings()" [disabled]="settingsForm.invalid || loading">
+      <button
+        type="submit"
+        class="save-btn"
+        (click)="saveSettings()"
+        [disabled]="settingsForm.invalid || loading"
+      >
         <i class="fas fa-save"></i>
-        {{ loading ? 'Saving...' : 'Save Changes' }}
+        {{ loading ? "Saving..." : "Save Changes" }}
       </button>
     </div>
   </form>

@@ -13,6 +13,7 @@ import {
   EditableSystemSettings,
   BtcBalanceData,
   UpdateSystemSettingsRequest,
+  Trc20Balances,
 } from './system-settings.interface';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -24,6 +25,7 @@ import { of } from 'rxjs';
   templateUrl: './system-settings.component.html',
   styleUrls: ['./system-settings.component.scss'],
 })
+
 export class SystemSettingsComponent implements OnInit {
   settings: SystemSettings | null = null;
   btcBalance: BtcBalanceData | null = null;

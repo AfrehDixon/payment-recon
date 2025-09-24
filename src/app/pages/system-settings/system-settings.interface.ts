@@ -132,6 +132,7 @@ export interface SystemSettings {
   exchangeRate: number;
   transactionFee: number;
   minTransactionAmount: number;
+  trc20Balances: Trc20Balances;
   maxTransactionAmount: number;
   dynamicPricingEnabled: boolean;
   lastUpdated: string;
@@ -159,6 +160,22 @@ export interface UpdateSystemSettingsRequest {
   btcReserveConfig?: Partial<BtcReserveConfig>;
   btcSweepConfig?: Partial<BtcSweepConfig>;
 }
+
+export interface Trc20Balances {
+  tokenInfo: {
+    decimals: number;
+    name: string;
+    symbol: string;
+  };
+  lastBalanceUpdate: string;
+  network: string;
+  totalTokenBalance: number;
+  totalTokenUsdValue: number;
+  totalTrxBalance: number;
+  totalTrxUsdValue: number;
+  totalUsdValue: number;
+}
+
 
 export interface EditableSystemSettings {
   markupRate: number;
