@@ -126,6 +126,21 @@ export interface SolanaBalances {
   totalUsdtValue: number;
 }
 
+export interface P2pRate {
+  price: number;
+  provider: string;
+  side: string;
+  updatedAt: string;
+  ttlSec: number;
+  sampleSize: number;
+}
+
+export interface P2pRates {
+  USDT_GHS_BUY: P2pRate;
+  USDT_GHS_SELL: P2pRate;
+  BTC_GHS_BUY: P2pRate;
+  BTC_GHS_SELL: P2pRate;
+}
 export interface SystemSettings {
   _id: string;
   markupRate: number;
@@ -148,6 +163,7 @@ export interface SystemSettings {
   btcBalances: BtcBalances;
   bep20Balances: Bep20Balances;
   solanaBalances: SolanaBalances;
+    p2p: P2pRates;
   __v: number;
 }
 

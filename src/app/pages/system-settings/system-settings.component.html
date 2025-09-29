@@ -109,7 +109,7 @@
       </div>
     </div>
 
-    <div class="setting-card">
+    <!-- <div class="setting-card">
       <h3>Transaction Limits</h3>
       <div class="setting-item">
         <label>Minimum Amount ($):</label>
@@ -153,7 +153,63 @@
           </div>
         </div>
       </div>
+    </div> -->
+
+    <!-- Replace the entire Transaction Limits card section with this -->
+<div class="setting-card">
+  <h3>P2P Exchange Rates</h3>
+  
+  <!-- USDT/GHS Rates -->
+  <div class="p2p-section">
+    <h4>USDT ↔ GHS</h4>
+    <div class="setting-item">
+      <label>Buy Rate:</label>
+      <span>GHS {{ formatCurrency(settings.p2p.USDT_GHS_BUY.price) }}</span>
+      <small class="provider-info">via {{ settings.p2p.USDT_GHS_BUY.provider }}</small>
     </div>
+    <div class="setting-item">
+      <label>Sell Rate:</label>
+      <span>GHS {{ formatCurrency(settings.p2p.USDT_GHS_SELL.price) }}</span>
+      <small class="provider-info">via {{ settings.p2p.USDT_GHS_SELL.provider }}</small>
+    </div>
+    <div class="setting-item">
+      <label>Last Updated:</label>
+      <span>{{ formatDate(settings.p2p.USDT_GHS_BUY.updatedAt) }}</span>
+    </div>
+  </div>
+
+  <!-- BTC/GHS Rates -->
+  <div class="p2p-section">
+    <h4>BTC ↔ GHS</h4>
+    <div class="setting-item">
+      <label>Buy Rate:</label>
+      <span>GHS {{ formatCurrency(settings.p2p.BTC_GHS_BUY.price) }}</span>
+      <small class="provider-info">via {{ settings.p2p.BTC_GHS_BUY.provider }}</small>
+    </div>
+    <div class="setting-item">
+      <label>Sell Rate:</label>
+      <span>GHS {{ formatCurrency(settings.p2p.BTC_GHS_SELL.price) }}</span>
+      <small class="provider-info">via {{ settings.p2p.BTC_GHS_SELL.provider }}</small>
+    </div>
+    <div class="setting-item">
+      <label>Last Updated:</label>
+      <span>{{ formatDate(settings.p2p.BTC_GHS_BUY.updatedAt) }}</span>
+    </div>
+  </div>
+
+  <!-- Rate Metadata -->
+  <div class="p2p-section">
+    <h4>Rate Info</h4>
+    <div class="setting-item">
+      <label>Cache TTL:</label>
+      <span>{{ settings.p2p.USDT_GHS_BUY.ttlSec }}s</span>
+    </div>
+    <div class="setting-item">
+      <label>Sample Size:</label>
+      <span>{{ settings.p2p.USDT_GHS_BUY.sampleSize }}</span>
+    </div>
+  </div>
+</div>
 
     <div class="setting-card">
       <h3>Features</h3>
