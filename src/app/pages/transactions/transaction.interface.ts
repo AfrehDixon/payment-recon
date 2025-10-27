@@ -31,6 +31,9 @@ export interface Transaction {
   balanceAfterCredit?: number;
   balanceBeforCredit?: number;
   recipient_account_issuer?: string;
+    // Add consolidation properties
+  consolidationStatus?: string;
+  consolidationOperator?: string; // TRC20, SOLANA, BEP20, etc.
   transaction?: {
     GTBTransId: string;
     PartnerTransId: string;

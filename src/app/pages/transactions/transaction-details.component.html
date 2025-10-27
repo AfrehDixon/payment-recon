@@ -478,6 +478,26 @@
             </svg>
             Complete
           </button>
+          <button
+            (click)="openRetryConsolidationModal(tx)"
+            class="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Retry Consolidation
+          </button>
         </div>
       </div>
     </div>
@@ -563,6 +583,123 @@
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {{ loading ? "Updating..." : "Update Status" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Retry Consolidation Modal -->
+    <div
+      *ngIf="showRetryConsolidationModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
+        <h3 class="text-lg font-medium mb-4">Retry Consolidation</h3>
+
+        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+          <div class="grid grid-cols-2 gap-2">
+            <span class="text-gray-500">Transaction ID:</span>
+            <span class="font-medium">{{ selectedTransaction?._id }}</span>
+
+            <span class="text-gray-500">Reference:</span>
+            <span class="font-medium">{{
+              selectedTransaction?.transactionRef
+            }}</span>
+
+            <span class="text-gray-500">Consolidation Status:</span>
+            <span
+              [class]="
+                getConsolidationStatusClass(
+                  selectedTransaction?.consolidationStatus
+                )
+              "
+            >
+              {{ selectedTransaction?.consolidationStatus || "N/A" }}
+            </span>
+
+            <span class="text-gray-500">Operator:</span>
+            <span class="font-medium">{{
+              selectedTransaction?.consolidationOperator || "N/A"
+            }}</span>
+          </div>
+        </div>
+
+        <form [formGroup]="retryConsolidationForm">
+          <div class="mb-4">
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                formControlName="force"
+                class="mr-2 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span class="text-sm font-medium text-gray-700">
+                Force Retry (override status check)
+              </span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+              If checked, will attempt retry even if consolidation status is not
+              FAILED
+            </p>
+          </div>
+
+          <div class="bg-yellow-50 text-yellow-700 p-3 rounded-md mb-4">
+            <p class="text-sm">
+              This will manually retry the consolidation process for this
+              transaction. The operation will use the
+              {{ selectedTransaction?.consolidationOperator }} operator.
+            </p>
+          </div>
+
+          <!-- In the modal, update the error display -->
+<div 
+  *ngIf="error" 
+  [class]="error.includes('successfully') ? 'bg-green-50 text-green-700 p-3 rounded-md mb-4' : 'bg-red-50 text-red-700 p-3 rounded-md mb-4'"
+>
+  <div class="flex items-start">
+    <svg 
+      *ngIf="error.includes('successfully')"
+      xmlns="http://www.w3.org/2000/svg" 
+      class="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" 
+      viewBox="0 0 20 20" 
+      fill="currentColor"
+    >
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+    </svg>
+    <svg 
+      *ngIf="!error.includes('successfully')"
+      xmlns="http://www.w3.org/2000/svg" 
+      class="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" 
+      viewBox="0 0 20 20" 
+      fill="currentColor"
+    >
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+    </svg>
+    <div>
+      {{ error }}
+      <div *ngIf="error.includes('Consolidation can only be retried')" class="text-sm mt-1">
+        Try enabling the "Force Retry" option to override this check.
+      </div>
+    </div>
+  </div>
+</div>
+
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              (click)="closeRetryConsolidationModal()"
+              [disabled]="loading"
+              class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="retryConsolidation()"
+              [disabled]="loading"
+              class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              {{ loading ? "Processing..." : "Retry Consolidation" }}
             </button>
           </div>
         </form>

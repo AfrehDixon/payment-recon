@@ -18,6 +18,8 @@ export class TransactionDetailsComponent {
   filteredTransactions: (Transaction & { showDetails?: boolean; showJsonData?: boolean })[] = [];
   loading = false;
   error: string | null = null;
+  retryConsolidationForm!: FormGroup;
+
   
   // Date filter properties
   dateFilterEnabled = false;
@@ -28,7 +30,8 @@ export class TransactionDetailsComponent {
   showStatusModal = false;
   showReverseModal = false;
   showCompleteModal = false;
-  
+  showRetryConsolidationModal = false;
+
   // Selected transaction for actions
   selectedTransaction: (Transaction & { showDetails?: boolean; showJsonData?: boolean }) | null = null;
 
@@ -42,6 +45,10 @@ export class TransactionDetailsComponent {
     
     this.statusForm = this.fb.group({
       status: ['', Validators.required]
+    });
+
+    this.retryConsolidationForm = this.fb.group({
+      force: [false]
     });
     
     // Initialize with today's date and 7 days ago
@@ -277,6 +284,69 @@ export class TransactionDetailsComponent {
         this.loading = false;
       }
     });
+  }
+
+  openRetryConsolidationModal(transaction: Transaction & { showDetails?: boolean; showJsonData?: boolean }) {
+    this.selectedTransaction = transaction;
+    this.retryConsolidationForm.patchValue({ force: false });
+    this.showRetryConsolidationModal = true;
+  }
+
+  closeRetryConsolidationModal() {
+    this.showRetryConsolidationModal = false;
+    this.selectedTransaction = null;
+    this.retryConsolidationForm.reset({ force: false });
+  }
+
+  retryConsolidation() {
+    if (!this.selectedTransaction) return;
+    
+    this.loading = true;
+    this.error = null;
+    
+    const retryData = {
+      id: this.selectedTransaction._id,
+      force: this.retryConsolidationForm.get('force')?.value || false
+    };
+    
+    this.transactionService.retryConsolidation(retryData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Show success message and refresh transaction data
+          this.error = null;
+          // You might want to refresh the transaction to show updated consolidation status
+          this.searchTransaction();
+          this.closeRetryConsolidationModal();
+        } else {
+          this.error = response.message || 'Failed to retry consolidation';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to retry consolidation';
+        this.loading = false;
+      }
+    });
+  }
+
+  canRetryConsolidation(transaction: Transaction): boolean {
+    // Allow retry if consolidation status is FAILED or if force option is available
+    return transaction.consolidationStatus === 'FAILED' || 
+           (transaction.consolidationOperator != null && 
+            ['TRC20', 'SOLANA', 'BEP20'].includes(transaction.consolidationOperator));
+  }
+
+  getConsolidationStatusClass(status?: string): string {
+    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
+    if (!status) return `${baseClasses} bg-gray-100 text-gray-800`;
+    
+    return `${baseClasses} ${
+      status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+      status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
+      status === 'FAILED' ? 'bg-red-100 text-red-800' :
+      status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-gray-100 text-gray-800'
+    }`;
   }
 
   getStatusClass(status: string): string {

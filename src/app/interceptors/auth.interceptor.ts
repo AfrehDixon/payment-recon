@@ -36,6 +36,12 @@ export const authInterceptor: HttpInterceptorFn = (
 
     return next(req).pipe(
       catchError((error: HttpErrorResponse) => {
+         // SKIP error transformation for consolidation retry endpoints
+        if (req.url.includes('/consolidations/') && req.url.includes('/retry')) {
+          console.log('Auth Interceptor - Skipping error transformation for consolidation retry');
+          return throwError(() => error); // Return original error
+        }
+
         if (error.status === 401) {
           return handleUnauthorizedError(req, next, store, http);
         }
