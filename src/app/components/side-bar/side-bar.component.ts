@@ -50,7 +50,8 @@ export const Routes: RouteInfo[] = [
   { path: 'permission-management', title: "Permission Management", class: 'false', permission: 'can view system settings module' },
   { path: 'tickets', title: "Admin Ticket Management", class: 'false', permission: 'can view admins module' },
   { path: 'card-wallets', title: "Customer Wallets", class: 'false', permission: 'can view admins module' },
-  { path: 'consolidations', title: "Consolidations", class: 'false', permission: 'can view admins module' }
+  { path: 'consolidations', title: "Consolidations", class: 'false', permission: 'can view admins module' },
+  { path: 'deposit-addresses', title: "Deposit Addresses", class: 'false', permission: 'can view admins module' }
 ];
 
 @Component({
@@ -163,6 +164,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'wallets': 'bi bi-wallet',
       'hub': 'bi bi-house-door',
       'tickets': 'bi bi-ticket-perforated',
+      'deposit-addresses': 'bi bi-house-door',
       'queues': 'bi bi-list',
       'transactions': 'bi bi-cash',
       'valut-config': 'bi bi-lock',

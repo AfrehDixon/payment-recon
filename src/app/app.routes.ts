@@ -38,6 +38,7 @@ import { VaultManagementComponent } from './pages/vault-management/vault-managem
 import { PendingReversalsComponent } from './pages/pending-reversals/pending-reversals.component';
 import { CardWalletsComponent } from './pages/card-wallets/card-wallets.component';
 import { ConsolidationsComponent } from './pages/consolidations/consolidations.component';
+import { DepositAddressesComponent } from './pages/deposit-addresses/deposit-addresses.component';
 
 export const routes: Routes = [
   {
@@ -201,6 +202,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SystemSettingsComponent,
+      },
+      {
+        path: 'deposit-addresses',
+        component: DepositAddressesComponent,
       },
       {
         path: 'consolidations',
