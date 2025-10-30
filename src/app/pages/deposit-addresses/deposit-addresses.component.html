@@ -1,9 +1,33 @@
 <div class="container mx-auto px-4 py-8" style="margin-left: 200px !important;">
   <h1 class="text-2xl font-bold mb-6">Deposit Addresses</h1>
 
+  <!-- Success Message -->
+  <div *ngIf="success" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+    {{ success }}
+    <button (click)="clearMessages()" class="float-right text-green-700 hover:text-green-900">×</button>
+  </div>
+
   <!-- Error Message -->
   <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
     {{ error }}
+    <button (click)="clearMessages()" class="float-right text-red-700 hover:text-red-900">×</button>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold">Actions</h2>
+      <div class="flex space-x-3">
+        <!-- Bulk Retire Button -->
+        <button
+          (click)="openBulkRetireModal()"
+          [disabled]="!filterForm.get('operator')?.value"
+          class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Bulk Retire Addresses
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Filter Form -->
@@ -165,6 +189,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open TX</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Consolidation</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -205,9 +230,17 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ address.createdAt | date:'medium' }}
             </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <button
+                (click)="openStatusUpdateModal(address)"
+                class="text-blue-600 hover:text-blue-900 font-medium"
+              >
+                Update Status
+              </button>
+            </td>
           </tr>
           <tr *ngIf="depositAddresses.length === 0">
-            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
               No deposit addresses found for the selected filters
             </td>
           </tr>
@@ -288,6 +321,234 @@
       <p class="mt-2 text-sm text-gray-500">
         Select an operator and click "Search Addresses" to view deposit addresses.
       </p>
+    </div>
+  </div>
+
+  <!-- Bulk Retire Modal -->
+  <div *ngIf="showBulkRetireModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Bulk Retire Deposit Addresses</h3>
+        
+        <form [formGroup]="bulkRetireForm" (ngSubmit)="onBulkRetireSubmit()" class="space-y-4">
+          <!-- Operator -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Operator</label>
+            <select 
+              formControlName="operator"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              [disabled]="true"
+            >
+              <option *ngFor="let operator of operatorOptions" [value]="operator">
+                {{ operator }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Safety Toggles -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-center">
+              <input 
+                type="checkbox"
+                formControlName="onlyUnused"
+                id="onlyUnused"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              >
+              <label for="onlyUnused" class="ml-2 block text-sm text-gray-700">
+                Only Unused Addresses
+              </label>
+            </div>
+
+            <div class="flex items-center">
+              <input 
+                type="checkbox"
+                formControlName="dryRun"
+                id="dryRun"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              >
+              <label for="dryRun" class="ml-2 block text-sm text-gray-700">
+                Dry Run (Preview Only)
+              </label>
+            </div>
+          </div>
+
+          <!-- Status Filters -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Include Statuses</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div *ngFor="let status of statusOptions" class="flex items-center">
+                <input 
+                  type="checkbox"
+                  [id]="'include-' + status"
+                  [checked]="bulkRetireForm.get('includeStatuses')?.value?.includes(status)"
+                  (change)="onStatusCheckboxChange(status, $event, 'includeStatuses')"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                >
+                <label [for]="'include-' + status" class="ml-2 block text-sm text-gray-700">
+                  {{ status }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Address Filter</label>
+              <input 
+                type="text"
+                formControlName="address"
+                placeholder="Filter by address..."
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Merchant ID Filter</label>
+              <input 
+                type="text"
+                formControlName="merchantId"
+                placeholder="Filter by merchant..."
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+          </div>
+
+          <!-- Modal Actions -->
+          <div class="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              (click)="closeBulkRetireModal()"
+              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="bulkRetireLoading"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+            >
+              {{ bulkRetireLoading ? 'Processing...' : (bulkRetireForm.get('dryRun')?.value ? 'Preview Retirement' : 'Retire Addresses') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Update Modal -->
+  <div *ngIf="showStatusUpdateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Update Status for {{ selectedAddress?.address }}
+        </h3>
+        
+        <form [formGroup]="statusUpdateForm" (ngSubmit)="onStatusUpdateSubmit()" class="space-y-4">
+          <!-- Status -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Status *</label>
+            <select 
+              formControlName="status"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select Status</option>
+              <option *ngFor="let status of statusUpdateOptions" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Additional Fields -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-center">
+              <input 
+                type="checkbox"
+                formControlName="pendingConsolidation"
+                id="updatePendingConsolidation"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              >
+              <label for="updatePendingConsolidation" class="ml-2 block text-sm text-gray-700">
+                Pending Consolidation
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Min Consolidate USD</label>
+              <input 
+                type="number"
+                formControlName="minConsolidateUsd"
+                step="0.01"
+                min="0"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Current Balance</label>
+              <input 
+                type="number"
+                formControlName="currentBalance"
+                step="0.000000001"
+                min="0"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Open Transaction ID</label>
+              <input 
+                type="text"
+                formControlName="openTransactionId"
+                placeholder="Transaction ID or null"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Assigned Merchant ID</label>
+              <input 
+                type="text"
+                formControlName="assignedToMerchantId"
+                placeholder="Merchant ID or null"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Reason</label>
+              <input 
+                type="text"
+                formControlName="reason"
+                placeholder="Reason for update (optional)"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+          </div>
+
+          <!-- Modal Actions -->
+          <div class="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              (click)="closeStatusUpdateModal()"
+              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="statusUpdateLoading || statusUpdateForm.invalid"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {{ statusUpdateLoading ? 'Updating...' : 'Update Status' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>

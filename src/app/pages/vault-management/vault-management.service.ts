@@ -174,6 +174,22 @@ export class VaultService {
       );
   }
 
+
+  activateVaultEntry(identifier: string): Observable<string> {
+    this.setLoading(true);
+    const payload = { identifier };
+    
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/activate`, payload)
+      .pipe(
+        map(response => response.message || 'Entry activated successfully'),
+        catchError(this.handleError),
+        map(message => {
+          this.setLoading(false);
+          return message;
+        })
+      );
+  }
+
   /**
    * Cleanup expired entries
    */

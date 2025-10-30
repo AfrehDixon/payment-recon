@@ -17,6 +17,7 @@ interface DepositAddress {
   minConsolidateUsd: number;
   createdAt?: Date;
   updatedAt?: Date;
+  assignedToMerchantId?: string | null;
 }
 
 interface DepositAddressResponse {
@@ -28,6 +29,22 @@ interface DepositAddressResponse {
   pageSize: number;
   total: number;
   items: DepositAddress[];
+}
+
+interface BulkRetireResponse {
+  success: boolean;
+  message: string;
+  retiredCount?: number;
+  affectedAddresses?: string[];
+  dryRun?: boolean;
+}
+
+interface StatusUpdateResponse {
+  success: boolean;
+  message: string;
+  address?: string;
+  previousStatus?: string;
+  newStatus?: string;
 }
 
 @Component({
@@ -44,10 +61,13 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
   depositAddresses: DepositAddress[] = [];
   loading = false;
   error: string | null = null;
+  success: string | null = null;
   hasSearched = false;
 
   // Filter properties
   filterForm: FormGroup;
+  bulkRetireForm: FormGroup;
+  statusUpdateForm: FormGroup;
 
   // Pagination properties
   currentPage = 1;
@@ -61,11 +81,19 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
   
   // Status options
   statusOptions = ['FRESH', 'ASSIGNED', 'WARM', 'LOCKED', 'RETIRED'];
+  statusUpdateOptions = ['FRESH', 'ASSIGNED', 'WARM', 'LOCKED', 'RETIRED'];
 
   // Response data
   operator: string = '';
   chain: string = '';
   currency: string = '';
+
+  // Modal states
+  showBulkRetireModal = false;
+  showStatusUpdateModal = false;
+  selectedAddress: DepositAddress | null = null;
+  bulkRetireLoading = false;
+  statusUpdateLoading = false;
 
   // Token subscription
   private tokenSubscription: Subscription | null = null;
@@ -84,15 +112,39 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
       address: [''],
       merchantId: ['']
     });
+
+    this.bulkRetireForm = this.fb.group({
+      operator: ['', Validators.required],
+      onlyUnused: [true],
+      includeStatuses: [[]],
+      excludeStatuses: [[]],
+      address: [''],
+      merchantId: [''],
+      dryRun: [false]
+    });
+
+    this.statusUpdateForm = this.fb.group({
+      status: ['', Validators.required],
+      pendingConsolidation: [false],
+      minConsolidateUsd: [0],
+      currentBalance: [0],
+      openTransactionId: [''],
+      assignedToMerchantId: [''],
+      reason: ['']
+    });
   }
 
   ngOnInit(): void {
-    // Don't load data automatically - wait for operator selection
-    // Subscribe to token changes for when token refreshes
     this.tokenSubscription = this.store.select(AuthState.token).subscribe(() => {
-      // If we've already searched and have an operator selected, reload
       if (this.hasSearched && this.filterForm.get('operator')?.value) {
         this.loadDepositAddresses();
+      }
+    });
+
+    // Sync operator from filter form to bulk retire form
+    this.filterForm.get('operator')?.valueChanges.subscribe(operator => {
+      if (operator) {
+        this.bulkRetireForm.patchValue({ operator });
       }
     });
   }
@@ -116,7 +168,6 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
       limit: this.pageSize
     };
 
-    // Add optional filters if they have values
     if (formValue.status) {
       params.status = formValue.status;
     }
@@ -147,6 +198,7 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = null;
+    this.success = null;
     this.hasSearched = true;
     
     const params = this.buildQueryParams();
@@ -182,6 +234,158 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Bulk Retire Methods
+  openBulkRetireModal(): void {
+    if (!this.filterForm.get('operator')?.value) {
+      this.error = 'Please select an operator first';
+      return;
+    }
+    this.bulkRetireForm.patchValue({
+      operator: this.filterForm.get('operator')?.value,
+      onlyUnused: true,
+      dryRun: false
+    });
+    this.showBulkRetireModal = true;
+    this.error = null;
+    this.success = null;
+  }
+
+  closeBulkRetireModal(): void {
+    this.showBulkRetireModal = false;
+    this.bulkRetireForm.reset({
+      onlyUnused: true,
+      dryRun: false
+    });
+  }
+
+  onBulkRetireSubmit(): void {
+    if (this.bulkRetireForm.invalid) {
+      return;
+    }
+
+    this.bulkRetireLoading = true;
+    this.error = null;
+    this.success = null;
+
+    const params = this.bulkRetireForm.value;
+    
+    this.http.post<BulkRetireResponse>(
+      'https://doronpay.com/api/transactions/deposit-addresses/retire-all',
+      {},
+      { 
+        headers: this.getHeaders(),
+        params: params
+      }
+    ).subscribe({
+      next: (response) => {
+        this.bulkRetireLoading = false;
+        if (response.success) {
+          if (response.dryRun) {
+            this.success = `Dry run: ${response.retiredCount} addresses would be retired`;
+          } else {
+            this.success = `Successfully retired ${response.retiredCount} addresses`;
+            this.loadDepositAddresses(); // Refresh the list
+          }
+          this.closeBulkRetireModal();
+        } else {
+          this.error = response.message || 'Failed to retire addresses';
+        }
+      },
+      error: (error) => {
+        this.bulkRetireLoading = false;
+        console.error('Bulk retire error:', error);
+        this.error = error.error?.message || 'Failed to retire addresses';
+      }
+    });
+  }
+
+  // Status Update Methods
+  openStatusUpdateModal(address: DepositAddress): void {
+    this.selectedAddress = address;
+    this.statusUpdateForm.patchValue({
+      status: address.status,
+      pendingConsolidation: address.pendingConsolidation,
+      minConsolidateUsd: address.minConsolidateUsd,
+      currentBalance: address.currentBalance,
+      openTransactionId: address.openTransactionId || '',
+      assignedToMerchantId: address.assignedToMerchantId || '',
+      reason: ''
+    });
+    this.showStatusUpdateModal = true;
+    this.error = null;
+    this.success = null;
+  }
+
+  closeStatusUpdateModal(): void {
+    this.showStatusUpdateModal = false;
+    this.selectedAddress = null;
+    this.statusUpdateForm.reset({
+      status: '',
+      pendingConsolidation: false,
+      minConsolidateUsd: 0,
+      currentBalance: 0,
+      openTransactionId: '',
+      assignedToMerchantId: '',
+      reason: ''
+    });
+  }
+
+  onStatusUpdateSubmit(): void {
+    if (this.statusUpdateForm.invalid || !this.selectedAddress) {
+      return;
+    }
+
+    this.statusUpdateLoading = true;
+    this.error = null;
+    this.success = null;
+
+    const payload = this.statusUpdateForm.value;
+    const params = {
+      operator: this.filterForm.get('operator')?.value,
+      includeRetired: true // Allow updating retired addresses
+    };
+
+    this.http.put<StatusUpdateResponse>(
+      `https://doronpay.com/api/transactions/deposit-addresses/${this.selectedAddress.address}/status`,
+      payload,
+      { 
+        headers: this.getHeaders(),
+        params: params
+      }
+    ).subscribe({
+      next: (response) => {
+        this.statusUpdateLoading = false;
+        if (response.success) {
+          this.success = `Successfully updated status for address ${this.selectedAddress?.address}`;
+          this.loadDepositAddresses(); // Refresh the list
+          this.closeStatusUpdateModal();
+        } else {
+          this.error = response.message || 'Failed to update address status';
+        }
+      },
+      error: (error) => {
+        this.statusUpdateLoading = false;
+        console.error('Status update error:', error);
+        this.error = error.error?.message || 'Failed to update address status';
+      }
+    });
+  }
+
+  // Helper methods for template
+  onStatusCheckboxChange(status: string, event: any, field: 'includeStatuses' | 'excludeStatuses'): void {
+    const currentValues = this.bulkRetireForm.get(field)?.value || [];
+    if (event.target.checked) {
+      this.bulkRetireForm.patchValue({
+        [field]: [...currentValues, status]
+      });
+    } else {
+      this.bulkRetireForm.patchValue({
+        [field]: currentValues.filter((s: string) => s !== status)
+      });
+    }
+  }
+
+  // Existing methods remain the same...
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages) {
       return;
@@ -304,5 +508,11 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
   // Helper to check if we should show the table
   shouldShowTable(): boolean {
     return this.hasSearched && !this.loading;
+  }
+
+  // Clear messages
+  clearMessages(): void {
+    this.error = null;
+    this.success = null;
   }
 }

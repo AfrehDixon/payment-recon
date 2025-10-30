@@ -47,7 +47,8 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     { value: 'BEP20', label: 'BEP20' },
     { value: 'SOLANA', label: 'Solana' },
     { value: 'ETHEREUM', label: 'Ethereum' },
-    { value: 'BITCOIN', label: 'Bitcoin' }
+    { value: 'BITCOIN', label: 'Bitcoin' },
+    { value: 'TRC20', label: 'TRC20' }
   ];
 
   // Action states
@@ -55,7 +56,8 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     cleanup: false,
     backup: false,
     deactivate: false,
-    create: false
+    create: false,
+    activate: false
   };
 
   constructor(
@@ -343,6 +345,37 @@ export class VaultManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+  async activateEntry(entry: VaultEntry): Promise<void> {
+ if (!confirm(`Are you sure you want to deactivate the entry with identifier "${entry.identifier}"?`)) {
+      return;
+    }
+
+    this.actionLoading.deactivate = true;
+
+    this.actionLoading.activate = true;
+    
+    try {
+      const message = await this.vaultService.activateVaultEntry(entry.identifier).toPromise();
+      console.log(message);
+      
+      // Update the entry in the local array
+      const index = this.vaultEntries.findIndex(e => e.identifier === entry.identifier);
+      if (index > -1) {
+        this.vaultEntries[index] = { ...this.vaultEntries[index], isActive: false };
+        this.applyFilters(); // Reapply filters to update display
+      }
+      
+      // Refresh statistics if shown
+      if (this.showStatistics) {
+        this.loadStatistics();
+      }
+      
+    } catch (error) {
+      console.error('Error deactivating entry:', error);
+    } finally {
+      this.actionLoading.deactivate = false;
+    }
+  }
   // Actions
   async deactivateEntry(entry: VaultEntry): Promise<void> {
     if (!confirm(`Are you sure you want to deactivate the entry with identifier "${entry.identifier}"?`)) {

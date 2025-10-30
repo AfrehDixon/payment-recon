@@ -424,6 +424,14 @@
               >
                 <i class="fas fa-ban"></i>
               </button>
+              <button
+                (click)="activateEntry(entry)"
+                [disabled]="entry.isActive || actionLoading.activate"
+                class="ml-3 text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Activate Entry"
+              >
+                <i class="fas fa-check"></i>
+              </button>
             </td>
           </tr>
         </tbody>

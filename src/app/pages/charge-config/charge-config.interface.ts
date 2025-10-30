@@ -1,3 +1,5 @@
+import { EOperator } from "../operator-config/operator-config.interface";
+
 export interface Tier {
     threshold: number;
     rate: number;
@@ -14,7 +16,7 @@ export interface Tier {
     maxCharge?: number;
     minCharge?: number;
     tiers?: Tier[];
-    operator: string;
+    operator: string[];
   }
   
   export enum ETransactionType {

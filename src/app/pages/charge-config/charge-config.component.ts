@@ -168,6 +168,20 @@ export class ChargeConfigComponent implements OnInit {
   }
   
   
+  toggleOperator(operator: string) {
+  const control = this.configForm.get('operator');
+  const currentValues = control?.value || [];
+  
+  if (currentValues.includes(operator)) {
+    control?.setValue(currentValues.filter((v: string) => v !== operator));
+  } else {
+    control?.setValue([...currentValues, operator]);
+  }
+}
+
+isOperatorSelected(operator: string): boolean {
+  return (this.configForm.get('operator')?.value || []).includes(operator);
+}
 
   get paginatedConfigs(): ChargeConfig[] {
     const startIndex = (this.currentPage - 1) * this.pageSize;
@@ -235,7 +249,7 @@ export class ChargeConfigComponent implements OnInit {
       baseRate: [0, [Validators.required, Validators.min(0)]],
       maxCharge: [0, Validators.min(0)],
       minCharge: [0, Validators.min(0)],
-      operator: [[], [Validators.required, Validators.minLength(1)]],
+      operator: [],
       tiers: this.fb.array([])
     });
   }
