@@ -147,7 +147,6 @@ export interface SystemSettings {
   exchangeRate: number;
   transactionFee: number;
   minTransactionAmount: number;
-  trc20Balances: Trc20Balances;
   maxTransactionAmount: number;
   dynamicPricingEnabled: boolean;
   lastUpdated: string;
@@ -158,12 +157,34 @@ export interface SystemSettings {
   solExchangeRate: number;
   ghsExchangeRate: number;
   bepExchangeRate: number;
+  cadExchangeRate: number;
+  cadusd: number;
+  
+  // New fields
+  maxAddressAgeHours: number;
+  minConsolidateUsd: number;
+  minTrxDustNeeded: number;
+  
+  // Balance configurations
+  trc20Balances: Trc20Balances;
   btcReserveConfig: BtcReserveConfig;
   btcSweepConfig: BtcSweepConfig;
   btcBalances: BtcBalances;
   bep20Balances: Bep20Balances;
   solanaBalances: SolanaBalances;
-    p2p: P2pRates;
+  
+  // P2P rates
+  p2p: {
+    USDT_GHS_BUY: P2pRate;
+    USDT_GHS_SELL: P2pRate;
+    BTC_GHS_BUY: P2pRate;
+    BTC_GHS_SELL: P2pRate;
+    BTC_CAD_BUY: P2pRate;
+    BTC_CAD_SELL: P2pRate;
+    USDT_CAD_BUY: P2pRate;
+    USDT_CAD_SELL: P2pRate;
+  };
+  
   __v: number;
 }
 
@@ -173,10 +194,12 @@ export interface UpdateSystemSettingsRequest {
   minTransactionAmount?: number;
   maxTransactionAmount?: number;
   dynamicPricingEnabled?: boolean;
+  maxAddressAgeHours?: number;
+  minConsolidateUsd?: number;
+  minTrxDustNeeded?: number;
   btcReserveConfig?: Partial<BtcReserveConfig>;
   btcSweepConfig?: Partial<BtcSweepConfig>;
 }
-
 export interface Trc20Balances {
   tokenInfo: {
     decimals: number;

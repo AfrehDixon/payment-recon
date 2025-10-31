@@ -1,0 +1,153 @@
+<!-- trx-transfer.component.html -->
+<div class="trx-transfer-container">
+  <div class="header">
+    <h1>TRX Transfer</h1>
+    <p>Transfer TRON (TRX) between addresses</p>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="error" class="alert alert-error">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ error }}
+    <button class="close-btn" (click)="error = null">&times;</button>
+  </div>
+
+  <div *ngIf="transferResult?.success" class="alert alert-success">
+    <i class="fas fa-check-circle"></i>
+    {{ transferResult?.message }}
+  </div>
+
+  <!-- Transfer Form -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Transfer Details</h2>
+    </div>
+
+    <div class="card-content">
+      <form [formGroup]="transferForm" (ngSubmit)="onSubmit()">
+        <!-- From Address -->
+        <div class="form-group">
+          <label for="fromAddress">From Address *</label>
+          <input
+            type="text"
+            id="fromAddress"
+            formControlName="fromAddress"
+            placeholder="T..."
+            class="form-input"
+            [class.error]="getFieldError('fromAddress')"
+          />
+          <div class="field-error" *ngIf="getFieldError('fromAddress')">
+            {{ getFieldError('fromAddress') }}
+          </div>
+        </div>
+
+        <!-- To Address -->
+        <div class="form-group">
+          <label for="toAddress">To Address *</label>
+          <input
+            type="text"
+            id="toAddress"
+            formControlName="toAddress"
+            placeholder="T..."
+            class="form-input"
+            [class.error]="getFieldError('toAddress')"
+          />
+          <div class="field-error" *ngIf="getFieldError('toAddress')">
+            {{ getFieldError('toAddress') }}
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label for="amountTrx">Amount (TRX) *</label>
+          <input
+            type="number"
+            id="amountTrx"
+            formControlName="amountTrx"
+            step="0.000001"
+            min="0.000001"
+            max="100000"
+            placeholder="0.000000"
+            class="form-input"
+            [class.error]="getFieldError('amountTrx')"
+          />
+          <div class="field-error" *ngIf="getFieldError('amountTrx')">
+            {{ getFieldError('amountTrx') }}
+          </div>
+          <div class="field-help">
+            Minimum: 0.000001 TRX, Maximum: 100,000 TRX
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="waitConfirm" />
+            Wait for confirmation
+            <small>Wait for transaction to be confirmed on chain</small>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="allowAccountActivation" />
+            Allow account activation
+            <small>Allow burning 1 TRX to activate new accounts</small>
+          </label>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="resetForm()"
+            [disabled]="loading"
+          >
+            Reset
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="transferForm.invalid || loading"
+          >
+            <i class="fas fa-paper-plane" *ngIf="!loading"></i>
+            <i class="fas fa-spinner fa-spin" *ngIf="loading"></i>
+            {{ loading ? 'Processing...' : 'Transfer TRX' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transaction Result -->
+  <div *ngIf="transferResult?.success && transferResult?.data" class="card">
+    <div class="card-header">
+      <h2>Transaction Details</h2>
+    </div>
+    <div class="card-content">
+      <div class="transaction-details">
+        <div class="detail-item">
+          <span class="label">Transaction ID:</span>
+          <span class="value">{{ transferResult?.data?.transactionId }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Status:</span>
+          <span class="value status-badge" [class]="getStatusClass(transferResult?.data?.status || '')">
+            {{ transferResult?.data?.status }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Amount Sent:</span>
+          <span class="value">{{ transferResult?.data?.amountTrx?.toFixed(6) }} TRX</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Network Fee:</span>
+          <span class="value">{{ transferResult?.data?.feeTrx?.toFixed(6) }} TRX</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Timestamp:</span>
+          <span class="value">{{ transferResult?.data?.timestamp | date:'medium' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -39,6 +39,7 @@ import { PendingReversalsComponent } from './pages/pending-reversals/pending-rev
 import { CardWalletsComponent } from './pages/card-wallets/card-wallets.component';
 import { ConsolidationsComponent } from './pages/consolidations/consolidations.component';
 import { DepositAddressesComponent } from './pages/deposit-addresses/deposit-addresses.component';
+import { TrxTransferComponent } from './pages/trx-transfer/trx-transfer.component';
 
 export const routes: Routes = [
   {
@@ -202,6 +203,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SystemSettingsComponent,
+      },
+      {
+        path: 'trx-transfer',
+        component: TrxTransferComponent,
       },
       {
         path: 'deposit-addresses',

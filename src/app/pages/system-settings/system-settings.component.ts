@@ -53,44 +53,45 @@ export class SystemSettingsComponent implements OnInit {
     return this.fb.group(
       {
         // Basic settings
-        markupRate: [
-          '',
-          [Validators.required, Validators.min(0), Validators.max(100)],
-        ],
-        transactionFee: ['', [Validators.required, Validators.min(0)]],
-        minTransactionAmount: ['', [Validators.required, Validators.min(1)]],
-        maxTransactionAmount: ['', [Validators.required, Validators.min(1)]],
-        dynamicPricingEnabled: [false],
+      markupRate: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
+      transactionFee: ['', [Validators.required, Validators.min(0)]],
+      minTransactionAmount: ['', [Validators.required, Validators.min(1)]],
+      maxTransactionAmount: ['', [Validators.required, Validators.min(1)]],
+      dynamicPricingEnabled: [false],
 
-        // BTC Reserve Config
-        btcReserveEnabled: [false],
-        btcReserveTargetPct: ['', [Validators.min(0), Validators.max(1)]],
-        btcReserveLowerPct: ['', [Validators.min(0), Validators.max(1)]],
-        btcReserveUpperPct: ['', [Validators.min(0), Validators.max(1)]],
-        btcReserveMaxDailyUsd: ['', [Validators.min(0)]],
-        btcReserveMaxTradeUsd: ['', [Validators.min(0)]],
-        btcReserveMinTradeUsd: ['', [Validators.min(0)]],
-        btcReserveSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
-        btcReserveCooldownSec: ['', [Validators.min(0)]],
-        btcRecipient: [''],
-        bscRecipient: [''],
-        bscRouterAddr: [''],
-        bscVaultAddr: [''],
-        usdtTokenAddr: [''],
+      // New fields
+      maxAddressAgeHours: ['', [Validators.required, Validators.min(1)]],
+      minConsolidateUsd: ['', [Validators.required, Validators.min(0)]],
+      minTrxDustNeeded: ['', [Validators.required, Validators.min(0)]],
 
-        // BTC Sweep Config
-        btcSweepEnabled: [false],
-        btcSweepMaxSweepUsd: ['', [Validators.min(0)]],
-        btcSweepMinSweepUsd: ['', [Validators.min(0)]],
-        btcSweepReserveBtc: ['', [Validators.min(0)]],
-        btcSweepPctOfAvail: ['', [Validators.min(0), Validators.max(1)]],
-        btcSweepSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
-        treasuryBep20: [''],
-      },
-      {
-        validators: [this.crossFieldValidator],
-      }
-    );
+      // BTC Reserve Config
+      btcReserveEnabled: [false],
+      btcReserveTargetPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveLowerPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveUpperPct: ['', [Validators.min(0), Validators.max(1)]],
+      btcReserveMaxDailyUsd: ['', [Validators.min(0)]],
+      btcReserveMaxTradeUsd: ['', [Validators.min(0)]],
+      btcReserveMinTradeUsd: ['', [Validators.min(0)]],
+      btcReserveSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
+      btcReserveCooldownSec: ['', [Validators.min(0)]],
+      btcRecipient: [''],
+      bscRecipient: [''],
+      bscRouterAddr: [''],
+      bscVaultAddr: [''],
+      usdtTokenAddr: [''],
+
+      // BTC Sweep Config
+      btcSweepEnabled: [false],
+      btcSweepMaxSweepUsd: ['', [Validators.min(0)]],
+      btcSweepMinSweepUsd: ['', [Validators.min(0)]],
+      btcSweepReserveBtc: ['', [Validators.min(0)]],
+      btcSweepPctOfAvail: ['', [Validators.min(0), Validators.max(1)]],
+      btcSweepSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
+      treasuryBep20: [''],
+    }, {
+      validators: [this.crossFieldValidator]
+    });
+
   }
 
   // Custom validator for cross-field validation
@@ -176,6 +177,11 @@ export class SystemSettingsComponent implements OnInit {
       minTransactionAmount: settings.minTransactionAmount,
       maxTransactionAmount: settings.maxTransactionAmount,
       dynamicPricingEnabled: settings.dynamicPricingEnabled,
+
+      // New fields
+      maxAddressAgeHours: settings.maxAddressAgeHours,
+      minConsolidateUsd: settings.minConsolidateUsd,
+      minTrxDustNeeded: settings.minTrxDustNeeded,
 
       // BTC Reserve Config
       btcReserveEnabled: settings.btcReserveConfig.enabled,
@@ -286,6 +292,9 @@ export class SystemSettingsComponent implements OnInit {
       minTransactionAmount: Number(formValue.minTransactionAmount),
       maxTransactionAmount: Number(formValue.maxTransactionAmount),
       dynamicPricingEnabled: formValue.dynamicPricingEnabled,
+      maxAddressAgeHours: Number(formValue.maxAddressAgeHours),
+      minConsolidateUsd: Number(formValue.minConsolidateUsd),
+      minTrxDustNeeded: Number(formValue.minTrxDustNeeded),
       btcReserveConfig: {
         enabled: formValue.btcReserveEnabled,
         targetPct: Number(formValue.btcReserveTargetPct),
@@ -337,6 +346,19 @@ export class SystemSettingsComponent implements OnInit {
         }
       });
   }
+
+  getActiveSystemsCount(): number {
+  if (!this.settings) return 0;
+  
+  let count = 0;
+  if (this.settings.dynamicPricingEnabled) count++;
+  if (this.settings.btcReserveConfig.enabled) count++;
+  if (this.settings.btcSweepConfig.enabled) count++;
+  // Add other systems as needed
+  
+  return count;
+}
+
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach((key) => {
       const control = formGroup.get(key);

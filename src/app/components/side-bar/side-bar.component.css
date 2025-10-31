@@ -371,3 +371,132 @@
     padding: 1rem;
   }
 }
+
+/* Add these styles to your existing CSS */
+
+/* Navigation Groups */
+.nav-group {
+  margin-bottom: 0.25rem;
+}
+
+.nav-group.active > .main-item .nav-link {
+  background-color: #1d83e3;
+  color: #fff;
+}
+
+.nav-group.active > .main-item .nav-link i {
+  color: #fff;
+}
+
+/* Main Menu Items */
+.main-item .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.main-item .nav-link.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Submenu Styles */
+.submenu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.submenu-item {
+  margin: 0;
+}
+
+.submenu-item.active .submenu-link {
+  background-color: #e3f2fd;
+  color: #1d83e3;
+  font-weight: 500;
+}
+
+.submenu-link {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1.25rem 0.6rem 3rem;
+  color: var(--text-dark);
+  text-decoration: none;
+  transition: var(--transition-speed);
+  gap: 0.75rem;
+  position: relative;
+}
+
+.submenu-link:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--primary-color);
+}
+
+.submenu-link i.bi-dot {
+  font-size: 1.5rem;
+  color: var(--secondary-color);
+  width: 16px;
+}
+
+.submenu-text {
+  flex: 1;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Submenu Arrow */
+.submenu-arrow {
+  font-size: 0.875rem;
+  color: var(--secondary-color);
+  transition: transform var(--transition-speed);
+  margin-left: auto;
+}
+
+.nav-group.open .submenu-arrow {
+  transform: rotate(0deg);
+}
+
+/* Collapsed State Adjustments */
+.layout-wrapper.collapsed .submenu-list {
+  display: none;
+}
+
+.layout-wrapper.collapsed .main-item .nav-link {
+  justify-content: center;
+}
+
+/* Active states */
+.nav-item.active .nav-link:active {
+  background-color: #1d83e3;
+}
+
+.nav-item:not(.active) .nav-link:hover {
+  background-color: #205fdc;
+  color: #fff;
+}
+
+.nav-item.active .nav-link {
+  color: #fff;
+}
+
+/* Ensure proper spacing */
+.sidebar-nav {
+  padding: 0.5rem 0;
+}
+
+.nav-list {
+  gap: 0.125rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 991.98px) {
+  .submenu-list {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}

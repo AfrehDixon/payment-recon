@@ -179,73 +179,169 @@
   <!-- Deposit Addresses Table -->
   <div *ngIf="shouldShowTable()" class="bg-white shadow-md rounded-lg overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Index</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Open TX</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Consolidation</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let address of depositAddresses">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs">{{ address.address }}</span>
-                <button 
-                  (click)="copyToClipboard(address.address)"
-                  class="text-gray-400 hover:text-gray-600"
-                  title="Copy to clipboard"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                  </svg>
-                </button>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ address.index }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <span [ngClass]="getStatusBadgeClass(address.status)">
-                {{ address.status }}
+          <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Index/Path</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consolidation</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage Stats</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reservation</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamps</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let address of depositAddresses" class="hover:bg-gray-50">
+          <!-- Address Column -->
+          <td class="px-4 py-4">
+            <div class="flex items-center space-x-2">
+              <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded" title="{{ address.address }}">
+                {{ address.address.substring(0, 8) }}...{{ address.address.substring(address.address.length - 8) }}
               </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ address.currentBalance }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ address.openTransactionId || 'None' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span [ngClass]="address.pendingConsolidation ? 'text-yellow-600' : 'text-gray-500'">
-                {{ address.pendingConsolidation ? 'Yes' : 'No' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ address.createdAt | date:'medium' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <button
-                (click)="openStatusUpdateModal(address)"
-                class="text-blue-600 hover:text-blue-900 font-medium"
+              <button 
+                (click)="copyToClipboard(address.address)"
+                class="text-gray-400 hover:text-gray-600"
+                title="Copy full address"
               >
-                Update Status
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
               </button>
-            </td>
-          </tr>
-          <tr *ngIf="depositAddresses.length === 0">
-            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-              No deposit addresses found for the selected filters
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div *ngIf="address.openTransactionId" class="text-xs text-blue-600 mt-1" title="Open Transaction">
+              TX: {{ address.openTransactionId.substring(0, 10) }}...
+            </div>
+          </td>
+
+          <!-- Index/Path Column -->
+          <td class="px-4 py-4 text-sm text-gray-500">
+            <div>Index: {{ address.index }}</div>
+            <div *ngIf="address.derivationPath" class="text-xs font-mono text-gray-400" title="Derivation Path">
+              {{ address.derivationPath }}
+            </div>
+          </td>
+
+          <!-- Status Column -->
+          <td class="px-4 py-4">
+            <span [ngClass]="getStatusBadgeClass(address.status)" class="mb-1 inline-block">
+              {{ address.status }}
+            </span>
+            <div *ngIf="address.addressLocked" class="text-xs text-red-600">
+              🔒 Locked
+            </div>
+            <div *ngIf="address.retiredAt" class="text-xs text-gray-500">
+              Retired: {{ formatDate(address.retiredAt) }}
+            </div>
+            <div *ngIf="address.retiredReason" class="text-xs text-gray-500" title="Retirement Reason">
+              Reason: {{ address.retiredReason }}
+            </div>
+          </td>
+
+          <!-- Balance Column -->
+          <td class="px-4 py-4 text-sm text-gray-500">
+            <div class="font-semibold">{{ formatBalance(address.currentBalance, currency) }} {{ currency }}</div>
+            <div *ngIf="address.trxDust !== undefined" class="text-xs">
+              TRX Dust: {{ address.trxDust }}
+            </div>
+            <div *ngIf="address.minTrxDustNeeded !== undefined" class="text-xs text-orange-600">
+              Min TRX Needed: {{ address.minTrxDustNeeded }}
+            </div>
+          </td>
+
+          <!-- Consolidation Column -->
+          <td class="px-4 py-4 text-sm">
+            <div class="flex flex-col space-y-1">
+              <span [ngClass]="address.pendingConsolidation ? 'text-yellow-600 font-semibold' : 'text-gray-500'">
+                {{ address.pendingConsolidation ? '🔄 Pending' : '✅ Complete' }}
+              </span>
+              <div class="text-xs">
+                Min: ${{ address.minConsolidateUsd }}
+              </div>
+              <div *ngIf="address.consolidationAttempts !== undefined" class="text-xs">
+                Attempts: {{ address.consolidationAttempts }}
+              </div>
+              <div *ngIf="address.lastTrxSweepAmount !== undefined" class="text-xs">
+                Last Sweep: {{ address.lastTrxSweepAmount }}
+              </div>
+              <div *ngIf="address.lastTrxSweepStatus" class="text-xs" [ngClass]="{
+                'text-green-600': address.lastTrxSweepStatus === 'SUCCESS',
+                'text-red-600': address.lastTrxSweepStatus === 'FAILED',
+                'text-yellow-600': address.lastTrxSweepStatus === 'SKIPPED'
+              }">
+                Sweep: {{ address.lastTrxSweepStatus }}
+              </div>
+              <div *ngIf="address.consolidationError" class="text-xs text-red-600" title="{{ getConsolidationErrorMessage(address) }}">
+                Error: {{ getConsolidationErrorMessage(address).substring(0, 20) }}...
+              </div>
+            </div>
+          </td>
+
+          <!-- Usage Stats Column -->
+          <td class="px-4 py-4 text-sm text-gray-500">
+            <div class="space-y-1">
+              <div *ngIf="address.reuseCount !== undefined">
+                Reused: {{ address.reuseCount }} times
+              </div>
+              <div *ngIf="address.totalReceived !== undefined">
+                Total Received: {{ formatBalance(address.totalReceived, currency) }}
+              </div>
+              <div *ngIf="address.maxAddressAgeHours && address.lastUsedAt" 
+                   [ngClass]="{'text-red-600': isAddressExpired(address), 'text-green-600': !isAddressExpired(address)}">
+                Expires: {{ getTimeUntilExpiry(address) }}
+              </div>
+            </div>
+          </td>
+
+          <!-- Reservation Column -->
+          <td class="px-4 py-4 text-sm">
+            <div *ngIf="isReservationActive(address)" class="text-green-600 space-y-1">
+              <div>🛡️ Reserved</div>
+              <div class="text-xs">Amount: {{ address.reservedAmount }}</div>
+              <div class="text-xs">Expires: {{ formatDate(address.reservationExpiresAt) }}</div>
+            </div>
+            <div *ngIf="!isReservationActive(address)" class="text-gray-400">
+              Available
+            </div>
+          </td>
+
+          <!-- Timestamps Column -->
+          <td class="px-4 py-4 text-sm text-gray-500">
+            <div class="space-y-1 text-xs">
+              <div title="Created: {{ formatDate(address.createdAt) }}">
+                Created: {{ formatDate(address.createdAt) ? formatDate(address.createdAt).split(',')[0] : '' }}
+              </div>
+              <div *ngIf="address.updatedAt" title="Updated: {{ formatDate(address.updatedAt) }}">
+                Updated: {{ formatDate(address.updatedAt) ? formatDate(address.updatedAt).split(' ')[1] : '' }}
+              </div>
+              <div *ngIf="address.lastUsedAt" title="Last Used: {{ formatDate(address.lastUsedAt) }}">
+                Last Used: {{ formatDate(address.lastUsedAt) ? formatDate(address.lastUsedAt).split(' ')[1] : '' }}
+              </div>
+            </div>
+          </td>
+
+          <!-- Actions Column -->
+          <td class="px-4 py-4 text-sm">
+            <button
+              (click)="openStatusUpdateModal(address)"
+              class="text-blue-600 hover:text-blue-900 font-medium block mb-2"
+            >
+              Update Status
+            </button>
+            <!-- <div class="text-xs text-gray-400">
+              ID: {{ address._id?.substring(0, 8) }}...
+            </div> -->
+          </td>
+        </tr>
+        <tr *ngIf="depositAddresses.length === 0">
+          <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
+            No deposit addresses found for the selected filters
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
     <!-- Pagination Controls -->
@@ -497,7 +593,7 @@
               >
             </div>
 
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700">Open Transaction ID</label>
               <input 
                 type="text"
@@ -505,11 +601,11 @@
                 placeholder="Transaction ID or null"
                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-            </div>
+            </div> -->
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700">Assigned Merchant ID</label>
               <input 
                 type="text"
@@ -517,7 +613,7 @@
                 placeholder="Merchant ID or null"
                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-            </div>
+            </div> -->
 
             <div>
               <label class="block text-sm font-medium text-gray-700">Reason</label>

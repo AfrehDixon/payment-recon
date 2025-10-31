@@ -1,10 +1,16 @@
-<div class="settings-container">
-  <div class="header">
-    <h1>System Settings</h1>
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>System Dashboard</h1>
+      <p class="last-updated" *ngIf="settings">
+        Last Updated: {{ formatDate(settings.lastUpdated) }}
+      </p>
+    </div>
     <div class="header-actions">
       <button
         (click)="toggleEdit()"
-        class="edit-btn"
+        class="btn btn-primary"
         [disabled]="loading"
         *ngIf="!isEditing"
       >
@@ -13,203 +19,303 @@
       </button>
       <button
         (click)="refreshAll()"
-        class="refresh-btn"
+        class="btn btn-secondary"
         [disabled]="loading || loadingBalance"
       >
-        <i
-          class="fas fa-sync-alt"
-          [class.rotating]="loading || loadingBalance"
-        ></i>
+        <i class="fas fa-sync-alt" [class.rotating]="loading || loadingBalance"></i>
         Refresh All
       </button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loader-container">
-    <div class="loader"></div>
-    <p>Loading system settings...</p>
-  </div>
-
-  <div *ngIf="error" class="error-message">
+  <!-- Messages -->
+  <div *ngIf="error" class="alert alert-error">
     <i class="fas fa-exclamation-circle"></i>
     {{ error }}
     <button class="close-btn" (click)="error = null">&times;</button>
   </div>
 
-  <div *ngIf="successMessage" class="success-message">
+  <div *ngIf="successMessage" class="alert alert-success">
     <i class="fas fa-check-circle"></i>
     {{ successMessage }}
     <button class="close-btn" (click)="successMessage = null">&times;</button>
   </div>
 
-  <div *ngIf="balanceError" class="error-message">
-    <i class="fas fa-exclamation-circle"></i>
-    {{ balanceError }}
-    <button class="close-btn" (click)="balanceError = null">&times;</button>
+  <!-- Quick Stats Cards -->
+  <div class="stats-grid" *ngIf="settings && !loading">
+    <div class="stat-card">
+      <div class="stat-icon primary">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Total Portfolio Value</h3>
+        <div class="stat-value">
+          ${{
+            formatCurrency(
+              settings.btcBalances.totalUsdValue +
+              settings.bep20Balances.totalUsdValue +
+              settings.solanaBalances.totalUsdValue +
+              settings.trc20Balances.totalUsdValue
+            )
+          }}
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon success">
+        <i class="fab fa-bitcoin"></i>
+      </div>
+      <div class="stat-content">
+        <h3>BTC Reserve</h3>
+        <div class="stat-value">
+          {{ formatBtc(settings.btcBalances.totalConfirmedBalance) }}
+        </div>
+        <div class="stat-subvalue">
+          ${{ formatCurrency(settings.btcBalances.totalUsdValue) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card">
+        <div class="stat-icon info">
+          <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Exchange Rate</h3>
+          <div class="stat-value">
+            ${{ formatCurrency(settings.exchangeRate) }}
+          </div>
+          <div class="stat-subvalue">
+            Market: ${{ formatCurrency(settings.marketPrice) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon warning">
+        <i class="fas fa-cog"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Active Systems</h3>
+        <div class="stat-value">
+          {{ getActiveSystemsCount() }}
+        </div>
+        <div class="stat-subvalue">
+          of 4 systems
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Form Validation Errors -->
-  <div
-    *ngIf="isEditing && getFormErrors().length > 0"
-    class="validation-errors"
-  >
-    <h4>Please fix the following errors:</h4>
-    <ul>
-      <li *ngFor="let error of getFormErrors()">{{ error }}</li>
-    </ul>
-  </div>
-
-  <form
-    [formGroup]="settingsForm"
-    *ngIf="settings && !loading"
-    class="settings-grid"
-  >
+  <!-- Main Settings Grid -->
+  <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
+    
+    <!-- Pricing & Limits Card -->
     <div class="setting-card">
-      <h3>Pricing</h3>
-      <div class="setting-item">
-        <label>Markup Rate (%):</label>
-        <ng-container *ngIf="!isEditing">
-          <span>{{ settings.markupRate }}%</span>
-        </ng-container>
-        <div *ngIf="isEditing" class="input-wrapper">
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            max="100"
-            formControlName="markupRate"
-            class="form-input"
-          />
-          <div class="field-error" *ngIf="getFieldError('markupRate')">
-            {{ getFieldError("markupRate") }}
-          </div>
+      <div class="card-header">
+        <h3>Pricing & Transaction Limits</h3>
+        <div class="card-badge" [class.active]="settings.dynamicPricingEnabled">
+          {{ settings.dynamicPricingEnabled ? 'Dynamic' : 'Static' }} Pricing
         </div>
       </div>
-      <div class="setting-item">
-        <label>Exchange Rate:</label>
-        <span>${{ formatCurrency(settings.exchangeRate) }}</span>
-      </div>
-      <div class="setting-item">
-        <label>Transaction Fee ($):</label>
-        <ng-container *ngIf="!isEditing">
-          <span>${{ settings.transactionFee }}</span>
-        </ng-container>
-        <div *ngIf="isEditing" class="input-wrapper">
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            formControlName="transactionFee"
-            class="form-input"
-          />
-          <div class="field-error" *ngIf="getFieldError('transactionFee')">
-            {{ getFieldError("transactionFee") }}
+      <div class="card-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Markup Rate (%)</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">{{ settings.markupRate }}%</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" step="0.1" formControlName="markupRate" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('markupRate')">
+                {{ getFieldError("markupRate") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Transaction Fee ($)</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">${{ settings.transactionFee }}</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" step="0.01" formControlName="transactionFee" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('transactionFee')">
+                {{ getFieldError("transactionFee") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Min Transaction Amount ($)</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">${{ settings.minTransactionAmount }}</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" step="1" formControlName="minTransactionAmount" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('minTransactionAmount')">
+                {{ getFieldError("minTransactionAmount") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Max Transaction Amount ($)</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">${{ settings.maxTransactionAmount }}</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" step="1" formControlName="maxTransactionAmount" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('maxTransactionAmount')">
+                {{ getFieldError("maxTransactionAmount") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="dynamicPricingEnabled" [disabled]="!isEditing" />
+              Enable Dynamic Pricing
+            </label>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- <div class="setting-card">
-      <h3>Transaction Limits</h3>
-      <div class="setting-item">
-        <label>Minimum Amount ($):</label>
-        <ng-container *ngIf="!isEditing">
-          <span>${{ settings.minTransactionAmount }}</span>
-        </ng-container>
-        <div *ngIf="isEditing" class="input-wrapper">
-          <input
-            type="number"
-            step="1"
-            min="1"
-            formControlName="minTransactionAmount"
-            class="form-input"
-          />
-          <div
-            class="field-error"
-            *ngIf="getFieldError('minTransactionAmount')"
-          >
-            {{ getFieldError("minTransactionAmount") }}
+    <!-- Address Management Card -->
+    <div class="setting-card">
+      <div class="card-header">
+        <h3>Address Management</h3>
+      </div>
+      <div class="card-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Max Address Age (Hours)</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">{{ settings.maxAddressAgeHours }} hours</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" formControlName="maxAddressAgeHours" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('maxAddressAgeHours')">
+                {{ getFieldError("maxAddressAgeHours") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Min Consolidate USD</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">${{ settings.minConsolidateUsd }}</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" formControlName="minConsolidateUsd" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('minConsolidateUsd')">
+                {{ getFieldError("minConsolidateUsd") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Min TRX Dust Needed</label>
+            <ng-container *ngIf="!isEditing">
+              <div class="display-value">{{ settings.minTrxDustNeeded }} TRX</div>
+            </ng-container>
+            <div *ngIf="isEditing" class="input-group">
+              <input type="number" formControlName="minTrxDustNeeded" class="form-input" />
+              <div class="field-error" *ngIf="getFieldError('minTrxDustNeeded')">
+                {{ getFieldError("minTrxDustNeeded") }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="setting-item">
-        <label>Maximum Amount ($):</label>
-        <ng-container *ngIf="!isEditing">
-          <span>${{ settings.maxTransactionAmount }}</span>
-        </ng-container>
-        <div *ngIf="isEditing" class="input-wrapper">
-          <input
-            type="number"
-            step="1"
-            min="1"
-            formControlName="maxTransactionAmount"
-            class="form-input"
-          />
-          <div
-            class="field-error"
-            *ngIf="getFieldError('maxTransactionAmount')"
-          >
-            {{ getFieldError("maxTransactionAmount") }}
+    </div>
+
+    <!-- Exchange Rates Card -->
+    <div class="setting-card">
+      <div class="card-header">
+        <h3>Exchange Rates</h3>
+        <div class="card-badge">Live</div>
+      </div>
+      <div class="card-content">
+        <div class="rates-grid">
+          <div class="rate-item">
+            <span class="rate-label">BTC/USD:</span>
+            <span class="rate-value">${{ formatCurrency(settings.btcExchangeRate) }}</span>
+          </div>
+          <div class="rate-item">
+            <span class="rate-label">USDT/USD:</span>
+            <span class="rate-value">${{ settings.usdtExchangeRate }}</span>
+          </div>
+          <div class="rate-item">
+            <span class="rate-label">SOL/USD:</span>
+            <span class="rate-value">${{ formatCurrency(settings.solExchangeRate) }}</span>
+          </div>
+          <div class="rate-item">
+            <span class="rate-label">GHS/USD:</span>
+            <span class="rate-value">GHS {{ settings.ghsExchangeRate }}</span>
+          </div>
+          <div class="rate-item">
+            <span class="rate-label">CAD/USD:</span>
+            <span class="rate-value">${{ settings.cadExchangeRate }}</span>
           </div>
         </div>
       </div>
-    </div> -->
+    </div>
 
-    <!-- Replace the entire Transaction Limits card section with this -->
-<div class="setting-card">
-  <h3>P2P Exchange Rates</h3>
-  
-  <!-- USDT/GHS Rates -->
-  <div class="p2p-section">
-    <h4>USDT ↔ GHS</h4>
-    <div class="setting-item">
-      <label>Buy Rate:</label>
-      <span>GHS {{ formatCurrency(settings.p2p.USDT_GHS_BUY.price) }}</span>
-      <small class="provider-info">via {{ settings.p2p.USDT_GHS_BUY.provider }}</small>
-    </div>
-    <div class="setting-item">
-      <label>Sell Rate:</label>
-      <span>GHS {{ formatCurrency(settings.p2p.USDT_GHS_SELL.price) }}</span>
-      <small class="provider-info">via {{ settings.p2p.USDT_GHS_SELL.provider }}</small>
-    </div>
-    <div class="setting-item">
-      <label>Last Updated:</label>
-      <span>{{ formatDate(settings.p2p.USDT_GHS_BUY.updatedAt) }}</span>
-    </div>
-  </div>
+    <!-- P2P Rates Card -->
+    <div class="setting-card">
+      <div class="card-header">
+        <h3>P2P Exchange Rates</h3>
+        <div class="card-badge">{{ settings.p2p.USDT_GHS_BUY.provider }}</div>
+      </div>
+      <div class="card-content">
+        <div class="p2p-grid">
+          <div class="p2p-section">
+            <h4>USDT/GHS</h4>
+            <div class="p2p-rate">
+              <span>Buy:</span>
+              <strong>GHS {{ formatCurrency(settings.p2p.USDT_GHS_BUY.price) }}</strong>
+            </div>
+            <div class="p2p-rate">
+              <span>Sell:</span>
+              <strong>GHS {{ formatCurrency(settings.p2p.USDT_GHS_SELL.price) }}</strong>
+            </div>
+          </div>
+          
+          <div class="p2p-section">
+            <h4>BTC/GHS</h4>
+            <div class="p2p-rate">
+              <span>Buy:</span>
+              <strong>GHS {{ formatCurrency(settings.p2p.BTC_GHS_BUY.price) }}</strong>
+            </div>
+            <div class="p2p-rate">
+              <span>Sell:</span>
+              <strong>GHS {{ formatCurrency(settings.p2p.BTC_GHS_SELL.price) }}</strong>
+            </div>
+          </div>
 
-  <!-- BTC/GHS Rates -->
-  <div class="p2p-section">
-    <h4>BTC ↔ GHS</h4>
-    <div class="setting-item">
-      <label>Buy Rate:</label>
-      <span>GHS {{ formatCurrency(settings.p2p.BTC_GHS_BUY.price) }}</span>
-      <small class="provider-info">via {{ settings.p2p.BTC_GHS_BUY.provider }}</small>
+          <div class="p2p-section">
+            <h4>CAD Pairs</h4>
+            <div class="p2p-rate">
+              <span>USDT/CAD Buy:</span>
+              <strong>${{ settings.p2p.USDT_CAD_BUY.price }}</strong>
+            </div>
+            <div class="p2p-rate">
+              <span>BTC/CAD Buy:</span>
+              <strong>${{ formatCurrency(settings.p2p.BTC_CAD_BUY.price) }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="p2p-footer">
+          <small>Updated: {{ formatDate(settings.p2p.USDT_GHS_BUY.updatedAt) }}</small>
+          <small>TTL: {{ settings.p2p.USDT_GHS_BUY.ttlSec }}s</small>
+        </div>
+      </div>
     </div>
-    <div class="setting-item">
-      <label>Sell Rate:</label>
-      <span>GHS {{ formatCurrency(settings.p2p.BTC_GHS_SELL.price) }}</span>
-      <small class="provider-info">via {{ settings.p2p.BTC_GHS_SELL.provider }}</small>
-    </div>
-    <div class="setting-item">
-      <label>Last Updated:</label>
-      <span>{{ formatDate(settings.p2p.BTC_GHS_BUY.updatedAt) }}</span>
-    </div>
-  </div>
-
-  <!-- Rate Metadata -->
-  <div class="p2p-section">
-    <h4>Rate Info</h4>
-    <div class="setting-item">
-      <label>Cache TTL:</label>
-      <span>{{ settings.p2p.USDT_GHS_BUY.ttlSec }}s</span>
-    </div>
-    <div class="setting-item">
-      <label>Sample Size:</label>
-      <span>{{ settings.p2p.USDT_GHS_BUY.sampleSize }}</span>
-    </div>
-  </div>
-</div>
 
     <div class="setting-card">
       <h3>Features</h3>
