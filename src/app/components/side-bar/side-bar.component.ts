@@ -12,47 +12,72 @@ export interface RouteInfo {
   path: string;
   title: string;
   class: string | string[] | Set<string> | { [klass: string]: any; } | null | undefined;
-  permission: string; // Permission required to see this route
+  permission: string;
+  isSubmenu?: boolean;
+  parentModule?: string;
+}
+
+export interface MenuGroup {
+  title: string;
+  icon: string;
+  permission: string;
+  isOpen: boolean;
+  children: RouteInfo[];
 }
 
 export const Routes: RouteInfo[] = [
-  { path: 'mechant', title: 'Merchants', class: 'false', permission: 'can view merchants module' },
-  { path: 'admins', title: 'Admins', class: 'false', permission: 'can view admins module' },
-  { path: 'reports', title: 'Reports', class: 'false', permission: 'can view reports module' },
-  { path: 'wallets', title: 'Wallets', class: 'false', permission: 'can view wallets module' },
-  { path: 'settlements', title: 'Merchant Collections', class: 'false', permission: 'can view merchant collections module' },
-  { path: 'hub', title: "Hub", class: 'false', permission: 'can view hub module' },
-  { path: 'queues', title: "Queues", class: 'false', permission: 'can view queues module' },
-  { path: 'credit-debit', title: "Credit/Debit", class: 'false', permission: 'can view credit/debit module' },
-  { path: 'transactions', title: "Transactions Filters", class: 'false', permission: 'can view transaction filters module' },
-  { path: 'operator-config', title: "Operator Config", class: 'false', permission: 'can view operator config module' },
-  { path: 'velocity-rules', title: "Velocity Rules", class: 'false', permission: 'can view velocity rules module' },
-  { path: 'terminals', title: "Payment Terminals", class: 'false', permission: 'can view payment terminals module' },
-  { path: 'charge-config', title: "Charge Config", class: 'false', permission: 'can view charge config module' },
-  { path: 'merchant-tiers', title: "Merchant Tiers", class: 'false', permission: 'can view merchant tier module' },
-  { path: 'daily-statistics', title: "Daily Statistics", class: 'false', permission: 'can view daily statistics module' },
-  { path: 'weekly-statistics', title: "Weekly Statistics", class: 'false', permission: 'can view weekly statistics module' },
-  { path: 'monthly-statistics', title: "Monthly Statistics", class: 'false', permission: 'can view monthly statistics module' },
-  { path: 'cummulative-statistics', title: "Cummulative Statistics", class: 'false', permission: 'can view cumulative statistics module' },
-  { path: 'logs', title: "System Logs", class: 'false', permission: 'can view system logs module' },
-  { path: 'logs-summary', title: "Logs Summary", class: 'false', permission: 'can view logs summary module' },
-  { path: 'payout-recon', title: "Payout Reconciliation", class: 'false', permission: 'can view payout reconciliation module' },
-  { path: 'payout-issues', title: "Payout Issues", class: 'false', permission: 'can view payout issues module' },
-  { path: 'operator-switch', title: "Operator Switch", class: 'false', permission: 'can view operator switch module' },
-  { path: 'valut-config', title: "Vault Management", class: 'false', permission: 'can view operator switch module'},
-  { path: 'reversals', title: "Reversals", class: 'false', permission: 'can view operator switch module'},
-  { path: 'merchant-statistics', title: "Merchant Statistics", class: 'false', permission: 'can view merchant statistics module' },
-  { path: 'balance-history', title: "Merchant Balance History", class: 'false', permission: 'can view merchant balance history module' },
-  { path: 'balance-summary', title: "Merchant Balance Summary", class: 'false', permission: 'can view merchant balance summary module' },
-  { path: 'payment-links', title: "Payment Links", class: 'false', permission: 'can view payment links module' },
-  { path: 'account-blacklist', title: "Account Blacklist", class: 'false', permission: 'can view account blacklist module' },
-  { path: 'settings', title: "System Settings", class: 'false', permission: 'can view system settings module' },
-  { path: 'permission-management', title: "Permission Management", class: 'false', permission: 'can view system settings module' },
-  { path: 'tickets', title: "Admin Ticket Management", class: 'false', permission: 'can view admins module' },
-  { path: 'card-wallets', title: "Customer Wallets", class: 'false', permission: 'can view admins module' },
-  { path: 'consolidations', title: "Consolidations", class: 'false', permission: 'can view admins module' },
-  { path: 'deposit-addresses', title: "Deposit Addresses", class: 'false', permission: 'can view admins module' },
-  { path: 'trx-transfer', title: "Transaction Transfer", class: 'false', permission: 'can view admins module' }
+  // Merchant Management
+  { path: 'mechant', title: 'Merchants', class: 'false', permission: 'can view merchants module', parentModule: 'merchant-management' },
+  { path: 'merchant-tiers', title: 'Merchant Tiers', class: 'false', permission: 'can view merchant tier module', parentModule: 'merchant-management' },
+  { path: 'merchant-statistics', title: 'Merchant Statistics', class: 'false', permission: 'can view merchant statistics module', parentModule: 'merchant-management' },
+  { path: 'balance-history', title: 'Balance History', class: 'false', permission: 'can view merchant balance history module', parentModule: 'merchant-management' },
+  { path: 'balance-summary', title: 'Balance Summary', class: 'false', permission: 'can view merchant balance summary module', parentModule: 'merchant-management' },
+  
+  // Transactions
+  { path: 'transactions', title: 'Transaction Filters', class: 'false', permission: 'can view transaction filters module', parentModule: 'transactions' },
+  { path: 'reversals', title: 'Reversals', class: 'false', permission: 'can view operator switch module', parentModule: 'transactions' },
+  { path: 'credit-debit', title: 'Credit/Debit', class: 'false', permission: 'can view credit/debit module', parentModule: 'transactions' },
+  { path: 'trx-transfer', title: 'Transaction Transfer', class: 'false', permission: 'can view admins module', parentModule: 'transactions' },
+  
+  // Wallets & Payments
+  { path: 'wallets', title: 'Wallets', class: 'false', permission: 'can view wallets module', parentModule: 'wallets-payments' },
+  { path: 'card-wallets', title: 'Customer Wallets', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
+  { path: 'payment-links', title: 'Payment Links', class: 'false', permission: 'can view payment links module', parentModule: 'wallets-payments' },
+  { path: 'terminals', title: 'Payment Terminals', class: 'false', permission: 'can view payment terminals module', parentModule: 'wallets-payments' },
+  { path: 'deposit-addresses', title: 'Deposit Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
+  
+  // Settlements & Payouts
+  { path: 'settlements', title: 'Merchant Collections', class: 'false', permission: 'can view merchant collections module', parentModule: 'settlements-payouts' },
+  { path: 'payout-recon', title: 'Payout Reconciliation', class: 'false', permission: 'can view payout reconciliation module', parentModule: 'settlements-payouts' },
+  { path: 'payout-issues', title: 'Payout Issues', class: 'false', permission: 'can view payout issues module', parentModule: 'settlements-payouts' },
+  { path: 'consolidations', title: 'Consolidations', class: 'false', permission: 'can view admins module', parentModule: 'settlements-payouts' },
+  
+  // Analytics & Reports
+  { path: 'reports', title: 'Reports', class: 'false', permission: 'can view reports module', parentModule: 'analytics-reports' },
+  { path: 'daily-statistics', title: 'Daily Statistics', class: 'false', permission: 'can view daily statistics module', parentModule: 'analytics-reports' },
+  { path: 'weekly-statistics', title: 'Weekly Statistics', class: 'false', permission: 'can view weekly statistics module', parentModule: 'analytics-reports' },
+  { path: 'monthly-statistics', title: 'Monthly Statistics', class: 'false', permission: 'can view monthly statistics module', parentModule: 'analytics-reports' },
+  { path: 'cummulative-statistics', title: 'Cumulative Statistics', class: 'false', permission: 'can view cumulative statistics module', parentModule: 'analytics-reports' },
+  
+  // System Configuration
+  { path: 'operator-config', title: 'Operator Config', class: 'false', permission: 'can view operator config module', parentModule: 'system-config' },
+  { path: 'charge-config', title: 'Charge Config', class: 'false', permission: 'can view charge config module', parentModule: 'system-config' },
+  { path: 'velocity-rules', title: 'Velocity Rules', class: 'false', permission: 'can view velocity rules module', parentModule: 'system-config' },
+  { path: 'valut-config', title: 'Vault Management', class: 'false', permission: 'can view operator switch module', parentModule: 'system-config' },
+  { path: 'operator-switch', title: 'Operator Switch', class: 'false', permission: 'can view operator switch module', parentModule: 'system-config' },
+  { path: 'account-blacklist', title: 'Account Blacklist', class: 'false', permission: 'can view account blacklist module', parentModule: 'system-config' },
+  
+  // System Management
+  { path: 'admins', title: 'Admins', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'permission-management', title: 'Permission Management', class: 'false', permission: 'can view system settings module', parentModule: 'system-management' },
+  { path: 'settings', title: 'System Settings', class: 'false', permission: 'can view system settings module', parentModule: 'system-management' },
+  { path: 'tickets', title: 'Admin Tickets', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  
+  // Monitoring & Logs
+  { path: 'logs', title: 'System Logs', class: 'false', permission: 'can view system logs module', parentModule: 'monitoring-logs' },
+  { path: 'logs-summary', title: 'Logs Summary', class: 'false', permission: 'can view logs summary module', parentModule: 'monitoring-logs' },
+  { path: 'queues', title: 'Queues', class: 'false', permission: 'can view queues module', parentModule: 'monitoring-logs' },
+  { path: 'hub', title: "Hub", class: 'false', permission: 'can view hub module', parentModule: 'monitoring-logs' }
 ];
 
 @Component({
@@ -65,7 +90,7 @@ export const Routes: RouteInfo[] = [
 export class SidebarComponent implements OnInit, OnDestroy {
   logo: string = "";
   allMenuItems: RouteInfo[] = Routes;
-  menuItems: RouteInfo[] = [];
+  menuGroups: MenuGroup[] = [];
   user_name: string = "";
   isCollapsed: boolean = false;
   isMobile: boolean = false;
@@ -80,12 +105,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private permissionService: PermissionService
   ) {
     this.checkScreenSize();
+    this.initializeMenuGroups();
   }
 
   ngOnInit(): void {
     this.setupEventListeners();
     
-    // Add a null check before subscribing
     if (this.user$) {
       this.userSubscription = this.user$.subscribe((user: any) => {
         if (user) {
@@ -94,7 +119,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       });
     }
     
-    // Initialize user name from localStorage if available
     const loginData = localStorage.getItem('PLOGIN');
     if (loginData) {
       try {
@@ -107,7 +131,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Subscribe to permission changes
     this.permissionsSubscription = this.permissionService.getPermissions()
       .subscribe(permissions => {
         this.filterMenuItems(permissions);
@@ -124,11 +147,76 @@ export class SidebarComponent implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.handleResize.bind(this));
   }
 
+  private initializeMenuGroups(): void {
+    this.menuGroups = [
+      {
+        title: 'Merchant Management',
+        icon: 'bi bi-people',
+        permission: 'merchant-management',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'Transactions',
+        icon: 'bi bi-arrow-left-right',
+        permission: 'transactions',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'Wallets & Payments',
+        icon: 'bi bi-wallet2',
+        permission: 'wallets-payments',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'Settlements & Payouts',
+        icon: 'bi bi-cash-stack',
+        permission: 'settlements-payouts',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'Analytics & Reports',
+        icon: 'bi bi-graph-up',
+        permission: 'analytics-reports',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'System Configuration',
+        icon: 'bi bi-gear',
+        permission: 'system-config',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'System Management',
+        icon: 'bi bi-person-badge',
+        permission: 'system-management',
+        isOpen: false,
+        children: []
+      },
+      {
+        title: 'Monitoring & Logs',
+        icon: 'bi bi-clipboard-data',
+        permission: 'monitoring-logs',
+        isOpen: false,
+        children: []
+      }
+    ];
+  }
+
   private filterMenuItems(permissions: string[]): void {
-    // Filter menu items based on user permissions
-    this.menuItems = this.allMenuItems.filter(item => 
-      permissions.includes(item.permission)
-    );
+    this.menuGroups.forEach(group => {
+      group.children = this.allMenuItems.filter(item => 
+        item.parentModule === group.permission && permissions.includes(item.permission)
+      );
+    });
+    
+    // Remove groups with no children
+    this.menuGroups = this.menuGroups.filter(group => group.children.length > 0);
   }
 
   private setupEventListeners(): void {
@@ -151,49 +239,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
     localStorage.setItem('sidebarState', this.isCollapsed ? 'collapsed' : 'expanded');
   }
 
-  getMenuIcon(path: string): string {
-    const iconMap: { [key: string]: string } = {
-      'mechant': 'bi bi-speedometer2',
-      'payment-reconciliation': 'bi bi-bar-chart',
-      'admins': 'bi bi-person',
-      'reports': 'bi bi-file-earmark-text',
-      'permission-management': 'bi bi-shield-lock',
-      'credit-debit': 'bi bi-credit-card',
-      'settlements': 'bi bi-file-earmark-text',
-      'terminals': 'bi bi-credit-card',
-      'trx-transfer': 'fas fa-exchange-alt',
-      'velocity-rules': 'bi bi-shield-lock',
-      'wallets': 'bi bi-wallet',
-      'hub': 'bi bi-house-door',
-      'tickets': 'bi bi-ticket-perforated',
-      'deposit-addresses': 'bi bi-house-door',
-      'queues': 'bi bi-list',
-      'transactions': 'bi bi-cash',
-      'valut-config': 'bi bi-lock',
-      'reversals': 'bi bi-arrow-counterclockwise',
-      'settings': 'bi bi-gear',
-      'operator-config': 'bi bi-tools',
-      'charge-config': 'bi bi-calculator',
-      'merchant-tiers': 'bi bi-layers',
-      'daily-statistics': 'bi bi-calendar',
-      'weekly-statistics': 'bi bi-calendar',
-      'monthly-statistics': 'bi bi-calendar',
-      'cummulative-statistics': 'bi bi-calendar',
-      'logs': 'bi bi-journal',
-      'logs-summary': 'bi bi-journal',
-      'payout-reconciliation': 'bi bi-calculator',
-      'operator-switch': 'bi bi-arrow-repeat',
-      'payout-issues': 'bi bi-exclamation-circle', 
-      'merchant-statistics': 'bi bi-bar-chart-line',
-      'balance-history': 'bi bi-graph-up',
-      'balance-summary': 'bi bi-graph-up',
-      'payment-links': 'bi bi-link-45deg',
-      'account-blacklist': 'bi bi-shield-lock',
-      'card-wallets': 'bi bi-credit-card-2-back',
-      'consolidations': 'bi bi-shuffle'
-    };
+  toggleSubmenu(group: MenuGroup, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    if (!this.isCollapsed) {
+      group.isOpen = !group.isOpen;
+    }
+  }
 
-    return iconMap[path] || 'bi bi-circle';
+  isGroupActive(group: MenuGroup): boolean {
+    return group.children.some(child => this.router.isActive(child.path, true));
   }
 
   logout(): void {

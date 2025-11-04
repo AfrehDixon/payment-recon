@@ -1,49 +1,61 @@
-<!-- topbar.component.html -->
-<!-- <div>dfdf</div> -->
-
 <div class="layout-wrapper" [class.collapsed]="isCollapsed">
-    <!-- <div>fdfdfd</div> -->
-  <!-- Sidebar -->
   <aside class="sidebar">
     <!-- Logo Section -->
     <div class="sidebar-header">
       <a class="logo-wrapper">
-       
         <!-- <img *ngIf="logo" [src]="logo" alt="Logo" class="logo" /> -->
       </a>
       <button class="collapse-btn" (click)="toggleSidebar()" style="background-color: red;">
-        <!-- <i class="bi" [class.bi-chevron-left]="!isCollapsed" [class.bi-chevron-right]="isCollapsed" style="color: white; background-color: red;"></i> -->
-       <i class="ri-arrow-drop-right-line icon" ></i>
-        <!-- <div>sdsds</div> -->
+        <i class="ri-arrow-drop-right-line icon"></i>
       </button>
-      
     </div>
-
-   
 
     <!-- Navigation Menu -->
     <nav class="sidebar-nav">
       <ul class="nav-list">
-        <li *ngFor="let menuItem of menuItems" 
-            class="nav-item"
-            [class.active]="router.isActive(menuItem.path, true)"
-            [ngClass]="menuItem.class">
-          <a class="nav-link" [routerLink]="[menuItem.path]" [title]="isCollapsed ? menuItem.title : ''">
-            <i [class]="getMenuIcon(menuItem.path)"></i>
-            <span class="nav-text" *ngIf="!isCollapsed">{{ menuItem.title }}</span>
-            <span class="nav-indicator" *ngIf="router.isActive(menuItem.path, true)"></span>
-          </a>
+        <li *ngFor="let group of menuGroups" 
+            class="nav-group"
+            [class.active]="isGroupActive(group)"
+            [class.open]="group.isOpen">
+          
+          <!-- Main Menu Item -->
+          <div class="main-item">
+            <a class="nav-link cursor-pointer" 
+               (click)="toggleSubmenu(group, $event)"
+               [title]="isCollapsed ? group.title : ''">
+              <i [class]="group.icon"></i>
+              <span class="nav-text" *ngIf="!isCollapsed">{{ group.title }}</span>
+              
+              <!-- Dropdown Arrow -->
+              <i *ngIf="!isCollapsed" 
+                 class="submenu-arrow bi"
+                 [class.bi-chevron-down]="group.isOpen"
+                 [class.bi-chevron-right]="!group.isOpen"></i>
+                 
+              <span class="nav-indicator" 
+                    *ngIf="isGroupActive(group) && !group.isOpen"></span>
+            </a>
+          </div>
+
+          <!-- Submenu -->
+          <ul *ngIf="group.isOpen && !isCollapsed" class="submenu-list">
+            <li *ngFor="let menuItem of group.children" 
+                class="submenu-item"
+                [class.active]="router.isActive(menuItem.path, true)">
+              <a class="submenu-link" 
+                 [routerLink]="[menuItem.path]" 
+                 [title]="menuItem.title">
+                <i class="bi bi-dot"></i>
+                <span class="submenu-text">{{ menuItem.title }}</span>
+              </a>
+            </li>
+          </ul>
         </li>
       </ul>
     </nav>
 
     <!-- Bottom Actions -->
     <div class="sidebar-footer">
-        
-      <!-- <button class="refresh-btn" (click)="loadBalance()" title="Refresh Balance">
-        <i class="bi bi-arrow-clockwise"></i>
-        <span *ngIf="!isCollapsed">Refresh Balance</span>
-      </button> -->
       <button class="logout-btn" (click)="logout()" title="Logout">
         <i class="bi bi-box-arrow-right"></i>
         <span *ngIf="!isCollapsed">Logout</span>
