@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { ChargeConfig } from './charge-config.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ChargeConfigService {
   private baseUrl = 'https://doronpay.com/api';
@@ -17,15 +17,16 @@ export class ChargeConfigService {
     );
   }
 
+  getOperatorsAccounts(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/transactions/operators-accounts`);
+  }
+
   getMerchants(): Observable<any> {
     return this.http.get(`${this.baseUrl}/merchants/get`);
   }
 
   createChargeConfig(config: ChargeConfig): Observable<any> {
-    return this.http.post(
-      `${this.baseUrl}/charge-configurations/add`,
-      config
-    );
+    return this.http.post(`${this.baseUrl}/charge-configurations/add`, config);
   }
 
   updateChargeConfig(id: string, config: ChargeConfig): Observable<any> {

@@ -29,11 +29,10 @@ export class ChargeConfigComponent implements OnInit {
   chargeConfigs: ChargeConfig[] = [];
   filteredConfigs: ChargeConfig[] = [];
   merchants: any[] = [];
-  accountIssuers = Object.values(EAccountIssuer);
   transactionTypes = Object.values(ETransactionType);
   calculationMethods = Object.values(EChargeCalculationMethod);
-  operators = Object.values(EOperator);
-  
+  operators: string[] = [];
+  accountIssuers: string[] = [];  
   
   currentPage = 1;
   pageSize = 10;
@@ -60,6 +59,7 @@ export class ChargeConfigComponent implements OnInit {
     this.loadChargeConfigs();
     this.loadMerchants();
     this.setupFilterSubscriptions();
+    this.loadOperatorsAndAccounts();
   }
 
   private initFilterForm() {
@@ -92,6 +92,27 @@ export class ChargeConfigComponent implements OnInit {
   
     // Apply filters immediately on initialization
     setTimeout(() => this.applyFilters(), 0);
+  }
+
+   private loadOperatorsAndAccounts() {
+    this.service.getOperatorsAccounts().subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Populate the arrays from backend response
+          this.operators = response.data.operators || [];
+          // this.accountTypes = response.data.accountTypes || [];
+          this.accountIssuers = response.data.accountIssuers || [];
+          
+          console.log('Loaded operators:', this.operators);
+          // console.log('Loaded account types:', this.accountTypes);
+          console.log('Loaded account issuers:', this.accountIssuers);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading operators and accounts:', error);
+        // You might want to set default values or show an error message
+      }
+    });
   }
   
   

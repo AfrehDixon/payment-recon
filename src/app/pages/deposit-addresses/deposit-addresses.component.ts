@@ -410,8 +410,19 @@ export class DepositAddressesComponent implements OnInit, OnDestroy {
   }
 
   // Format balance with appropriate decimals
-  formatBalance(balance: number, currency: string): string {
+  formatBalance(balance: number | null | undefined, currency?: string): string {
+    // Guard against undefined/null/NaN balance to avoid calling toFixed on invalid values
+    if (balance == null || typeof balance !== 'number' || isNaN(balance)) {
+      return '0';
+    }
+
     if (currency === 'USDT') {
+      return balance.toFixed(6);
+    }
+    if (currency === 'SOL') {
+      return balance.toFixed(9);
+    }
+    if (currency === 'BNB' || currency === 'TRX') {
       return balance.toFixed(6);
     }
     return balance.toString();

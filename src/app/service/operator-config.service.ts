@@ -5,14 +5,17 @@ import { Observable } from 'rxjs';
 import { OperatorConfig } from '../pages/operator-config/operator-config.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class OperatorConfigService {
   private baseUrl = 'https://doronpay.com/api';
 
   constructor(private http: HttpClient) {}
 
-  getOperatorConfigs(): Observable<{ success: boolean; data: OperatorConfig[] }> {
+  getOperatorConfigs(): Observable<{
+    success: boolean;
+    data: OperatorConfig[];
+  }> {
     return this.http.get<{ success: boolean; data: OperatorConfig[] }>(
       `${this.baseUrl}/operator-configurations/get`
     );
@@ -27,6 +30,10 @@ export class OperatorConfigService {
       `${this.baseUrl}/operator-configurations/add`,
       config
     );
+  }
+
+  getOperatorsAccounts(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/transactions/operators-accounts`);
   }
 
   updateOperatorConfig(id: string, config: OperatorConfig): Observable<any> {
