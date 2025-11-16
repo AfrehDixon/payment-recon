@@ -22,7 +22,10 @@
         class="btn btn-secondary"
         [disabled]="loading || loadingBalance"
       >
-        <i class="fas fa-sync-alt" [class.rotating]="loading || loadingBalance"></i>
+        <i
+          class="fas fa-sync-alt"
+          [class.rotating]="loading || loadingBalance"
+        ></i>
         Refresh All
       </button>
     </div>
@@ -53,9 +56,9 @@
           ${{
             formatCurrency(
               settings.btcBalances.totalUsdValue +
-              settings.bep20Balances.totalUsdValue +
-              settings.solanaBalances.totalUsdValue +
-              settings.trc20Balances.totalUsdValue
+                settings.bep20Balances.totalUsdValue +
+                settings.solanaBalances.totalUsdValue +
+                settings.trc20Balances.totalUsdValue
             )
           }}
         </div>
@@ -103,22 +106,23 @@
         <div class="stat-value">
           {{ getActiveSystemsCount() }}
         </div>
-        <div class="stat-subvalue">
-          of 4 systems
-        </div>
+        <div class="stat-subvalue">of 4 systems</div>
       </div>
     </div>
   </div>
 
   <!-- Main Settings Grid -->
-  <form [formGroup]="settingsForm" *ngIf="settings && !loading" class="settings-grid">
-    
+  <form
+    [formGroup]="settingsForm"
+    *ngIf="settings && !loading"
+    class="settings-grid"
+  >
     <!-- Pricing & Limits Card -->
     <div class="setting-card">
       <div class="card-header">
         <h3>Pricing & Transaction Limits</h3>
         <div class="card-badge" [class.active]="settings.dynamicPricingEnabled">
-          {{ settings.dynamicPricingEnabled ? 'Dynamic' : 'Static' }} Pricing
+          {{ settings.dynamicPricingEnabled ? "Dynamic" : "Static" }} Pricing
         </div>
       </div>
       <div class="card-content">
@@ -129,7 +133,12 @@
               <div class="display-value">{{ settings.markupRate }}%</div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" step="0.1" formControlName="markupRate" class="form-input" />
+              <input
+                type="number"
+                step="0.1"
+                formControlName="markupRate"
+                class="form-input"
+              />
               <div class="field-error" *ngIf="getFieldError('markupRate')">
                 {{ getFieldError("markupRate") }}
               </div>
@@ -142,7 +151,12 @@
               <div class="display-value">${{ settings.transactionFee }}</div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" step="0.01" formControlName="transactionFee" class="form-input" />
+              <input
+                type="number"
+                step="0.01"
+                formControlName="transactionFee"
+                class="form-input"
+              />
               <div class="field-error" *ngIf="getFieldError('transactionFee')">
                 {{ getFieldError("transactionFee") }}
               </div>
@@ -152,11 +166,21 @@
           <div class="form-group">
             <label>Min Transaction Amount ($)</label>
             <ng-container *ngIf="!isEditing">
-              <div class="display-value">${{ settings.minTransactionAmount }}</div>
+              <div class="display-value">
+                ${{ settings.minTransactionAmount }}
+              </div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" step="1" formControlName="minTransactionAmount" class="form-input" />
-              <div class="field-error" *ngIf="getFieldError('minTransactionAmount')">
+              <input
+                type="number"
+                step="1"
+                formControlName="minTransactionAmount"
+                class="form-input"
+              />
+              <div
+                class="field-error"
+                *ngIf="getFieldError('minTransactionAmount')"
+              >
                 {{ getFieldError("minTransactionAmount") }}
               </div>
             </div>
@@ -165,11 +189,21 @@
           <div class="form-group">
             <label>Max Transaction Amount ($)</label>
             <ng-container *ngIf="!isEditing">
-              <div class="display-value">${{ settings.maxTransactionAmount }}</div>
+              <div class="display-value">
+                ${{ settings.maxTransactionAmount }}
+              </div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" step="1" formControlName="maxTransactionAmount" class="form-input" />
-              <div class="field-error" *ngIf="getFieldError('maxTransactionAmount')">
+              <input
+                type="number"
+                step="1"
+                formControlName="maxTransactionAmount"
+                class="form-input"
+              />
+              <div
+                class="field-error"
+                *ngIf="getFieldError('maxTransactionAmount')"
+              >
                 {{ getFieldError("maxTransactionAmount") }}
               </div>
             </div>
@@ -177,7 +211,11 @@
 
           <div class="form-group full-width">
             <label class="checkbox-label">
-              <input type="checkbox" formControlName="dynamicPricingEnabled" [disabled]="!isEditing" />
+              <input
+                type="checkbox"
+                formControlName="dynamicPricingEnabled"
+                [disabled]="!isEditing"
+              />
               Enable Dynamic Pricing
             </label>
           </div>
@@ -195,11 +233,20 @@
           <div class="form-group">
             <label>Max Address Age (Hours)</label>
             <ng-container *ngIf="!isEditing">
-              <div class="display-value">{{ settings.maxAddressAgeHours }} hours</div>
+              <div class="display-value">
+                {{ settings.maxAddressAgeHours }} hours
+              </div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" formControlName="maxAddressAgeHours" class="form-input" />
-              <div class="field-error" *ngIf="getFieldError('maxAddressAgeHours')">
+              <input
+                type="number"
+                formControlName="maxAddressAgeHours"
+                class="form-input"
+              />
+              <div
+                class="field-error"
+                *ngIf="getFieldError('maxAddressAgeHours')"
+              >
                 {{ getFieldError("maxAddressAgeHours") }}
               </div>
             </div>
@@ -211,8 +258,15 @@
               <div class="display-value">${{ settings.minConsolidateUsd }}</div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" formControlName="minConsolidateUsd" class="form-input" />
-              <div class="field-error" *ngIf="getFieldError('minConsolidateUsd')">
+              <input
+                type="number"
+                formControlName="minConsolidateUsd"
+                class="form-input"
+              />
+              <div
+                class="field-error"
+                *ngIf="getFieldError('minConsolidateUsd')"
+              >
                 {{ getFieldError("minConsolidateUsd") }}
               </div>
             </div>
@@ -221,12 +275,265 @@
           <div class="form-group">
             <label>Min TRX Dust Needed</label>
             <ng-container *ngIf="!isEditing">
-              <div class="display-value">{{ settings.minTrxDustNeeded }} TRX</div>
+              <div class="display-value">
+                {{ settings.minTrxDustNeeded }} TRX
+              </div>
             </ng-container>
             <div *ngIf="isEditing" class="input-group">
-              <input type="number" formControlName="minTrxDustNeeded" class="form-input" />
-              <div class="field-error" *ngIf="getFieldError('minTrxDustNeeded')">
+              <input
+                type="number"
+                formControlName="minTrxDustNeeded"
+                class="form-input"
+              />
+              <div
+                class="field-error"
+                *ngIf="getFieldError('minTrxDustNeeded')"
+              >
                 {{ getFieldError("minTrxDustNeeded") }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chain Trading Configuration Card -->
+    <div class="setting-card">
+      <div class="card-header">
+        <h3>Chain Trading Configuration</h3>
+      </div>
+      <div class="card-content">
+        <!-- TRC20 Section -->
+        <div class="chain-section">
+          <h4>TRC-20 (Tron)</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="trc20BuyEnabled"
+                  [disabled]="!isEditing"
+                />
+                Buy Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="trc20SellEnabled"
+                  [disabled]="!isEditing"
+                />
+                Sell Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="trc20HideBalance"
+                  [disabled]="!isEditing"
+                />
+                Hide Balance
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Min USD for Buy</label>
+              <ng-container *ngIf="!isEditing">
+                <div class="display-value">
+                  ${{ settings?.chainTradingConfig?.trc20?.minUsdForBuy }}
+                </div>
+              </ng-container>
+              <div *ngIf="isEditing" class="input-group">
+                <input
+                  type="number"
+                  step="1"
+                  formControlName="trc20MinUsdForBuy"
+                  class="form-input"
+                />
+                <div
+                  class="field-error"
+                  *ngIf="getFieldError('trc20MinUsdForBuy')"
+                >
+                  {{ getFieldError("trc20MinUsdForBuy") }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solana Section -->
+        <div class="chain-section">
+          <h4>Solana</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="solanaBuyEnabled"
+                  [disabled]="!isEditing"
+                />
+                Buy Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="solanaSellEnabled"
+                  [disabled]="!isEditing"
+                />
+                Sell Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="solanaHideBalance"
+                  [disabled]="!isEditing"
+                />
+                Hide Balance
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Min USD for Buy</label>
+              <ng-container *ngIf="!isEditing">
+                <div class="display-value">
+                  ${{ settings?.chainTradingConfig?.solana?.minUsdForBuy }}
+                </div>
+              </ng-container>
+              <div *ngIf="isEditing" class="input-group">
+                <input
+                  type="number"
+                  step="1"
+                  formControlName="solanaMinUsdForBuy"
+                  class="form-input"
+                />
+                <div
+                  class="field-error"
+                  *ngIf="getFieldError('solanaMinUsdForBuy')"
+                >
+                  {{ getFieldError("solanaMinUsdForBuy") }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BEP20 Section -->
+        <div class="chain-section">
+          <h4>BEP-20 (BSC)</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="bep20BuyEnabled"
+                  [disabled]="!isEditing"
+                />
+                Buy Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="bep20SellEnabled"
+                  [disabled]="!isEditing"
+                />
+                Sell Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="bep20HideBalance"
+                  [disabled]="!isEditing"
+                />
+                Hide Balance
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Min USD for Buy</label>
+              <ng-container *ngIf="!isEditing">
+                <div class="display-value">
+                  ${{ settings?.chainTradingConfig?.bep20?.minUsdForBuy }}
+                </div>
+              </ng-container>
+              <div *ngIf="isEditing" class="input-group">
+                <input
+                  type="number"
+                  step="1"
+                  formControlName="bep20MinUsdForBuy"
+                  class="form-input"
+                />
+                <div
+                  class="field-error"
+                  *ngIf="getFieldError('bep20MinUsdForBuy')"
+                >
+                  {{ getFieldError("bep20MinUsdForBuy") }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BTC Section -->
+        <div class="chain-section">
+          <h4>Bitcoin</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="btcBuyEnabled"
+                  [disabled]="!isEditing"
+                />
+                Buy Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="btcSellEnabled"
+                  [disabled]="!isEditing"
+                />
+                Sell Enabled
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="btcHideBalance"
+                  [disabled]="!isEditing"
+                />
+                Hide Balance
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Min USD for Buy</label>
+              <ng-container *ngIf="!isEditing">
+                <div class="display-value">
+                  ${{ settings?.chainTradingConfig?.btc?.minUsdForBuy }}
+                </div>
+              </ng-container>
+              <div *ngIf="isEditing" class="input-group">
+                <input
+                  type="number"
+                  step="1"
+                  formControlName="btcMinUsdForBuy"
+                  class="form-input"
+                />
+                <div
+                  class="field-error"
+                  *ngIf="getFieldError('btcMinUsdForBuy')"
+                >
+                  {{ getFieldError("btcMinUsdForBuy") }}
+                </div>
               </div>
             </div>
           </div>
@@ -244,7 +551,9 @@
         <div class="rates-grid">
           <div class="rate-item">
             <span class="rate-label">BTC/USD:</span>
-            <span class="rate-value">${{ formatCurrency(settings.btcExchangeRate) }}</span>
+            <span class="rate-value"
+              >${{ formatCurrency(settings.btcExchangeRate) }}</span
+            >
           </div>
           <div class="rate-item">
             <span class="rate-label">USDT/USD:</span>
@@ -252,7 +561,9 @@
           </div>
           <div class="rate-item">
             <span class="rate-label">SOL/USD:</span>
-            <span class="rate-value">${{ formatCurrency(settings.solExchangeRate) }}</span>
+            <span class="rate-value"
+              >${{ formatCurrency(settings.solExchangeRate) }}</span
+            >
           </div>
           <div class="rate-item">
             <span class="rate-label">GHS/USD:</span>
@@ -278,23 +589,35 @@
             <h4>USDT/GHS</h4>
             <div class="p2p-rate">
               <span>Buy:</span>
-              <strong>GHS {{ formatCurrency(settings.p2p.USDT_GHS_BUY.price) }}</strong>
+              <strong
+                >GHS
+                {{ formatCurrency(settings.p2p.USDT_GHS_BUY.price) }}</strong
+              >
             </div>
             <div class="p2p-rate">
               <span>Sell:</span>
-              <strong>GHS {{ formatCurrency(settings.p2p.USDT_GHS_SELL.price) }}</strong>
+              <strong
+                >GHS
+                {{ formatCurrency(settings.p2p.USDT_GHS_SELL.price) }}</strong
+              >
             </div>
           </div>
-          
+
           <div class="p2p-section">
             <h4>BTC/GHS</h4>
             <div class="p2p-rate">
               <span>Buy:</span>
-              <strong>GHS {{ formatCurrency(settings.p2p.BTC_GHS_BUY.price) }}</strong>
+              <strong
+                >GHS
+                {{ formatCurrency(settings.p2p.BTC_GHS_BUY.price) }}</strong
+              >
             </div>
             <div class="p2p-rate">
               <span>Sell:</span>
-              <strong>GHS {{ formatCurrency(settings.p2p.BTC_GHS_SELL.price) }}</strong>
+              <strong
+                >GHS
+                {{ formatCurrency(settings.p2p.BTC_GHS_SELL.price) }}</strong
+              >
             </div>
           </div>
 
@@ -306,12 +629,17 @@
             </div>
             <div class="p2p-rate">
               <span>BTC/CAD Buy:</span>
-              <strong>${{ formatCurrency(settings.p2p.BTC_CAD_BUY.price) }}</strong>
+              <strong
+                >${{ formatCurrency(settings.p2p.BTC_CAD_BUY.price) }}</strong
+              >
             </div>
           </div>
         </div>
         <div class="p2p-footer">
-          <small>Updated: {{ formatDate(settings.p2p.USDT_GHS_BUY.updatedAt) }}</small>
+          <small
+            >Updated:
+            {{ formatDate(settings.p2p.USDT_GHS_BUY.updatedAt) }}</small
+          >
           <small>TTL: {{ settings.p2p.USDT_GHS_BUY.ttlSec }}s</small>
         </div>
       </div>

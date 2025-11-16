@@ -25,7 +25,6 @@ import { of } from 'rxjs';
   templateUrl: './system-settings.component.html',
   styleUrls: ['./system-settings.component.scss'],
 })
-
 export class SystemSettingsComponent implements OnInit {
   settings: SystemSettings | null = null;
   btcBalance: BtcBalanceData | null = null;
@@ -53,45 +52,74 @@ export class SystemSettingsComponent implements OnInit {
     return this.fb.group(
       {
         // Basic settings
-      markupRate: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
-      transactionFee: ['', [Validators.required, Validators.min(0)]],
-      minTransactionAmount: ['', [Validators.required, Validators.min(1)]],
-      maxTransactionAmount: ['', [Validators.required, Validators.min(1)]],
-      dynamicPricingEnabled: [false],
+        markupRate: [
+          '',
+          [Validators.required, Validators.min(0), Validators.max(100)],
+        ],
+        transactionFee: ['', [Validators.required, Validators.min(0)]],
+        minTransactionAmount: ['', [Validators.required, Validators.min(1)]],
+        maxTransactionAmount: ['', [Validators.required, Validators.min(1)]],
+        dynamicPricingEnabled: [false],
 
-      // New fields
-      maxAddressAgeHours: ['', [Validators.required, Validators.min(1)]],
-      minConsolidateUsd: ['', [Validators.required, Validators.min(0)]],
-      minTrxDustNeeded: ['', [Validators.required, Validators.min(0)]],
+        // New fields
+        maxAddressAgeHours: ['', [Validators.required, Validators.min(1)]],
+        minConsolidateUsd: ['', [Validators.required, Validators.min(0)]],
+        minTrxDustNeeded: ['', [Validators.required, Validators.min(0)]],
 
-      // BTC Reserve Config
-      btcReserveEnabled: [false],
-      btcReserveTargetPct: ['', [Validators.min(0), Validators.max(1)]],
-      btcReserveLowerPct: ['', [Validators.min(0), Validators.max(1)]],
-      btcReserveUpperPct: ['', [Validators.min(0), Validators.max(1)]],
-      btcReserveMaxDailyUsd: ['', [Validators.min(0)]],
-      btcReserveMaxTradeUsd: ['', [Validators.min(0)]],
-      btcReserveMinTradeUsd: ['', [Validators.min(0)]],
-      btcReserveSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
-      btcReserveCooldownSec: ['', [Validators.min(0)]],
-      btcRecipient: [''],
-      bscRecipient: [''],
-      bscRouterAddr: [''],
-      bscVaultAddr: [''],
-      usdtTokenAddr: [''],
+        // BTC Reserve Config
+        btcReserveEnabled: [false],
+        btcReserveTargetPct: ['', [Validators.min(0), Validators.max(1)]],
+        btcReserveLowerPct: ['', [Validators.min(0), Validators.max(1)]],
+        btcReserveUpperPct: ['', [Validators.min(0), Validators.max(1)]],
+        btcReserveMaxDailyUsd: ['', [Validators.min(0)]],
+        btcReserveMaxTradeUsd: ['', [Validators.min(0)]],
+        btcReserveMinTradeUsd: ['', [Validators.min(0)]],
+        btcReserveSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
+        btcReserveCooldownSec: ['', [Validators.min(0)]],
+        btcRecipient: [''],
+        bscRecipient: [''],
+        bscRouterAddr: [''],
+        bscVaultAddr: [''],
+        usdtTokenAddr: [''],
 
-      // BTC Sweep Config
-      btcSweepEnabled: [false],
-      btcSweepMaxSweepUsd: ['', [Validators.min(0)]],
-      btcSweepMinSweepUsd: ['', [Validators.min(0)]],
-      btcSweepReserveBtc: ['', [Validators.min(0)]],
-      btcSweepPctOfAvail: ['', [Validators.min(0), Validators.max(1)]],
-      btcSweepSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
-      treasuryBep20: [''],
-    }, {
-      validators: [this.crossFieldValidator]
-    });
+        // BTC Sweep Config
+        btcSweepEnabled: [false],
+        btcSweepMaxSweepUsd: ['', [Validators.min(0)]],
+        btcSweepMinSweepUsd: ['', [Validators.min(0)]],
+        btcSweepReserveBtc: ['', [Validators.min(0)]],
+        btcSweepPctOfAvail: ['', [Validators.min(0), Validators.max(1)]],
+        btcSweepSlippageBps: ['', [Validators.min(0), Validators.max(10000)]],
+        treasuryBep20: [''],
 
+        // Chain Trading Configuration
+        // TRC20
+        trc20BuyEnabled: [false],
+        trc20SellEnabled: [false],
+        trc20HideBalance: [false],
+        trc20MinUsdForBuy: ['', [Validators.required, Validators.min(0)]],
+
+        // Solana
+        solanaBuyEnabled: [false],
+        solanaSellEnabled: [false],
+        solanaHideBalance: [false],
+        solanaMinUsdForBuy: ['', [Validators.required, Validators.min(0)]],
+
+        // BEP20
+        bep20BuyEnabled: [false],
+        bep20SellEnabled: [false],
+        bep20HideBalance: [false],
+        bep20MinUsdForBuy: ['', [Validators.required, Validators.min(0)]],
+
+        // BTC
+        btcBuyEnabled: [false],
+        btcSellEnabled: [false],
+        btcHideBalance: [false],
+        btcMinUsdForBuy: ['', [Validators.required, Validators.min(0)]],
+      },
+      {
+        validators: [this.crossFieldValidator],
+      }
+    );
   }
 
   // Custom validator for cross-field validation
@@ -207,6 +235,31 @@ export class SystemSettingsComponent implements OnInit {
       btcSweepPctOfAvail: settings.btcSweepConfig.sweepPctOfAvail,
       btcSweepSlippageBps: settings.btcSweepConfig.slippageBps,
       treasuryBep20: settings.btcSweepConfig.treasuryBep20,
+
+      // Chain Trading Configuration
+      // TRC20
+      trc20BuyEnabled: settings.chainTradingConfig.trc20.buyEnabled,
+      trc20SellEnabled: settings.chainTradingConfig.trc20.sellEnabled,
+      trc20HideBalance: settings.chainTradingConfig.trc20.hideBalance,
+      trc20MinUsdForBuy: settings.chainTradingConfig.trc20.minUsdForBuy,
+
+      // Solana
+      solanaBuyEnabled: settings.chainTradingConfig.solana.buyEnabled,
+      solanaSellEnabled: settings.chainTradingConfig.solana.sellEnabled,
+      solanaHideBalance: settings.chainTradingConfig.solana.hideBalance,
+      solanaMinUsdForBuy: settings.chainTradingConfig.solana.minUsdForBuy,
+
+      // BEP20
+      bep20BuyEnabled: settings.chainTradingConfig.bep20.buyEnabled,
+      bep20SellEnabled: settings.chainTradingConfig.bep20.sellEnabled,
+      bep20HideBalance: settings.chainTradingConfig.bep20.hideBalance,
+      bep20MinUsdForBuy: settings.chainTradingConfig.bep20.minUsdForBuy,
+
+      // BTC
+      btcBuyEnabled: settings.chainTradingConfig.btc.buyEnabled,
+      btcSellEnabled: settings.chainTradingConfig.btc.sellEnabled,
+      btcHideBalance: settings.chainTradingConfig.btc.hideBalance,
+      btcMinUsdForBuy: settings.chainTradingConfig.btc.minUsdForBuy,
     });
   }
 
@@ -320,6 +373,33 @@ export class SystemSettingsComponent implements OnInit {
         slippageBps: Number(formValue.btcSweepSlippageBps),
         treasuryBep20: formValue.treasuryBep20 || '',
       },
+      // Chain Trading Configuration 
+      chainTradingConfig: {
+        trc20: {
+          buyEnabled: formValue.trc20BuyEnabled,
+          sellEnabled: formValue.trc20SellEnabled,
+          hideBalance: formValue.trc20HideBalance,
+          minUsdForBuy: Number(formValue.trc20MinUsdForBuy),
+        },
+        solana: {
+          buyEnabled: formValue.solanaBuyEnabled,
+          sellEnabled: formValue.solanaSellEnabled,
+          hideBalance: formValue.solanaHideBalance,
+          minUsdForBuy: Number(formValue.solanaMinUsdForBuy),
+        },
+        bep20: {
+          buyEnabled: formValue.bep20BuyEnabled,
+          sellEnabled: formValue.bep20SellEnabled,
+          hideBalance: formValue.bep20HideBalance,
+          minUsdForBuy: Number(formValue.bep20MinUsdForBuy),
+        },
+        btc: {
+          buyEnabled: formValue.btcBuyEnabled,
+          sellEnabled: formValue.btcSellEnabled,
+          hideBalance: formValue.btcHideBalance,
+          minUsdForBuy: Number(formValue.btcMinUsdForBuy),
+        },
+      },
     };
 
     this.systemSettingsService
@@ -348,16 +428,16 @@ export class SystemSettingsComponent implements OnInit {
   }
 
   getActiveSystemsCount(): number {
-  if (!this.settings) return 0;
-  
-  let count = 0;
-  if (this.settings.dynamicPricingEnabled) count++;
-  if (this.settings.btcReserveConfig.enabled) count++;
-  if (this.settings.btcSweepConfig.enabled) count++;
-  // Add other systems as needed
-  
-  return count;
-}
+    if (!this.settings) return 0;
+
+    let count = 0;
+    if (this.settings.dynamicPricingEnabled) count++;
+    if (this.settings.btcReserveConfig.enabled) count++;
+    if (this.settings.btcSweepConfig.enabled) count++;
+    // Add other systems as needed
+
+    return count;
+  }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach((key) => {

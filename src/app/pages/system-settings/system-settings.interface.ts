@@ -160,7 +160,6 @@ export interface SystemSettings {
   cadExchangeRate: number;
   cadusd: number;
   
-  // New fields
   maxAddressAgeHours: number;
   minConsolidateUsd: number;
   minTrxDustNeeded: number;
@@ -172,6 +171,9 @@ export interface SystemSettings {
   btcBalances: BtcBalances;
   bep20Balances: Bep20Balances;
   solanaBalances: SolanaBalances;
+  
+  // Chain Trading Configuration
+  chainTradingConfig: ChainTradingConfigs;
   
   // P2P rates
   p2p: {
@@ -188,6 +190,20 @@ export interface SystemSettings {
   __v: number;
 }
 
+export interface ChainTradingConfig {
+  buyEnabled: boolean;
+  sellEnabled: boolean;
+  hideBalance: boolean;
+  minUsdForBuy: number;
+}
+
+export interface ChainTradingConfigs {
+  trc20: ChainTradingConfig;
+  solana: ChainTradingConfig;
+  bep20: ChainTradingConfig;
+  btc: ChainTradingConfig;
+}
+
 export interface UpdateSystemSettingsRequest {
   markupRate?: number;
   transactionFee?: number;
@@ -199,6 +215,7 @@ export interface UpdateSystemSettingsRequest {
   minTrxDustNeeded?: number;
   btcReserveConfig?: Partial<BtcReserveConfig>;
   btcSweepConfig?: Partial<BtcSweepConfig>;
+  chainTradingConfig?: Partial<ChainTradingConfigs>; 
 }
 export interface Trc20Balances {
   tokenInfo: {
