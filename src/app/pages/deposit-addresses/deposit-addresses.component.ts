@@ -22,6 +22,7 @@ interface DepositAddress {
   derivationPath?: string;
   status: 'FRESH' | 'ASSIGNED' | 'WARM' | 'LOCKED' | 'RETIRED';
   currentBalance: number;
+  consolidationStatus?: string;
   pendingConsolidation: boolean;
   trxDust?: number;
   minTrxDustNeeded?: number;

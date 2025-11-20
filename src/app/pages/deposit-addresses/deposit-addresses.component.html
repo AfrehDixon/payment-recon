@@ -254,8 +254,16 @@
           <!-- Consolidation Column -->
           <td class="px-4 py-4 text-sm">
             <div class="flex flex-col space-y-1">
-              <span [ngClass]="address.pendingConsolidation ? 'text-yellow-600 font-semibold' : 'text-gray-500'">
-                {{ address.pendingConsolidation ? '🔄 Pending' : '✅ Complete' }}
+              <span
+                [ngClass]="
+                  address.consolidationStatus?.toUpperCase() === 'CONSOLIDATED' ? 'text-green-600 font-semibold' :
+                  !address.pendingConsolidation ? 'text-yellow-600 font-semibold' : 'text-gray-500'
+                "
+              >
+                {{
+                  address.consolidationStatus?.toUpperCase() === 'CONSOLIDATED' ? '✅ Consolidated' :
+                  !address.pendingConsolidation ? '🔄 Pending' : '✅ Complete'
+                }}
               </span>
               <div class="text-xs">
                 Min: ${{ address.minConsolidateUsd }}
