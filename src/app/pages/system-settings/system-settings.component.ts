@@ -326,106 +326,119 @@ export class SystemSettingsComponent implements OnInit {
     }
   }
 
-  saveSettings(): void {
-    if (this.settingsForm.invalid) {
-      this.markFormGroupTouched(this.settingsForm);
-      this.error = 'Please fix validation errors before saving.';
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-    this.successMessage = null;
-
-    const formValue = this.settingsForm.value;
-
-    const updatedSettings: UpdateSystemSettingsRequest = {
-      markupRate: Number(formValue.markupRate),
-      transactionFee: Number(formValue.transactionFee),
-      minTransactionAmount: Number(formValue.minTransactionAmount),
-      maxTransactionAmount: Number(formValue.maxTransactionAmount),
-      dynamicPricingEnabled: formValue.dynamicPricingEnabled,
-      maxAddressAgeHours: Number(formValue.maxAddressAgeHours),
-      minConsolidateUsd: Number(formValue.minConsolidateUsd),
-      minTrxDustNeeded: Number(formValue.minTrxDustNeeded),
-      btcReserveConfig: {
-        enabled: formValue.btcReserveEnabled,
-        targetPct: Number(formValue.btcReserveTargetPct),
-        lowerPct: Number(formValue.btcReserveLowerPct),
-        upperPct: Number(formValue.btcReserveUpperPct),
-        maxDailyUsd: Number(formValue.btcReserveMaxDailyUsd),
-        maxTradeUsd: Number(formValue.btcReserveMaxTradeUsd),
-        minTradeUsd: Number(formValue.btcReserveMinTradeUsd),
-        slippageBps: Number(formValue.btcReserveSlippageBps),
-        cooldownSec: Number(formValue.btcReserveCooldownSec),
-        btcRecipient: formValue.btcRecipient || '',
-        bscRecipient: formValue.bscRecipient || '',
-        bscRouterAddr: formValue.bscRouterAddr || '',
-        bscVaultAddr: formValue.bscVaultAddr || '',
-        usdtTokenAddr: formValue.usdtTokenAddr || '',
-      },
-      btcSweepConfig: {
-        enabled: formValue.btcSweepEnabled,
-        maxSweepUsd: Number(formValue.btcSweepMaxSweepUsd),
-        minSweepUsd: Number(formValue.btcSweepMinSweepUsd),
-        reserveBtc: Number(formValue.btcSweepReserveBtc),
-        sweepPctOfAvail: Number(formValue.btcSweepPctOfAvail),
-        slippageBps: Number(formValue.btcSweepSlippageBps),
-        treasuryBep20: formValue.treasuryBep20 || '',
-      },
-      // Chain Trading Configuration 
-      chainTradingConfig: {
-        trc20: {
-          buyEnabled: formValue.trc20BuyEnabled,
-          sellEnabled: formValue.trc20SellEnabled,
-          hideBalance: formValue.trc20HideBalance,
-          minUsdForBuy: Number(formValue.trc20MinUsdForBuy),
-        },
-        solana: {
-          buyEnabled: formValue.solanaBuyEnabled,
-          sellEnabled: formValue.solanaSellEnabled,
-          hideBalance: formValue.solanaHideBalance,
-          minUsdForBuy: Number(formValue.solanaMinUsdForBuy),
-        },
-        bep20: {
-          buyEnabled: formValue.bep20BuyEnabled,
-          sellEnabled: formValue.bep20SellEnabled,
-          hideBalance: formValue.bep20HideBalance,
-          minUsdForBuy: Number(formValue.bep20MinUsdForBuy),
-        },
-        btc: {
-          buyEnabled: formValue.btcBuyEnabled,
-          sellEnabled: formValue.btcSellEnabled,
-          hideBalance: formValue.btcHideBalance,
-          minUsdForBuy: Number(formValue.btcMinUsdForBuy),
-        },
-      },
-    };
-
-    this.systemSettingsService
-      .updateSettings(updatedSettings)
-      .pipe(
-        catchError((error) => {
-          this.error = 'Failed to update settings. Please try again later.';
-          return of({ success: false, message: error.message, data: null });
-        }),
-        finalize(() => {
-          this.loading = false;
-        })
-      )
-      .subscribe((response) => {
-        if (response.success && response.data) {
-          this.settings = response.data;
-          this.isEditing = false;
-          this.successMessage = 'Settings updated successfully!';
-          setTimeout(() => {
-            this.successMessage = null;
-          }, 5000);
-        } else {
-          this.error = response.message || 'Failed to update settings';
-        }
-      });
+saveSettings(): void {
+  if (this.settingsForm.invalid) {
+    this.markFormGroupTouched(this.settingsForm);
+    this.error = 'Please fix validation errors before saving.';
+    return;
   }
+
+  this.loading = true;
+  this.error = null;
+  this.successMessage = null;
+
+  const formValue = this.settingsForm.value;
+
+  // Build the update payload matching the backend schema
+  const updatedSettings: any = {
+    // Global pricing knobs
+    markupRate: Number(formValue.markupRate),
+    transactionFee: Number(formValue.transactionFee),
+    minTransactionAmount: Number(formValue.minTransactionAmount),
+    maxTransactionAmount: Number(formValue.maxTransactionAmount),
+    dynamicPricingEnabled: formValue.dynamicPricingEnabled,
+    
+    // Global consolidation knobs
+    maxAddressAgeHours: Number(formValue.maxAddressAgeHours),
+    minConsolidateUsd: Number(formValue.minConsolidateUsd),
+    minTrxDustNeeded: Number(formValue.minTrxDustNeeded),
+    
+    // BTC Reserve Config
+    btcReserveConfig: {
+      enabled: formValue.btcReserveEnabled,
+      targetPct: Number(formValue.btcReserveTargetPct),
+      lowerPct: Number(formValue.btcReserveLowerPct),
+      upperPct: Number(formValue.btcReserveUpperPct),
+      maxDailyUsd: Number(formValue.btcReserveMaxDailyUsd),
+      maxTradeUsd: Number(formValue.btcReserveMaxTradeUsd),
+      minTradeUsd: Number(formValue.btcReserveMinTradeUsd),
+      slippageBps: Number(formValue.btcReserveSlippageBps),
+      cooldownSec: Number(formValue.btcReserveCooldownSec),
+      btcRecipient: formValue.btcRecipient || '',
+      bscRecipient: formValue.bscRecipient || '',
+      bscRouterAddr: formValue.bscRouterAddr || '',
+      bscVaultAddr: formValue.bscVaultAddr || '',
+      usdtTokenAddr: formValue.usdtTokenAddr || ''
+    },
+    
+    // BTC Sweep Config
+    btcSweepConfig: {
+      enabled: formValue.btcSweepEnabled,
+      maxSweepUsd: Number(formValue.btcSweepMaxSweepUsd),
+      minSweepUsd: Number(formValue.btcSweepMinSweepUsd),
+      reserveBtc: Number(formValue.btcSweepReserveBtc),
+      sweepPctOfAvail: Number(formValue.btcSweepPctOfAvail),
+      slippageBps: Number(formValue.btcSweepSlippageBps),
+      // treasuryBep20: formValue.treasuryBep20 || ''
+    },
+    
+    // Chain Trading Configuration - CRITICAL FIX
+    chainTradingConfig: {
+      trc20: {
+        buyEnabled: formValue.trc20BuyEnabled,
+        sellEnabled: formValue.trc20SellEnabled,
+        hideBalance: formValue.trc20HideBalance,
+        minUsdForBuy: Number(formValue.trc20MinUsdForBuy)
+      },
+      solana: {
+        buyEnabled: formValue.solanaBuyEnabled,
+        sellEnabled: formValue.solanaSellEnabled,
+        hideBalance: formValue.solanaHideBalance,
+        minUsdForBuy: Number(formValue.solanaMinUsdForBuy)
+      },
+      bep20: {
+        buyEnabled: formValue.bep20BuyEnabled,
+        sellEnabled: formValue.bep20SellEnabled,
+        hideBalance: formValue.bep20HideBalance,
+        minUsdForBuy: Number(formValue.bep20MinUsdForBuy)
+      },
+      btc: {
+        buyEnabled: formValue.btcBuyEnabled,
+        sellEnabled: formValue.btcSellEnabled,
+        hideBalance: formValue.btcHideBalance,
+        minUsdForBuy: Number(formValue.btcMinUsdForBuy)
+      }
+    }
+  };
+
+  console.log('Sending update payload:', updatedSettings); // Debug log
+
+  this.systemSettingsService
+    .updateSettings(updatedSettings)
+    .pipe(
+      catchError((error) => {
+        console.error('Update error:', error); // Debug log
+        this.error = error.error?.message || 'Failed to update settings. Please try again later.';
+        return of({ success: false, message: error.message, data: null });
+      }),
+      finalize(() => {
+        this.loading = false;
+      })
+    )
+    .subscribe((response) => {
+      console.log('Update response:', response); // Debug log
+      if (response.success && response.data) {
+        this.settings = response.data;
+        this.isEditing = false;
+        this.successMessage = 'Settings updated successfully!';
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 5000);
+      } else {
+        this.error = response.message || 'Failed to update settings';
+      }
+    });
+}
 
   getActiveSystemsCount(): number {
     if (!this.settings) return 0;

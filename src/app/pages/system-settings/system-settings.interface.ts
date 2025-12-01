@@ -205,17 +205,74 @@ export interface ChainTradingConfigs {
 }
 
 export interface UpdateSystemSettingsRequest {
+  // Global pricing knobs
   markupRate?: number;
   transactionFee?: number;
   minTransactionAmount?: number;
   maxTransactionAmount?: number;
   dynamicPricingEnabled?: boolean;
+  
+  // Global consolidation knobs
   maxAddressAgeHours?: number;
   minConsolidateUsd?: number;
   minTrxDustNeeded?: number;
-  btcReserveConfig?: Partial<BtcReserveConfig>;
-  btcSweepConfig?: Partial<BtcSweepConfig>;
-  chainTradingConfig?: Partial<ChainTradingConfigs>; 
+  
+  // BTC Reserve Config
+  btcReserveConfig?: {
+    enabled?: boolean;
+    targetPct?: number;
+    lowerPct?: number;
+    upperPct?: number;
+    maxDailyUsd?: number;
+    maxTradeUsd?: number;
+    minTradeUsd?: number;
+    slippageBps?: number;
+    cooldownSec?: number;
+    btcRecipient?: string;
+    bscRecipient?: string;
+    bscRouterAddr?: string;
+    bscVaultAddr?: string;
+    usdtTokenAddr?: string;
+  };
+  
+  // BTC Sweep Config
+  btcSweepConfig?: {
+    enabled?: boolean;
+    maxSweepUsd?: number;
+    minSweepUsd?: number;
+    reserveBtc?: number;
+    sweepPctOfAvail?: number;
+    slippageBps?: number;
+    treasuryBep20?: string;
+  };
+  
+  // Chain Trading Config
+  chainTradingConfig?: {
+    trc20?: {
+      buyEnabled?: boolean;
+      sellEnabled?: boolean;
+      hideBalance?: boolean;
+      minUsdForBuy?: number;
+    };
+    solana?: {
+      buyEnabled?: boolean;
+      sellEnabled?: boolean;
+      hideBalance?: boolean;
+      minUsdForBuy?: number;
+    };
+    bep20?: {
+      buyEnabled?: boolean;
+      sellEnabled?: boolean;
+      hideBalance?: boolean;
+      minUsdForBuy?: number;
+    };
+    btc?: {
+      buyEnabled?: boolean;
+      sellEnabled?: boolean;
+      hideBalance?: boolean;
+      minUsdForBuy?: number;
+    };
+  };
 }
 export interface Trc20Balances {
   tokenInfo: {
