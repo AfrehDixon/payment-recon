@@ -7,6 +7,7 @@ import { AuthState } from '../../state/apps/app.states';
 import * as XLSX from 'xlsx';
 import { TransactionModalComponent } from '../../components/transactoin.modal';
 import { ApiTransaction } from '../../types';
+import { ErrorStateMatcher } from '@angular/material/core';
 
 interface SearchFilters {
   phone: string;
@@ -84,6 +85,10 @@ interface Transaction {
   transaction?: {
     PartnerTransId: string;
   };
+  reason?: string;
+  transactionErrors: {
+    message: string;
+  }
 }
 
 // Updated interface to handle both old and new API response formats
@@ -1074,6 +1079,8 @@ export class ReportsComponent implements OnInit {
         'External Transaction ID': tx.externalTransactionId,
         Profit: tx.profitEarned,
         Reference: tx.transactionRef,
+        'Transaction Errors': tx.transactionErrors?.message,
+        Reason: tx.reason,
         Description: tx.description,
       }))
     );
