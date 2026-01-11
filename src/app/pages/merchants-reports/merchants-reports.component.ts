@@ -85,10 +85,15 @@ interface Transaction {
   transaction?: {
     PartnerTransId: string;
   };
+  payload?: {
+    account_number: string;
+    account_name: string;
+    externalTransactionId: string;
+  };
   reason?: string;
   transactionErrors: {
     message: string;
-  }
+  };
 }
 
 // Updated interface to handle both old and new API response formats
@@ -1076,7 +1081,9 @@ export class ReportsComponent implements OnInit {
         Type: tx.transaction_type,
         Status: tx.status,
         Operator: tx.operator || tx.creditOperator,
-        'External Transaction ID': tx.externalTransactionId,
+        'External Transaction ID': tx.payload?.externalTransactionId,
+        'Account Name': tx.payload?.account_name,
+        'Account Number': tx.payload?.account_number,
         Profit: tx.profitEarned,
         Reference: tx.transactionRef,
         'Transaction Errors': tx.transactionErrors?.message,
