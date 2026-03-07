@@ -1,3 +1,4 @@
+// merchant-wallets.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -38,6 +39,15 @@ interface MerchantWallet {
   active: boolean;
 }
 
+interface BalanceActionRequest {
+  merchantId: string;
+  walletId: string;
+  amount: number;
+  reason?: string;
+  transactionId?: string;
+  externalTransactionId?: string;
+}
+
 @Component({
   selector: 'app-merchant-wallets',
   standalone: true,
@@ -50,13 +60,37 @@ export class MerchantWalletsComponent implements OnInit {
   merchants: Merchant[] = [];
   loading = false;
   error: string | null = null;
+  successMessage: string | null = null;
+  
+  // Forms
   addWalletForm: FormGroup;
   updateWalletForm: FormGroup;
+  blockBalanceForm: FormGroup;
+  unblockBalanceForm: FormGroup;
+  consumeBlockedForm: FormGroup;
+  
+  // Modal states
   showAddWalletModal = false;
   showUpdateWalletModal = false;
+  showBlockBalanceModal = false;
+  showUnblockBalanceModal = false;
+  showConsumeBlockedModal = false;
+  
   selectedWallet: MerchantWallet | null = null;
   searchTerm: string = '';
   filteredWallets: MerchantWallet[] = [];
+
+  // Action types for dropdown
+  actionReasons = [
+    'Manual block request',
+    'Security hold',
+    'Dispute resolution',
+    'Fraud prevention',
+    'Regulatory compliance',
+    'Internal transfer',
+    'Settlement pending',
+    'Other'
+  ];
 
   constructor(
     private http: HttpClient,
@@ -70,16 +104,35 @@ export class MerchantWalletsComponent implements OnInit {
     });
 
     this.updateWalletForm = this.fb.group({
-        accountType: ['', Validators.required],
-        walletType: ['', Validators.required],
-        currency: ['', Validators.required],
-        // balance: [0, [Validators.required, Validators.min(0)]],
-        blockedBalance: [0, [Validators.required, Validators.min(0)]],
-        confirmedBalance: [0, [Validators.required, Validators.min(0)]],
-        availableBalance: [0, [Validators.required, Validators.min(0)]],
-        active: [true, Validators.required],
-        unConfirmedBalance: [0, [Validators.required, Validators.min(0)]]
-      });
+      accountType: ['', Validators.required],
+      walletType: ['', Validators.required],
+      currency: ['', Validators.required],
+      blockedBalance: [0, [Validators.required, Validators.min(0)]],
+      confirmedBalance: [0, [Validators.required, Validators.min(0)]],
+      availableBalance: [0, [Validators.required, Validators.min(0)]],
+      active: [true, Validators.required],
+      unConfirmedBalance: [0, [Validators.required, Validators.min(0)]]
+    });
+
+    this.blockBalanceForm = this.fb.group({
+      amount: ['', [Validators.required, Validators.min(0.01)]],
+      reason: ['Manual block request', Validators.required],
+      transactionId: [''],
+      externalTransactionId: ['']
+    });
+
+    this.unblockBalanceForm = this.fb.group({
+      amount: ['', [Validators.required, Validators.min(0.01)]],
+      reason: ['Manual unblock request', Validators.required],
+      transactionId: [''],
+      externalTransactionId: ['']
+    });
+
+    this.consumeBlockedForm = this.fb.group({
+      amount: ['', [Validators.required, Validators.min(0.01)]],
+      reason: ['Blocked funds consumed', Validators.required],
+      externalTransactionId: ['']
+    });
   }
 
   ngOnInit(): void {
@@ -93,24 +146,22 @@ export class MerchantWalletsComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.merchants = response.data;
-          } else {
-            this.error = 'Failed to load merchants';
           }
         },
         error: (error) => {
-          this.error = 'An error occurred while loading merchants';
+          console.error('Error loading merchants:', error);
         }
       });
   }
 
- loadWallets(): void {
+  loadWallets(): void {
     this.loading = true;
     this.http.get<any>(`${BASE_URL}/accounts/get`)
       .subscribe({
         next: (response) => {
           if (response.success) {
             this.wallets = response.data;
-            this.filteredWallets = this.wallets; // Initialize filtered wallets
+            this.filteredWallets = this.wallets;
           } else {
             this.error = 'Failed to load wallets';
           }
@@ -147,6 +198,7 @@ export class MerchantWalletsComponent implements OnInit {
     });
   }
 
+  // Modal open/close methods
   openAddWalletModal(): void {
     this.showAddWalletModal = true;
   }
@@ -166,7 +218,6 @@ export class MerchantWalletsComponent implements OnInit {
       accountType: wallet.accountType,
       walletType: wallet.walletType,
       currency: wallet.currency,
-    //   balance: wallet.balance,
       blockedBalance: wallet.blockedBalance,
       confirmedBalance: wallet.confirmedBalance,
       availableBalance: wallet.availableBalance,
@@ -182,6 +233,54 @@ export class MerchantWalletsComponent implements OnInit {
     this.updateWalletForm.reset();
   }
 
+  openBlockBalanceModal(wallet: MerchantWallet): void {
+    this.selectedWallet = wallet;
+    this.blockBalanceForm.reset({
+      reason: 'Manual block request',
+      transactionId: '',
+      externalTransactionId: ''
+    });
+    this.showBlockBalanceModal = true;
+  }
+
+  closeBlockBalanceModal(): void {
+    this.showBlockBalanceModal = false;
+    this.selectedWallet = null;
+    this.blockBalanceForm.reset();
+  }
+
+  openUnblockBalanceModal(wallet: MerchantWallet): void {
+    this.selectedWallet = wallet;
+    this.unblockBalanceForm.reset({
+      reason: 'Manual unblock request',
+      transactionId: '',
+      externalTransactionId: ''
+    });
+    this.showUnblockBalanceModal = true;
+  }
+
+  closeUnblockBalanceModal(): void {
+    this.showUnblockBalanceModal = false;
+    this.selectedWallet = null;
+    this.unblockBalanceForm.reset();
+  }
+
+  openConsumeBlockedModal(wallet: MerchantWallet): void {
+    this.selectedWallet = wallet;
+    this.consumeBlockedForm.reset({
+      reason: 'Blocked funds consumed',
+      externalTransactionId: ''
+    });
+    this.showConsumeBlockedModal = true;
+  }
+
+  closeConsumeBlockedModal(): void {
+    this.showConsumeBlockedModal = false;
+    this.selectedWallet = null;
+    this.consumeBlockedForm.reset();
+  }
+
+  // Form submission methods
   submitAddWallet(): void {
     if (this.addWalletForm.valid) {
       this.loading = true;
@@ -191,6 +290,7 @@ export class MerchantWalletsComponent implements OnInit {
             if (response.success) {
               this.loadWallets();
               this.closeAddWalletModal();
+              this.showSuccess('Wallet added successfully');
             } else {
               this.error = response.message || 'Failed to add wallet';
             }
@@ -219,6 +319,7 @@ export class MerchantWalletsComponent implements OnInit {
             if (response.success) {
               this.loadWallets();
               this.closeUpdateWalletModal();
+              this.showSuccess('Wallet updated successfully');
             } else {
               this.error = response.message || 'Failed to update wallet';
             }
@@ -230,6 +331,112 @@ export class MerchantWalletsComponent implements OnInit {
           }
         });
     }
+  }
+
+  submitBlockBalance(): void {
+    if (this.blockBalanceForm.valid && this.selectedWallet && this.selectedWallet.merchantId) {
+      this.loading = true;
+      
+      const request: BalanceActionRequest = {
+        merchantId: this.selectedWallet.merchantId._id,
+        walletId: this.selectedWallet.walletId,
+        amount: Number(this.blockBalanceForm.value.amount),
+        reason: this.blockBalanceForm.value.reason,
+        transactionId: this.blockBalanceForm.value.transactionId || undefined,
+        externalTransactionId: this.blockBalanceForm.value.externalTransactionId || undefined
+      };
+
+      this.http.put(`${BASE_URL}/accounts/balance/block`, request)
+        .subscribe({
+          next: (response: any) => {
+            if (response.success) {
+              this.loadWallets();
+              this.closeBlockBalanceModal();
+              this.showSuccess('Balance blocked successfully');
+            } else {
+              this.error = response.message || 'Failed to block balance';
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            this.error = error.error?.message || 'An error occurred while blocking balance';
+            this.loading = false;
+          }
+        });
+    }
+  }
+
+  submitUnblockBalance(): void {
+    if (this.unblockBalanceForm.valid && this.selectedWallet && this.selectedWallet.merchantId) {
+      this.loading = true;
+      
+      const request: BalanceActionRequest = {
+        merchantId: this.selectedWallet.merchantId._id,
+        walletId: this.selectedWallet.walletId,
+        amount: Number(this.unblockBalanceForm.value.amount),
+        reason: this.unblockBalanceForm.value.reason,
+        transactionId: this.unblockBalanceForm.value.transactionId || undefined,
+        externalTransactionId: this.unblockBalanceForm.value.externalTransactionId || undefined
+      };
+
+      this.http.put(`${BASE_URL}/accounts/balance/unblock`, request)
+        .subscribe({
+          next: (response: any) => {
+            if (response.success) {
+              this.loadWallets();
+              this.closeUnblockBalanceModal();
+              this.showSuccess('Balance unblocked successfully');
+            } else {
+              this.error = response.message || 'Failed to unblock balance';
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            this.error = error.error?.message || 'An error occurred while unblocking balance';
+            this.loading = false;
+          }
+        });
+    }
+  }
+
+  submitConsumeBlocked(): void {
+    if (this.consumeBlockedForm.valid && this.selectedWallet && this.selectedWallet.merchantId) {
+      this.loading = true;
+      
+      const request = {
+        merchantId: this.selectedWallet.merchantId._id,
+        walletId: this.selectedWallet.walletId,
+        amount: Number(this.consumeBlockedForm.value.amount),
+        reason: this.consumeBlockedForm.value.reason,
+        externalTransactionId: this.consumeBlockedForm.value.externalTransactionId || undefined
+      };
+
+      this.http.put(`${BASE_URL}/accounts/balance/consume-blocked`, request)
+        .subscribe({
+          next: (response: any) => {
+            if (response.success) {
+              this.loadWallets();
+              this.closeConsumeBlockedModal();
+              this.showSuccess('Blocked funds consumed successfully');
+            } else {
+              this.error = response.message || 'Failed to consume blocked funds';
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            this.error = error.error?.message || 'An error occurred while consuming blocked funds';
+            this.loading = false;
+          }
+        });
+    }
+  }
+
+  // Helper methods
+  showSuccess(message: string): void {
+    this.successMessage = message;
+    setTimeout(() => {
+      this.successMessage = null;
+    }, 3000);
   }
 
   formatAccountNumber(accountNumber: string): string {
@@ -254,5 +461,17 @@ export class MerchantWalletsComponent implements OnInit {
 
   getMerchantEmail(wallet: MerchantWallet): string {
     return wallet.merchantId?.email || 'No email provided';
+  }
+
+  canBlockBalance(wallet: MerchantWallet): boolean {
+    return wallet.availableBalance > 0 && wallet.merchantId !== null;
+  }
+
+  canUnblockBalance(wallet: MerchantWallet): boolean {
+    return wallet.blockedBalance > 0 && wallet.merchantId !== null;
+  }
+
+  canConsumeBlocked(wallet: MerchantWallet): boolean {
+    return wallet.blockedBalance > 0 && wallet.merchantId !== null;
   }
 }

@@ -1,0 +1,184 @@
+// wallet-addresses.component.scss
+.wallet-container {
+  padding: 24px;
+  margin-left: 200px;
+  
+  // Table styles
+  .table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  // Status badges
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    
+    &.badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    &.badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    &.badge-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    &.badge-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+  }
+
+  // Filter section
+  .filters-section {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      
+      .filter-item {
+        flex: 1;
+        min-width: 200px;
+      }
+    }
+    
+    .filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+  }
+
+  // Summary cards
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+    
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      
+      .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          font-size: 24px;
+        }
+      }
+      
+      .card-content {
+        flex: 1;
+        
+        .card-label {
+          color: #6c757d;
+          font-size: 14px;
+        }
+        
+        .card-value {
+          font-size: 24px;
+          font-weight: 600;
+          color: #212529;
+        }
+      }
+    }
+  }
+}
+
+// Modal styles
+:host ::ng-deep .dialog {
+  .detail-section {
+    margin-bottom: 20px;
+    
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #495057;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 8px;
+    }
+    
+    .detail-row {
+      display: flex;
+      padding: 8px 0;
+      border-bottom: 1px solid #f8f9fa;
+      
+      .detail-label {
+        width: 150px;
+        color: #6c757d;
+        font-size: 14px;
+      }
+      
+      .detail-value {
+        flex: 1;
+        font-weight: 500;
+        color: #212529;
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .status-flags-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    
+    .flag-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+      
+      i {
+        width: 20px;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .wallet-container {
+    padding: 16px;
+    margin-left: 0;
+    
+    .filters-section {
+      .filter-row {
+        flex-direction: column;
+        
+        .filter-item {
+          width: 100%;
+        }
+      }
+    }
+    
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

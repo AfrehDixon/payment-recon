@@ -1,0 +1,735 @@
+<!-- wallet-addresses.component.html -->
+<div class="p-6 wallet-container">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Wallet Addresses</h1>
+  </div>
+
+  <!-- Summary Cards - First Row -->
+  <div *ngIf="!loadingSummary && summary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Total Addresses -->
+    <div class="bg-white rounded-lg border-md p-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+          <i class="fas fa-wallet text-blue-600"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Total Addresses</p>
+          <p class="text-2xl font-semibold text-gray-900">{{summary.totals.total}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Balance -->
+    <div class="bg-white rounded-lg border-md p-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+          <i class="fas fa-coins text-green-600"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Total Balance</p>
+          <p class="text-2xl font-semibold text-gray-900">${{summary.totals.totalBalance?.toFixed(2)}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Addresses -->
+    <div class="bg-white rounded-lg border-md p-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
+          <i class="fas fa-check-circle text-purple-600"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Active Addresses</p>
+          <p class="text-2xl font-semibold text-gray-900">{{summary.totals.active}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leased Addresses -->
+    <div class="bg-white rounded-lg border-md p-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-orange-100 rounded-lg p-3">
+          <i class="fas fa-clock text-orange-600"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Leased Addresses</p>
+          <p class="text-2xl font-semibold text-gray-900">{{summary.totals.leased}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards - Second Row -->
+  <div *ngIf="!loadingSummary && summary" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <!-- Open Transactions -->
+    <div class="bg-white rounded-lg border-md p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Open Transactions</span>
+        <span class="text-lg font-semibold text-blue-600">{{summary.totals.openTxn}}</span>
+      </div>
+    </div>
+
+    <!-- Pending Consolidation -->
+    <div class="bg-white rounded-lg border-md p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Pending Consolidation</span>
+        <span class="text-lg font-semibold text-yellow-600">{{summary.totals.pendingConsolidation}}</span>
+      </div>
+    </div>
+
+    <!-- Sweep Locked -->
+    <div class="bg-white rounded-lg border-md p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Sweep Locked</span>
+        <span class="text-lg font-semibold text-orange-600">{{summary.totals.sweepLocked}}</span>
+      </div>
+    </div>
+
+    <!-- Lease Expired -->
+    <div class="bg-white rounded-lg border-md p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Lease Expired</span>
+        <span class="text-lg font-semibold text-red-600">{{summary.totals.leaseExpired}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Network Distribution -->
+  <div *ngIf="!loadingSummary && summary" class="bg-white rounded-lg border-md mb-6 p-4">
+    <h3 class="text-sm font-medium text-gray-700 mb-3">Network Distribution</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div *ngFor="let network of summary.byNetwork" class="flex items-center justify-between p-2 bg-gray-50 rounded">
+        <span class="text-sm text-gray-600">{{network.network || 'Unknown'}}</span>
+        <span class="text-sm font-semibold">{{network.total}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-lg border-md mb-6 p-4">
+    <form [formGroup]="filterForm" class="space-y-4">
+      <!-- Search and Sort Row -->
+      <div class="flex space-x-4">
+        <div class="flex-1">
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            <input
+              type="text"
+              formControlName="q"
+              placeholder="Search by address..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+        <div class="w-64">
+          <select
+            formControlName="sort"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option *ngFor="let option of sortOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </div>
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Filter Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <!-- Network Filter -->
+        <select
+          formControlName="network"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Networks</option>
+          <option *ngFor="let network of networks" [value]="network">
+            {{network}}
+          </option>
+        </select>
+
+        <!-- Asset Filter -->
+        <select
+          formControlName="asset"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Assets</option>
+          <option *ngFor="let asset of assets" [value]="asset">
+            {{asset}}
+          </option>
+        </select>
+
+        <!-- State Filter -->
+        <select
+          formControlName="state"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All States</option>
+          <option *ngFor="let state of addressStates" [value]="state">
+            {{state}}
+          </option>
+        </select>
+
+        <!-- Lease Kind Filter -->
+        <select
+          formControlName="leaseKind"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Lease Types</option>
+          <option *ngFor="let kind of leaseKinds" [value]="kind">
+            {{kind}}
+          </option>
+        </select>
+
+        <!-- Active Filter -->
+        <select
+          formControlName="isActive"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Status</option>
+          <option [value]="true">Active</option>
+          <option [value]="false">Inactive</option>
+        </select>
+      </div>
+
+      <!-- Second Filter Row -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Has Tokens -->
+        <select
+          formControlName="hasTokens"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Token Status</option>
+          <option [value]="true">Has Tokens</option>
+          <option [value]="false">No Tokens</option>
+        </select>
+
+        <!-- Pending Consolidation -->
+        <select
+          formControlName="pendingConsolidation"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Consolidation</option>
+          <option [value]="true">Pending</option>
+          <option [value]="false">Not Pending</option>
+        </select>
+
+        <!-- Sweep Locked -->
+        <select
+          formControlName="isSweepLocked"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Sweep Status</option>
+          <option [value]="true">Sweep Locked</option>
+          <option [value]="false">Not Locked</option>
+        </select>
+
+        <!-- Leased -->
+        <select
+          formControlName="leased"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Lease Status</option>
+          <option [value]="true">Leased</option>
+          <option [value]="false">Not Leased</option>
+        </select>
+      </div>
+
+      <!-- Balance Range -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <input
+            type="number"
+            formControlName="minBalance"
+            placeholder="Min Balance"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <input
+            type="number"
+            formControlName="maxBalance"
+            placeholder="Max Balance"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="flex justify-center items-center h-40">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="bg-white rounded-lg border-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Address
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Network/Asset
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Balance
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              State
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Lease
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Last Transaction
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let address of filteredAddresses" class="hover:bg-gray-50">
+            <td class="px-6 py-4">
+              <div class="text-sm font-mono text-gray-900 truncate max-w-xs">
+                {{address.address}}
+              </div>
+              <div class="text-xs text-gray-500">
+                Index: {{address.index}}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <i [class]="getNetworkIcon(address.network) + ' text-gray-500 mr-2'"></i>
+                <span class="text-sm font-medium text-gray-900">{{address.network || 'N/A'}}</span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{address.asset || 'N/A'}}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">
+                ${{address.currentBalance?.toFixed(2) || '0'}}
+              </div>
+              <div class="text-xs text-gray-500">
+                Received: ${{address.totalReceived?.toFixed(2) || '0'}}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + getStateClass(address.state)">
+                {{address.state || 'N/A'}}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span *ngIf="address.lease?.kind && address.lease.kind !== 'NONE'" 
+                    [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + getLeaseBadgeClass(address.lease.kind)">
+                {{address.lease.kind}}
+              </span>
+              <span *ngIf="!address.lease?.kind || address.lease.kind === 'NONE'" class="text-gray-400 text-xs">
+                None
+              </span>
+              <div *ngIf="address.lease?.expiresAt" class="text-xs text-gray-500 mt-1">
+                Exp: {{formatDate(address.lease.expiresAt)}}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-col space-y-1">
+                <span *ngIf="address.isActive === false" class="text-xs text-red-600">
+                  <i class="fas fa-times-circle mr-1"></i>Inactive
+                </span>
+                <span *ngIf="address.isActive === true" class="text-xs text-green-600">
+                  <i class="fas fa-check mr-1"></i>Active
+                </span>
+                <span *ngIf="address.addressLocked" class="text-xs text-red-600">
+                  <i class="fas fa-lock mr-1"></i>Locked
+                </span>
+                <span *ngIf="address.isSweepLocked" class="text-xs text-orange-600">
+                  <i class="fas fa-ban mr-1"></i>Sweep Locked
+                </span>
+                <span *ngIf="address.pendingConsolidation" class="text-xs text-yellow-600">
+                  <i class="fas fa-sync-alt mr-1"></i>Pending Consolidation
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <div>{{formatDate(address.lastTransactionAt)}}</div>
+              <div class="text-xs text-gray-400">
+                Reuses: {{address.reuseCount || 0}}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="viewAddressDetails(address)"
+                class="text-blue-600 hover:text-blue-900"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+      <!-- Mobile pagination -->
+      <div class="flex-1 flex justify-between sm:hidden">
+        <button
+          (click)="previousPage()"
+          [disabled]="currentPage === 1"
+          class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          [class.opacity-50]="currentPage === 1"
+        >
+          Previous
+        </button>
+        <button
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages"
+          class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          [class.opacity-50]="currentPage === totalPages"
+        >
+          Next
+        </button>
+      </div>
+
+      <!-- Desktop pagination -->
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div class="flex items-center">
+          <p class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+            to
+            <span class="font-medium">
+              {{ Math.min(currentPage * pageSize, totalItems) }}
+            </span>
+            of
+            <span class="font-medium">{{ totalItems }}</span>
+            results
+          </p>
+          
+          <!-- Page size selector -->
+          <select 
+            (change)="changePageSize($any($event.target).value)"
+            class="ml-4 px-2 py-1 border border-gray-300 rounded-md text-sm"
+          >
+            <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+              {{size}} per page
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <!-- Previous button -->
+            <button
+              (click)="previousPage()"
+              [disabled]="currentPage === 1"
+              class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              [class.opacity-50]="currentPage === 1"
+            >
+              <span class="sr-only">Previous</span>
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <!-- Page numbers -->
+            <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+              <button
+                *ngIf="i + 1 <= 3 || i + 1 >= totalPages - 2 || Math.abs(i + 1 - currentPage) <= 1"
+                (click)="goToPage(i + 1)"
+                [class]="i + 1 === currentPage
+                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium'
+                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium'"
+              >
+                {{ i + 1 }}
+              </button>
+            </ng-container>
+
+            <!-- Next button -->
+            <button
+              (click)="nextPage()"
+              [disabled]="currentPage === totalPages"
+              class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              [class.opacity-50]="currentPage === totalPages"
+            >
+              <span class="sr-only">Next</span>
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Address Details Modal -->
+  <div *ngIf="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="dialog bg-white rounded-lg border-md max-w-4xl w-full max-h-[90vh] overflow-auto">
+      <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-xl font-semibold text-gray-800">Address Details</h2>
+        <button (click)="closeDetailsModal()" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6" *ngIf="selectedAddress">
+        <!-- Address Header -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-600">Address</div>
+              <div class="font-mono text-lg break-all">{{selectedAddress.address}}</div>
+            </div>
+            <div class="flex space-x-2">
+              <span [class]="'px-3 py-1 rounded-full text-sm font-semibold ' + getStateClass(selectedAddress.state)">
+                {{selectedAddress.state || 'N/A'}}
+              </span>
+              <span *ngIf="selectedAddress.isActive === false" class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                Inactive
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Network Info -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3">Network Information</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Network:</span>
+                <span class="font-medium">{{selectedAddress.network || 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Asset:</span>
+                <span class="font-medium">{{selectedAddress.asset || 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Token Contract:</span>
+                <span class="font-mono text-sm break-all">{{selectedAddress.tokenContract || 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Index:</span>
+                <span class="font-medium">{{selectedAddress.index}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Derivation Path:</span>
+                <span class="font-mono text-sm">{{selectedAddress.derivationPath || 'N/A'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balance Info -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3">Balance Information</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Current Balance:</span>
+                <span class="font-medium text-green-600">${{selectedAddress.currentBalance?.toFixed(2) || '0'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Total Received:</span>
+                <span class="font-medium">${{selectedAddress.totalReceived?.toFixed(2) || '0'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Native Balance:</span>
+                <span class="font-medium">{{selectedAddress.nativeBalance || 0}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Native Dust:</span>
+                <span class="font-medium">{{selectedAddress.nativeDust || 0}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Has Tokens:</span>
+                <span class="font-medium">{{selectedAddress.hasTokens ? 'Yes' : 'No'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lease Info -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3">Lease Information</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Kind:</span>
+                <span [class]="'px-2 py-1 rounded-full text-xs font-semibold ' + getLeaseBadgeClass(selectedAddress.lease?.kind)">
+                  {{selectedAddress.lease?.kind || 'NONE'}}
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Reference ID:</span>
+                <span class="font-mono text-sm">{{selectedAddress.lease?.refId || 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Reference Code:</span>
+                <span class="font-mono text-sm">{{selectedAddress.lease?.refCode || 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Lease Amount:</span>
+                <span class="font-medium">${{selectedAddress.lease?.amount || 0}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Leased At:</span>
+                <span class="text-sm">{{selectedAddress.lease?.leasedAt ? formatDate(selectedAddress.lease.leasedAt) : 'N/A'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Expires At:</span>
+                <span class="text-sm">{{selectedAddress.lease?.expiresAt ? formatDate(selectedAddress.lease.expiresAt) : 'N/A'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sweep Policy -->
+          <div class="border rounded-lg p-4" *ngIf="selectedAddress.sweepPolicy">
+            <h3 class="font-medium text-gray-900 mb-3">Sweep Policy</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Mode:</span>
+                <span class="font-medium">{{selectedAddress.sweepPolicy.mode}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Destination:</span>
+                <span class="font-medium">{{selectedAddress.sweepPolicy.destination}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Min Threshold:</span>
+                <span class="font-medium">${{selectedAddress.sweepPolicy.minUsdThreshold || 0}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Window Hours:</span>
+                <span class="font-medium">{{selectedAddress.sweepPolicy.windowHours || 0}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Sweep While Leased:</span>
+                <span class="font-medium">{{selectedAddress.sweepPolicy.sweepWhileLeased ? 'Yes' : 'No'}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Keep Alive After Sweep:</span>
+                <span class="font-medium">{{selectedAddress.sweepPolicy.keepAliveAfterSweep ? 'Yes' : 'No'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timestamps -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3">Timestamps</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Created At:</span>
+                <span class="text-sm">{{formatDate(selectedAddress.createdAt)}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Updated At:</span>
+                <span class="text-sm">{{formatDate(selectedAddress.updatedAt)}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">First Transaction:</span>
+                <span class="text-sm">{{formatDate(selectedAddress.firstTransactionAt)}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Last Transaction:</span>
+                <span class="text-sm">{{formatDate(selectedAddress.lastTransactionAt)}}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Last Balance Update:</span>
+                <span class="text-sm">{{formatDate(selectedAddress.lastBalanceUpdate)}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Flags -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3">Status Flags</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex items-center">
+                <i [class]="selectedAddress.addressLocked ? 'fas fa-check-circle text-red-500' : 'fas fa-times-circle text-gray-300'"></i>
+                <span class="ml-2 text-sm">Address Locked</span>
+              </div>
+              <div class="flex items-center">
+                <i [class]="selectedAddress.isSweepLocked ? 'fas fa-check-circle text-orange-500' : 'fas fa-times-circle text-gray-300'"></i>
+                <span class="ml-2 text-sm">Sweep Locked</span>
+              </div>
+              <div class="flex items-center">
+                <i [class]="selectedAddress.pendingConsolidation ? 'fas fa-check-circle text-yellow-500' : 'fas fa-times-circle text-gray-300'"></i>
+                <span class="ml-2 text-sm">Pending Consolidation</span>
+              </div>
+              <div class="flex items-center">
+                <i [class]="(selectedAddress.reuseCount && selectedAddress.reuseCount > 0) ? 'fas fa-check-circle text-blue-500' : 'fas fa-times-circle text-gray-300'"></i>
+                <span class="ml-2 text-sm">Has Reuses ({{selectedAddress.reuseCount || 0}})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Open Transaction Info -->
+        <div *ngIf="selectedAddress.openTransactionId" class="mt-6 border rounded-lg p-4">
+          <h3 class="font-medium text-gray-900 mb-3">Open Transaction</h3>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Transaction ID:</span>
+              <span class="font-mono text-sm">{{selectedAddress.openTransactionId}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consolidation Info -->
+        <div *ngIf="selectedAddress.consolidationStatus" class="mt-6 border rounded-lg p-4">
+          <h3 class="font-medium text-gray-900 mb-3">Consolidation Information</h3>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Status:</span>
+              <span class="font-medium">{{selectedAddress.consolidationStatus}}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Transaction ID:</span>
+              <span class="font-mono text-sm">{{selectedAddress.consolidatedTransactionId || 'N/A'}}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Consolidated At:</span>
+              <span class="text-sm">{{formatDate(selectedAddress.consolidatedAt)}}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Attempts:</span>
+              <span class="font-medium">{{selectedAddress.consolidationAttempts || 0}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retired Info -->
+        <div *ngIf="selectedAddress.retiredAt" class="mt-6 border rounded-lg p-4 bg-gray-50">
+          <h3 class="font-medium text-gray-900 mb-3">Retirement Information</h3>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Retired At:</span>
+              <span class="text-sm">{{formatDate(selectedAddress.retiredAt)}}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Reason:</span>
+              <span class="font-medium">{{selectedAddress.retiredReason || 'Not specified'}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 px-6 py-4 flex justify-end">
+        <button
+          (click)="closeDetailsModal()"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

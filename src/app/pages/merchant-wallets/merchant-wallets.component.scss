@@ -602,4 +602,214 @@
     }
   }
 
-  
+  // merchant-wallets.component.scss (add these styles)
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #c3e6cb;
+  animation: slideIn 0.3s ease-out;
+}
+
+.wallet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+
+  .balance-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+.action-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+
+  i {
+    font-size: 0.9rem;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.view-btn {
+    background-color: #6c757d;
+    color: white;
+    width: fit-content;
+
+    &:hover:not(:disabled) {
+      background-color: #5a6268;
+    }
+  }
+
+  &.block-btn {
+    background-color: #dc3545;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #c82333;
+    }
+  }
+
+  &.unblock-btn {
+    background-color: #28a745;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #218838;
+    }
+  }
+
+  &.consume-btn {
+    background-color: #fd7e14;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #dc6b12;
+    }
+  }
+}
+
+.balance-item {
+  .amount {
+    &.available {
+      color: #28a745;
+    }
+    &.blocked {
+      color: #dc3545;
+    }
+    &.confirmed {
+      color: #17a2b8;
+    }
+  }
+}
+
+.wallet-summary {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    span {
+      color: #6c757d;
+    }
+
+    strong {
+      color: #2c3e50;
+
+      &.available {
+        color: #28a745;
+      }
+      &.blocked {
+        color: #dc3545;
+      }
+    }
+  }
+}
+
+.warning-box {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  i {
+    font-size: 1.2rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.submit-btn {
+  &.block-btn {
+    background-color: #dc3545;
+    
+    &:hover:not(:disabled) {
+      background-color: #c82333;
+    }
+  }
+
+  &.unblock-btn {
+    background-color: #28a745;
+    
+    &:hover:not(:disabled) {
+      background-color: #218838;
+    }
+  }
+
+  &.consume-btn {
+    background-color: #fd7e14;
+    
+    &:hover:not(:disabled) {
+      background-color: #dc6b12;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .wallet-actions {
+    .balance-actions {
+      flex-direction: column;
+      
+      .action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

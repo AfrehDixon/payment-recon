@@ -1,0 +1,453 @@
+<!-- account-ledger.component.html -->
+<div class="ledger-container" [class.embedded]="embedded">
+  <!-- Header (only show if not embedded) -->
+  <div *ngIf="!embedded" class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-book"></i>
+        {{ accountId ? 'Account Ledger' : 'Ledger' }}
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Account Context -->
+    <div *ngIf="accountId" class="account-context">
+      <span class="badge">Account: {{ formatAddress(accountId) }}</span>
+      <span *ngIf="walletId" class="badge">Wallet: {{ formatAddress(walletId) }}</span>
+    </div>
+  </div>
+
+<!-- Summary Cards -->
+<div *ngIf="!loadingSummary && summary.length > 0" class="summary-section">
+  <!-- Main Summary Cards -->
+  <div class="summary-cards">
+    <!-- Total Credits -->
+    <div class="summary-card credit">
+      <div class="card-icon">
+        <i class="fas fa-arrow-down"></i>
+      </div>
+      <div class="card-content">
+        <span class="label">Total Credits</span>
+        <span class="value">{{ formatAmount(summaryTotals.totalCredits, 'CREDIT', 'USD') }}</span>
+      </div>
+    </div>
+
+    <!-- Total Debits -->
+    <div class="summary-card debit">
+      <div class="card-icon">
+        <i class="fas fa-arrow-up"></i>
+      </div>
+      <div class="card-content">
+        <span class="label">Total Debits</span>
+        <span class="value">{{ formatAmount(summaryTotals.totalDebits, 'DEBIT', 'USD') }}</span>
+      </div>
+    </div>
+
+    <!-- Net Change -->
+    <div class="summary-card net" [class.positive]="summaryTotals.netChange >= 0">
+      <div class="card-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="card-content">
+        <span class="label">Net Change</span>
+        <span class="value">{{ formatAmount(summaryTotals.netChange, undefined, 'USD') }}</span>
+      </div>
+    </div>
+
+    <!-- Total Entries -->
+    <div class="summary-card count">
+      <div class="card-icon">
+        <i class="fas fa-list"></i>
+      </div>
+      <div class="card-content">
+        <span class="label">Total Entries</span>
+        <span class="value">{{ summaryTotals.totalEntries | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- By Currency Breakdown -->
+  <div class="summary-breakdown" *ngIf="getSummaryCurrencies().length > 0">
+    <h4>By Currency</h4>
+    <div class="breakdown-grid">
+      <div *ngFor="let currency of getSummaryCurrencies()" class="breakdown-item">
+        <div class="currency-header">
+          <strong>{{ currency }}</strong>
+        </div>
+        <div class="breakdown-stats">
+          <div class="stat">
+            <span class="stat-label">Credits:</span>
+            <span class="stat-value credit">{{ formatAmount(summaryTotals.byCurrency[currency].credits, 'CREDIT', currency) }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Debits:</span>
+            <span class="stat-value debit">{{ formatAmount(summaryTotals.byCurrency[currency].debits, 'DEBIT', currency) }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Net:</span>
+            <span class="stat-value" [class.credit]="summaryTotals.byCurrency[currency].net >= 0" [class.debit]="summaryTotals.byCurrency[currency].net < 0">
+              {{ formatAmount(summaryTotals.byCurrency[currency].net, undefined, currency) }}
+            </span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Entries:</span>
+            <span class="stat-value">{{ summaryTotals.byCurrency[currency].count | number }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- By Balance Type Breakdown -->
+  <div class="summary-breakdown" *ngIf="getSummaryBalanceTypes().length > 0">
+    <h4>By Balance Type</h4>
+    <div class="breakdown-grid">
+      <div *ngFor="let type of getSummaryBalanceTypes()" class="breakdown-item">
+        <!-- Fix the type assertion issue - remove the 'as' keyword -->
+<div class="balance-header">
+  <span [class]="'badge ' + getBalanceTypeClass(type)">
+    {{ type }}
+  </span>
+</div>
+        <div class="breakdown-stats">
+          <div class="stat">
+            <span class="stat-label">Credits:</span>
+            <span class="stat-value credit">{{ formatAmount(summaryTotals.byBalanceType[type].credits, 'CREDIT', 'USD') }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Debits:</span>
+            <span class="stat-value debit">{{ formatAmount(summaryTotals.byBalanceType[type].debits, 'DEBIT', 'USD') }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Net:</span>
+            <span class="stat-value" [class.credit]="summaryTotals.byBalanceType[type].net >= 0" [class.debit]="summaryTotals.byBalanceType[type].net < 0">
+              {{ formatAmount(summaryTotals.byBalanceType[type].net, undefined, 'USD') }}
+            </span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Entries:</span>
+            <span class="stat-value">{{ summaryTotals.byBalanceType[type].count | number }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Show message if summary is empty -->
+<div *ngIf="!loadingSummary && summary.length === 0 && !loading" class="summary-unavailable">
+  <p>No summary data available for the selected filters</p>
+</div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters" [class.embedded]="embedded">
+    <form [formGroup]="filterForm" class="filters-form">
+      <!-- Date Range -->
+      <div formGroupName="dateRange" class="filter-group date-range">
+        <h4>Date Range</h4>
+        <div class="date-inputs">
+          <div class="input-field">
+            <label>From</label>
+            <input type="datetime-local" formControlName="from" />
+          </div>
+          <div class="input-field">
+            <label>To</label>
+            <input type="datetime-local" formControlName="to" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Entry Type Filters -->
+      <div class="filter-group">
+        <h4>Entry Type</h4>
+        <select formControlName="entryType">
+          <option value="">All Types</option>
+          <option *ngFor="let type of entryTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+
+      <!-- Balance Type -->
+      <div class="filter-group">
+        <h4>Balance Type</h4>
+        <select formControlName="balanceType">
+          <option value="">All Balances</option>
+          <option *ngFor="let type of balanceTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+
+      <!-- Direction -->
+      <div class="filter-group">
+        <h4>Direction</h4>
+        <select formControlName="direction">
+          <option value="">All</option>
+          <option *ngFor="let dir of directions" [value]="dir">{{ dir }}</option>
+        </select>
+      </div>
+
+      <!-- Reference Filters -->
+      <div class="filter-group">
+        <h4>Transaction ID</h4>
+        <input type="text" formControlName="transactionId" placeholder="Enter transaction ID" />
+      </div>
+
+      <div class="filter-group">
+        <h4>External Ref</h4>
+        <input type="text" formControlName="externalTransactionId" placeholder="External reference" />
+      </div>
+
+      <div class="filter-group">
+        <h4>Provider</h4>
+        <input type="text" formControlName="provider" placeholder="Provider name" />
+      </div>
+
+      <div class="filter-group">
+        <h4>Operator</h4>
+        <input type="text" formControlName="operator" placeholder="Operator" />
+      </div>
+
+      <!-- Sorting -->
+      <div class="filter-group">
+        <h4>Sort By</h4>
+        <select formControlName="sortBy">
+          <option value="createdAt">Date</option>
+          <option value="amount">Amount</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <h4>Sort Order</h4>
+        <select formControlName="sortDir">
+          <option value="desc">Newest First</option>
+          <option value="asc">Oldest First</option>
+        </select>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Entries Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Direction</th>
+          <th>Amount</th>
+          <th>Balance Type</th>
+          <th>Reference</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of entries" class="entry-row">
+          <td class="date-cell">{{ formatDate(entry.createdAt) }}</td>
+          <td>
+            <span [class]="'badge ' + getEntryTypeClass(entry.entryType)">
+              {{ entry.entryType }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getDirectionClass(entry.direction)">
+              {{ entry.direction }}
+            </span>
+          </td>
+          <td class="amount-cell" [class.credit]="entry.direction === 'CREDIT'" [class.debit]="entry.direction === 'DEBIT'">
+            {{ formatAmount(entry.amount, entry.direction, entry.currency) }}
+          </td>
+          <td>
+            <span [class]="'badge ' + getBalanceTypeClass(entry.balanceType)">
+              {{ entry.balanceType }}
+            </span>
+          </td>
+          <td class="reference-cell">
+            <div *ngIf="entry.transactionId" class="ref-item" title="{{ entry.transactionId }}">
+              TX: {{ formatAddress(entry.transactionId) }}
+            </div>
+            <div *ngIf="entry.externalTransactionId" class="ref-item" title="{{ entry.externalTransactionId }}">
+              EXT: {{ formatAddress(entry.externalTransactionId) }}
+            </div>
+          </td>
+          <td class="description-cell">{{ entry.description || '-' }}</td>
+          <td>
+            <button class="view-btn" (click)="viewEntryDetails(entry)">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="entries.length === 0" class="empty-state">
+      <i class="fas fa-book-open"></i>
+      <p>No ledger entries found</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} entries
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <span class="page-indicator">Page {{ currentPage }} of {{ totalPages }}</span>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedEntry">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Ledger Entry Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Entry Header -->
+        <div class="entry-header">
+          <div class="header-left">
+            <span [class]="'badge large ' + getEntryTypeClass(selectedEntry.entryType)">
+              {{ selectedEntry.entryType }}
+            </span>
+            <span [class]="'badge large ' + getDirectionClass(selectedEntry.direction)">
+              {{ selectedEntry.direction }}
+            </span>
+          </div>
+          <div class="header-right">
+            <span class="entry-id">ID: {{ selectedEntry._id }}</span>
+          </div>
+        </div>
+
+        <!-- Amount Display -->
+        <div class="amount-display" [class.credit]="selectedEntry.direction === 'CREDIT'" [class.debit]="selectedEntry.direction === 'DEBIT'">
+          {{ formatAmount(selectedEntry.amount, selectedEntry.direction, selectedEntry.currency) }}
+        </div>
+
+        <!-- Details Grid -->
+<!-- Details Grid - UPDATED to match actual API fields -->
+<div class="details-grid">
+  <!-- Account Info -->
+  <div class="detail-section">
+    <h3>Account Information</h3>
+    <div class="detail-row">
+      <span class="label">Account ID:</span>
+      <span class="value mono">{{ selectedEntry.accountId }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.merchantId">
+      <span class="label">Merchant ID:</span>
+      <span class="value mono">{{ selectedEntry.merchantId }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.walletType">
+      <span class="label">Wallet Type:</span>
+      <span class="value">{{ selectedEntry.walletType }}</span>
+    </div>
+  </div>
+
+  <!-- Balance Info -->
+  <div class="detail-section">
+    <h3>Balance Information</h3>
+    <div class="detail-row">
+      <span class="label">Balance Type:</span>
+      <span [class]="'badge ' + getBalanceTypeClass(selectedEntry.balanceType)">
+        {{ selectedEntry.balanceType }}
+      </span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Currency:</span>
+      <span class="value">{{ selectedEntry.currency }}</span>
+    </div>
+  </div>
+
+  <!-- Reference Info -->
+  <div class="detail-section">
+    <h3>Reference Information</h3>
+    <div class="detail-row" *ngIf="selectedEntry.transactionId">
+      <span class="label">Transaction ID:</span>
+      <span class="value mono">{{ selectedEntry.transactionId }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.externalTransactionId">
+      <span class="label">External ID:</span>
+      <span class="value mono">{{ selectedEntry.externalTransactionId }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.provider">
+      <span class="label">Provider:</span>
+      <span class="value">{{ selectedEntry.provider }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.providerRef">
+      <span class="label">Provider Ref:</span>
+      <span class="value">{{ selectedEntry.providerRef }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.idempotencyKey">
+      <span class="label">Idempotency Key:</span>
+      <span class="value mono">{{ formatAddress(selectedEntry.idempotencyKey) }}</span>
+    </div>
+  </div>
+
+  <!-- Timestamps -->
+  <div class="detail-section">
+    <h3>Timestamps</h3>
+    <div class="detail-row">
+      <span class="label">Created:</span>
+      <span class="value">{{ formatDate(selectedEntry.createdAt) }}</span>
+    </div>
+    <div class="detail-row" *ngIf="selectedEntry.updatedAt">
+      <span class="label">Updated:</span>
+      <span class="value">{{ formatDate(selectedEntry.updatedAt) }}</span>
+    </div>
+  </div>
+
+  <!-- Description (if exists in meta) -->
+  <div class="detail-section full-width" *ngIf="selectedEntry.meta?.['description']">
+    <h3>Description</h3>
+    <p class="description">{{ selectedEntry.meta?.['description'] }}</p>
+  </div>
+
+  <!-- Metadata section -->
+  <div class="detail-section full-width" *ngIf="hasMetadata(selectedEntry)">
+    <h3>Additional Data</h3>
+    <pre class="metadata">{{ selectedEntry.meta | json }}</pre>
+  </div>
+</div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="close-btn" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

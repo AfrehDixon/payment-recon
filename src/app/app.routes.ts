@@ -40,6 +40,8 @@ import { CardWalletsComponent } from './pages/card-wallets/card-wallets.componen
 import { ConsolidationsComponent } from './pages/consolidations/consolidations.component';
 import { DepositAddressesComponent } from './pages/deposit-addresses/deposit-addresses.component';
 import { TrxTransferComponent } from './pages/trx-transfer/trx-transfer.component';
+import { WalletAddressesComponent } from './pages/wallet-addresses/wallet-addresses.component';
+import { AccountLedgerComponent } from './pages/account-ledger/account-ledger.component';
 
 export const routes: Routes = [
   {
@@ -208,6 +210,18 @@ export const routes: Routes = [
         path: 'trx-transfer',
         component: TrxTransferComponent,
       },
+      {
+        path: 'wallet-addresses',
+        component: WalletAddressesComponent,
+      },
+       {
+    path: 'accounts/ledger',
+    component: AccountLedgerComponent,
+  },
+  {
+    path: 'accounts/:accountId/ledger',
+    component: AccountLedgerComponent,
+  },
       {
         path: 'deposit-addresses',
         component: DepositAddressesComponent,
