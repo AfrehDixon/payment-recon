@@ -46,7 +46,7 @@ export const Routes: RouteInfo[] = [
   { path: 'terminals', title: 'Payment Terminals', class: 'false', permission: 'can view payment terminals module', parentModule: 'wallets-payments' },
   { path: 'deposit-addresses', title: 'Deposit Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
   {  path: 'wallet-addresses', title: 'Wallet Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
-  {  path: 'accounts/ledger', title: 'Account Ledger', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
+  {  path: 'accounts/ledger', title: 'Account Ledger', class: 'false', permission: 'can view wallets module', parentModule: 'wallets-payments' },
   // Settlements & Payouts
   { path: 'settlements', title: 'Merchant Collections', class: 'false', permission: 'can view merchant collections module', parentModule: 'settlements-payouts' },
   { path: 'payout-recon', title: 'Payout Reconciliation', class: 'false', permission: 'can view payout reconciliation module', parentModule: 'settlements-payouts' },
