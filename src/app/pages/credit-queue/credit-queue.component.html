@@ -1,0 +1,604 @@
+<!-- credit-queue.component.html -->
+<div class="credit-queue-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-clock"></i>
+        Credit Queue Management
+      </h1>
+
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? "Hide Filters" : "Show Filters" }}
+        </button>
+        <button class="refresh-btn" (click)="loadItems(); loadStats()">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div *ngIf="!loadingStats && stats" class="stats-cards">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Total Items</span>
+        <span class="stat-value">{{ getTotalItems() | number }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card failed" *ngIf="stats.byStatus['FAILED']">
+      <div class="stat-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Failed</span>
+        <span class="stat-value">{{ stats.byStatus["FAILED"] | number }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card completed" *ngIf="stats.byStatus['COMPLETED']">
+      <div class="stat-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Completed</span>
+        <span class="stat-value">{{
+          stats.byStatus["COMPLETED"] | number
+        }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card pending" *ngIf="stats.byStatus['PENDING']">
+      <div class="stat-icon">
+        <i class="fas fa-hourglass-half"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ stats.byStatus["PENDING"] | number }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card processing" *ngIf="stats.byStatus['PROCESSING']">
+      <div class="stat-icon">
+        <i class="fas fa-spinner"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Processing</span>
+        <span class="stat-value">{{
+          stats.byStatus["PROCESSING"] | number
+        }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card cancelled" *ngIf="stats.byStatus['CANCELLED']">
+      <div class="stat-icon">
+        <i class="fas fa-ban"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Cancelled</span>
+        <span class="stat-value">{{
+          stats.byStatus["CANCELLED"] | number
+        }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card stuck" *ngIf="stats.lockedCount > 0">
+      <div class="stat-icon">
+        <i class="fas fa-lock"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Locked Items</span>
+        <span class="stat-value">{{ stats.lockedCount | number }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card retry" *ngIf="stats.retryPendingCount > 0">
+      <div class="stat-icon">
+        <i class="fas fa-redo"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Retry Pending</span>
+        <span class="stat-value">{{ stats.retryPendingCount | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <!-- Status -->
+      <div class="filter-group">
+        <h4>Status</h4>
+        <select formControlName="status">
+          <option value="">All Statuses</option>
+          <option *ngFor="let status of statuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Operator -->
+      <div class="filter-group">
+        <h4>Operator</h4>
+        <input
+          type="text"
+          formControlName="operator"
+          placeholder="Enter operator"
+        />
+      </div>
+
+      <!-- Merchant ID -->
+      <div class="filter-group">
+        <h4>Merchant ID</h4>
+        <input
+          type="text"
+          formControlName="merchantId"
+          placeholder="Enter merchant ID"
+        />
+      </div>
+
+      <!-- Transaction Reference -->
+      <div class="filter-group">
+        <h4>Transaction Ref</h4>
+        <input
+          type="text"
+          formControlName="transactionRef"
+          placeholder="Transaction reference"
+        />
+      </div>
+
+      <!-- External Transaction ID -->
+      <div class="filter-group">
+        <h4>External ID</h4>
+        <input
+          type="text"
+          formControlName="externalTransactionId"
+          placeholder="External transaction ID"
+        />
+      </div>
+
+      <!-- Locked Only -->
+      <div class="filter-group">
+        <h4>Locked Items Only</h4>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="lockedOnly" />
+          <span>Show only locked items</span>
+        </label>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Items Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="queue-table">
+      <thead>
+        <tr>
+          <th>Created</th>
+          <th>Status</th>
+          <th>Transaction Ref</th>
+          <th>Amount</th>
+          <th>Operator</th>
+          <th>Merchant ID</th>
+          <!-- <th>Retries</th> -->
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items" class="queue-row">
+          <td class="date-cell">{{ formatDate(item.createdAt) }}</td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(item.status)">
+              {{ item.status }}
+              <i *ngIf="item.lockedAt" class="fas fa-lock" title="Locked"></i>
+            </span>
+          </td>
+          <td class="ref-cell">
+            <div class="ref-item">
+              {{ formatAddress(item.transactionRef || "N/A") }}
+            </div>
+            <div *ngIf="item.externalTransactionId" class="ref-item small">
+              EXT: {{ formatAddress(item.externalTransactionId) }}
+            </div>
+          </td>
+          <td class="amount-cell">
+            {{ formatAmount(item.amount, item.currency) }}
+          </td>
+          <td>{{ item.operator || "-" }}</td>
+          <td class="merchant-cell">
+            {{ formatAddress(item.merchantId || "-") }}
+          </td>
+          <!-- <td class="retry-cell">
+            {{ item.retryCount }}/{{ item.maxRetries }}
+          </td> -->
+          <td class="actions-cell">
+            <button
+              class="action-btn view"
+              (click)="viewItemDetails(item)"
+              title="View Details"
+            >
+              <i class="fas fa-eye"></i>
+            </button>
+
+            <button
+              *ngIf="canRetry(item)"
+              class="action-btn retry"
+              (click)="openActionModal(item, 'retry')"
+              title="Retry"
+            >
+              <i class="fas fa-redo"></i>
+            </button>
+
+            <button
+              *ngIf="canCancel(item)"
+              class="action-btn cancel"
+              (click)="openActionModal(item, 'cancel')"
+              title="Cancel"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+
+            <button
+              *ngIf="canRequeue(item)"
+              class="action-btn requeue"
+              (click)="openActionModal(item, 'requeue')"
+              title="Requeue"
+            >
+              <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <button
+              *ngIf="canReleaseLock(item)"
+              class="action-btn release"
+              (click)="openActionModal(item, 'release-lock')"
+              title="Release Lock"
+            >
+              <i class="fas fa-unlock"></i>
+            </button>
+
+            <button
+              *ngIf="canForceMark(item)"
+              class="action-btn force"
+              (click)="openActionModal(item, 'mark-completed')"
+              title="Force Complete"
+            >
+              <i class="fas fa-check-double"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="items.length === 0" class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <p>No queue items found</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to
+        {{ Math.min(currentPage * pageSize, totalItems) }} of
+        {{ totalItems }} items
+      </div>
+
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <span class="page-indicator"
+          >Page {{ currentPage }} of {{ totalPages }}</span
+        >
+
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <select
+          (change)="changePageSize($any($event.target).value)"
+          class="page-size-select"
+        >
+          <option
+            *ngFor="let size of pageSizeOptions"
+            [value]="size"
+            [selected]="size === pageSize"
+          >
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedItem">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Queue Item Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Status Header -->
+        <div class="entry-header">
+          <div class="header-left">
+            <span
+              [class]="'badge large ' + getStatusClass(selectedItem.status)"
+            >
+              {{ selectedItem.status }}
+            </span>
+            <span
+              *ngIf="selectedItem.lockAcquiredAt"
+              class="badge large bg-warning"
+            >
+              <i class="fas fa-lock"></i> Locked
+            </span>
+          </div>
+          <div class="header-right">
+            <span class="entry-id">ID: {{ selectedItem._id }}</span>
+          </div>
+        </div>
+
+        <!-- Amount Display -->
+        <div class="amount-display" *ngIf="selectedItem.amount">
+          {{ formatAmount(selectedItem.amount, selectedItem.currency) }}
+          <small
+            class="actual-amount"
+            *ngIf="selectedItem.actualAmount !== selectedItem.amount"
+          >
+            (Actual:
+            {{
+              formatAmount(selectedItem.actualAmount, selectedItem.currency)
+            }})
+          </small>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-grid">
+          <!-- Transaction Info -->
+          <div class="detail-section">
+            <h3>Transaction Information</h3>
+            <div class="detail-row">
+              <span class="label">Transaction Ref:</span>
+              <span class="value mono">{{ selectedItem.transactionRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Transaction ID:</span>
+              <span class="value mono">{{ selectedItem.transactionId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.externalTransactionId">
+              <span class="label">External ID:</span>
+              <span class="value mono">{{
+                selectedItem.externalTransactionId
+              }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Idempotency Key:</span>
+              <span class="value mono">{{
+                formatAddress(selectedItem.idempotencyKey)
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Account Info -->
+          <div class="detail-section">
+            <h3>Account Information</h3>
+            <div class="detail-row">
+              <span class="label">Account ID:</span>
+              <span class="value mono">{{ selectedItem.accountId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Type:</span>
+              <span class="value">{{ selectedItem.accountType }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedItem.merchantId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Operator:</span>
+              <span class="value">{{ selectedItem.operator }}</span>
+            </div>
+          </div>
+
+          <!-- Processing Info -->
+          <div class="detail-section">
+            <h3>Processing Information</h3>
+            <div class="detail-row">
+              <span class="label">Attempts:</span>
+              <span class="value">{{ getAttemptsDisplay(selectedItem) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.lastError">
+              <span class="label">Last Error:</span>
+              <span class="value error">{{
+                selectedItem.lastError.message
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.providerReference">
+              <span class="label">Provider Ref:</span>
+              <span class="value mono">{{
+                selectedItem.providerReference
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.providerMessage">
+              <span class="label">Provider Message:</span>
+              <span class="value">{{ selectedItem.providerMessage }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.providerStatus">
+              <span class="label">Provider Status:</span>
+              <span class="value">{{ selectedItem.providerStatus }}</span>
+            </div>
+          </div>
+
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{
+                formatDate(selectedItem.createdAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.queuedAt">
+              <span class="label">Queued:</span>
+              <span class="value">{{ formatDate(selectedItem.queuedAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.processingStartedAt">
+              <span class="label">Processing Started:</span>
+              <span class="value">{{
+                formatDate(selectedItem.processingStartedAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.processingEndedAt">
+              <span class="label">Processing Ended:</span>
+              <span class="value">{{
+                formatDate(selectedItem.processingEndedAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.completedAt">
+              <span class="label">Completed:</span>
+              <span class="value">{{
+                formatDate(selectedItem.completedAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.failedAt">
+              <span class="label">Failed:</span>
+              <span class="value">{{ formatDate(selectedItem.failedAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.reconciledAt">
+              <span class="label">Reconciled:</span>
+              <span class="value">{{
+                formatDate(selectedItem.reconciledAt)
+              }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{
+                formatDate(selectedItem.updatedAt)
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Lock Info -->
+          <div class="detail-section" *ngIf="selectedItem.lockAcquiredAt">
+            <h3>Lock Information</h3>
+            <div class="detail-row">
+              <span class="label">Lock Acquired:</span>
+              <span class="value">{{
+                formatDate(selectedItem.lockAcquiredAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.lockExpiresAt">
+              <span class="label">Lock Expires:</span>
+              <span class="value">{{
+                formatDate(selectedItem.lockExpiresAt)
+              }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedItem.lockedBy">
+              <span class="label">Locked By:</span>
+              <span class="value">{{ selectedItem.lockedBy }}</span>
+            </div>
+          </div>
+
+          <!-- Metadata -->
+          <div
+            class="detail-section full-width"
+            *ngIf="
+              selectedItem.meta && Object.keys(selectedItem.meta).length > 0
+            "
+          >
+            <h3>Additional Data</h3>
+            <pre class="metadata">{{ selectedItem.meta | json }}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="close-btn" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Modal -->
+  <div class="modal" *ngIf="showActionModal && selectedItem && currentAction">
+    <div class="modal-content small">
+      <div class="modal-header">
+        <h2>{{ actionModalTitle }}</h2>
+        <button class="close-btn" (click)="closeActionModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirmation-message">
+          Are you sure you want to {{ actionModalTitle.toLowerCase() }} for
+          item:
+        </p>
+        <div class="item-info">
+          <div><strong>ID:</strong> {{ selectedItem._id }}</div>
+          <div *ngIf="selectedItem.transactionRef">
+            <strong>Transaction Ref:</strong> {{ selectedItem.transactionRef }}
+          </div>
+          <div *ngIf="selectedItem.amount">
+            <strong>Amount:</strong>
+            {{ formatAmount(selectedItem.amount, selectedItem.currency) }}
+          </div>
+          <div>
+            <strong>Current Status:</strong>
+            <span [class]="'badge ' + getStatusClass(selectedItem.status)">{{
+              selectedItem.status
+            }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="currentAction !== 'release-lock'" class="form-group">
+          <label for="reason">Reason (optional):</label>
+          <textarea
+            id="reason"
+            formControlName="reason"
+            rows="3"
+            placeholder="Enter reason for this action..."
+            class="reason-input"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          class="cancel-btn"
+          (click)="closeActionModal()"
+          [disabled]="actionLoading"
+        >
+          Cancel
+        </button>
+        <button
+          class="confirm-btn"
+          (click)="executeAction()"
+          [disabled]="actionLoading"
+        >
+          <i *ngIf="actionLoading" class="fas fa-spinner fa-spin"></i>
+          <span *ngIf="!actionLoading">Confirm</span>
+          <span *ngIf="actionLoading">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

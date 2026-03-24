@@ -1,0 +1,389 @@
+<!-- cron-job.component.html -->
+<div class="cron-jobs-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-clock"></i>
+        Cron Jobs Management
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="showFilters = !showFilters">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+        <button class="refresh-btn" (click)="loadJobs()" [disabled]="loading">
+          <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <h4>Search</h4>
+        <input type="text" formControlName="search" placeholder="Search by name, description..." />
+      </div>
+
+      <div class="filter-group">
+        <h4>Status</h4>
+        <select formControlName="status">
+          <option value="all">All Jobs</option>
+          <option value="running">Running</option>
+          <option value="idle">Stopped</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Stats Summary - Fixed: Using computed properties instead of functions -->
+  <div class="stats-summary" *ngIf="jobs.length > 0">
+    <div class="stat-badge total">
+      <i class="fas fa-tasks"></i>
+      <span>Total: {{ totalJobs }}</span>
+    </div>
+    <div class="stat-badge running">
+      <i class="fas fa-play-circle"></i>
+      <span>Running: {{ runningJobs }}</span>
+    </div>
+    <div class="stat-badge stopped">
+      <i class="fas fa-stop-circle"></i>
+      <span>Stopped: {{ stoppedJobs }}</span>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Jobs Grid -->
+  <div *ngIf="!loading" class="jobs-grid">
+    <div *ngFor="let job of filteredJobs" class="job-card" [class.has-command]="job.controlCommand">
+      <div class="card-header">
+        <div class="job-name">
+          <i [class]="getStatusIcon(job) + ' ' + getStatusClass(job)"></i>
+          <h3>{{ job.name }}</h3>
+        </div>
+        <div class="status-badge" [class]="getStatusClass(job)">
+          {{ getStatusText(job) }}
+        </div>
+      </div>
+
+      <div class="card-body">
+        <p class="description" *ngIf="job.description">{{ job.description }}</p>
+        <p class="description text-muted" *ngIf="!job.description">No description</p>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Host:</span>
+            <span class="value">{{ job.host || 'N/A' }}</span>
+          </div>
+          <div class="info-item" *ngIf="job.pid">
+            <span class="label">PID:</span>
+            <span class="value">{{ job.pid }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Last Run:</span>
+            <span class="value">{{ formatDate(job.lastRunAt) }}</span>
+          </div>
+          <div class="info-item" *ngIf="job.lastError">
+            <span class="label error">Last Error:</span>
+            <span class="value error">{{ job.lastError }}</span>
+          </div>
+        </div>
+
+        <div class="config-badges">
+          <span class="config-badge" *ngIf="job.enabled" title="Enabled">
+            <i class="fas fa-check-circle"></i> Enabled
+          </span>
+          <span class="config-badge disabled" *ngIf="!job.enabled" title="Disabled">
+            <i class="fas fa-ban"></i> Disabled
+          </span>
+          <span class="config-badge" *ngIf="job.autoStart" title="Auto-start on system boot">
+            <i class="fas fa-rocket"></i> Auto-start
+          </span>
+          <span class="config-badge" *ngIf="job.autoRestartOnFailure" title="Auto-restart on failure">
+            <i class="fas fa-redo"></i> Auto-restart
+          </span>
+        </div>
+
+        <div class="control-command" *ngIf="job.controlCommand">
+          <i class="fas fa-hourglass-half"></i>
+          <span>{{ getControlCommandDisplay(job.controlCommand) }}</span>
+          <span class="command-time">at {{ formatDate(job.controlRequestedAt) }}</span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button 
+          class="action-btn view" 
+          (click)="viewJobDetails(job)"
+          title="View Details">
+          <i class="fas fa-eye"></i> Details
+        </button>
+        <button 
+          class="action-btn config" 
+          (click)="openConfigModal(job)"
+          [disabled]="!canConfigure(job)"
+          title="Configure">
+          <i class="fas fa-cog"></i> Config
+        </button>
+        <button 
+          *ngIf="canStart(job)" 
+          class="action-btn start" 
+          (click)="startJob(job)"
+          [disabled]="isActionDisabled(job)">
+          <i class="fas fa-play"></i> Start
+        </button>
+        <button 
+          *ngIf="canStop(job)" 
+          class="action-btn stop" 
+          (click)="stopJob(job)"
+          [disabled]="isActionDisabled(job)">
+          <i class="fas fa-stop"></i> Stop
+        </button>
+        <button 
+          *ngIf="canRestart(job)" 
+          class="action-btn restart" 
+          (click)="restartJob(job)"
+          [disabled]="isActionDisabled(job)">
+          <i class="fas fa-sync-alt"></i> Restart
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredJobs.length === 0" class="empty-state">
+      <i class="fas fa-calendar-alt"></i>
+      <p>No cron jobs found</p>
+      <button class="clear-filters-btn" (click)="clearFilters()" *ngIf="filterText || statusFilter !== 'all'">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Job Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedJob">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2>{{ selectedJob.name }} - Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Description -->
+        <div class="detail-section" *ngIf="selectedJob.description">
+          <h3>Description</h3>
+          <p>{{ selectedJob.description }}</p>
+        </div>
+
+        <!-- Status Section -->
+        <div class="detail-section">
+          <h3>Status Information</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Running:</span>
+              <span class="value">
+                <i [class]="getStatusIcon(selectedJob)"></i>
+                {{ getStatusText(selectedJob) }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Runtime Status:</span>
+              <span class="value">{{ selectedJob.runtimeStatus || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.heartbeatAt">
+              <span class="label">Last Heartbeat:</span>
+              <span class="value">{{ formatDate(selectedJob.heartbeatAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.runnerInstanceId">
+              <span class="label">Runner Instance:</span>
+              <span class="value mono">{{ selectedJob.runnerInstanceId }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Host Information -->
+        <div class="detail-section">
+          <h3>Host Information</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Host:</span>
+              <span class="value">{{ selectedJob.host || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.pid">
+              <span class="label">Process ID:</span>
+              <span class="value">{{ selectedJob.pid }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Command -->
+        <div class="detail-section" *ngIf="selectedJob.controlCommand">
+          <h3>Pending Control Command</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Command:</span>
+              <span class="value">{{ getControlCommandDisplay(selectedJob.controlCommand) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Requested At:</span>
+              <span class="value">{{ formatDate(selectedJob.controlRequestedAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.controlRequestedBy">
+              <span class="label">Requested By:</span>
+              <span class="value">{{ selectedJob.controlRequestedBy }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lease Information -->
+        <div class="detail-section" *ngIf="selectedJob.leaseOwner">
+          <h3>Lease Information</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Lease Owner:</span>
+              <span class="value mono">{{ selectedJob.leaseOwner }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Acquired At:</span>
+              <span class="value">{{ formatDate(selectedJob.leaseAcquiredAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Expires At:</span>
+              <span class="value">{{ formatDate(selectedJob.leaseExpiresAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="detail-section">
+          <h3>Configuration</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Enabled:</span>
+              <span class="value">{{ selectedJob.enabled ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Auto-start:</span>
+              <span class="value">{{ selectedJob.autoStart ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Auto-restart on Failure:</span>
+              <span class="value">{{ selectedJob.autoRestartOnFailure ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Allow Manual Run:</span>
+              <span class="value">{{ selectedJob.allowManualRun ? 'Yes' : 'No' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="detail-section">
+          <h3>Execution History</h3>
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="label">Last Started:</span>
+              <span class="value">{{ formatDate(selectedJob.lastStartedAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Stopped:</span>
+              <span class="value">{{ formatDate(selectedJob.lastStoppedAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Run:</span>
+              <span class="value">{{ formatDate(selectedJob.lastRunAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Success:</span>
+              <span class="value">{{ formatDate(selectedJob.lastSuccessAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.lastErrorAt">
+              <span class="label error">Last Error At:</span>
+              <span class="value error">{{ formatDate(selectedJob.lastErrorAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedJob.lastError">
+              <span class="label error">Last Error:</span>
+              <span class="value error">{{ selectedJob.lastError }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated At:</span>
+              <span class="value">{{ formatDate(selectedJob.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="close-btn" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration Modal -->
+  <div class="modal" *ngIf="showConfigModal && selectedJob">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Configure {{ selectedJob.name }}</h2>
+        <button class="close-btn" (click)="closeConfigModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form [formGroup]="configForm" class="config-form">
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="enabled" />
+              <span>Enabled</span>
+            </label>
+            <p class="help-text">When disabled, the cron job will not run automatically</p>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="autoStart" />
+              <span>Auto-start on System Boot</span>
+            </label>
+            <p class="help-text">Automatically start this job when the application starts</p>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="autoRestartOnFailure" />
+              <span>Auto-restart on Failure</span>
+            </label>
+            <p class="help-text">Automatically restart the job if it fails</p>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="allowManualRun" />
+              <span>Allow Manual Run</span>
+            </label>
+            <p class="help-text">Allow manual start/stop/restart operations from the UI</p>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeConfigModal()" [disabled]="actionLoading">Cancel</button>
+        <button class="save-btn" (click)="saveConfig()" [disabled]="actionLoading">
+          <i *ngIf="actionLoading" class="fas fa-spinner fa-spin"></i>
+          <span *ngIf="!actionLoading">Save Changes</span>
+          <span *ngIf="actionLoading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

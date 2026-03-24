@@ -77,8 +77,10 @@ export const Routes: RouteInfo[] = [
   // Monitoring & Logs
   { path: 'logs', title: 'System Logs', class: 'false', permission: 'can view system logs module', parentModule: 'monitoring-logs' },
   { path: 'logs-summary', title: 'Logs Summary', class: 'false', permission: 'can view logs summary module', parentModule: 'monitoring-logs' },
-  { path: 'queues', title: 'Queues', class: 'false', permission: 'can view queues module', parentModule: 'monitoring-logs' },
-  { path: 'hub', title: "Hub", class: 'false', permission: 'can view hub module', parentModule: 'monitoring-logs' }
+  // { path: 'queues', title: 'Queues', class: 'false', permission: 'can view queues module', parentModule: 'monitoring-logs' },
+  { path: 'hub', title: "Hub", class: 'false', permission: 'can view hub module', parentModule: 'monitoring-logs' },
+  { path: 'credit-queue', title: 'Credit Queue', class: 'false', permission: 'can view wallets module', parentModule: 'monitoring-logs' },
+  {  path: 'cron-jobs', title: 'Cron Jobs', class: 'false', permission: 'can view system logs module', parentModule: 'monitoring-logs' },
 ];
 
 @Component({

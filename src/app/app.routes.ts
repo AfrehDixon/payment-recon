@@ -42,6 +42,8 @@ import { DepositAddressesComponent } from './pages/deposit-addresses/deposit-add
 import { TrxTransferComponent } from './pages/trx-transfer/trx-transfer.component';
 import { WalletAddressesComponent } from './pages/wallet-addresses/wallet-addresses.component';
 import { AccountLedgerComponent } from './pages/account-ledger/account-ledger.component';
+import { CreditQueueComponent } from './pages/credit-queue/credit-queue.component';
+import { CronJobComponent } from './pages/cron-job/cron-job.component';
 
 export const routes: Routes = [
   {
@@ -217,6 +219,14 @@ export const routes: Routes = [
        {
     path: 'accounts/ledger',
     component: AccountLedgerComponent,
+  },
+  {
+    path: 'credit-queue',
+    component: CreditQueueComponent,
+  },
+  {
+    path: 'cron-jobs',
+    component: CronJobComponent,
   },
   {
     path: 'accounts/:accountId/ledger',
