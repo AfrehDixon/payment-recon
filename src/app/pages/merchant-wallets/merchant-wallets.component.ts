@@ -26,7 +26,7 @@ interface MerchantWallet {
   merchantId: {
     _id: string;
     merchant_tradeName: string;
-    email: string;
+email: string;
     phone: string;
   } | null;
   totalBalance: number;
@@ -79,6 +79,12 @@ export class MerchantWalletsComponent implements OnInit {
   selectedWallet: MerchantWallet | null = null;
   searchTerm: string = '';
   filteredWallets: MerchantWallet[] = [];
+
+  // Pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Action types for dropdown
   actionReasons = [
@@ -161,7 +167,7 @@ export class MerchantWalletsComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.wallets = response.data;
-            this.filteredWallets = this.wallets;
+            this.filteredWallets = [...this.wallets];
           } else {
             this.error = 'Failed to load wallets';
           }
@@ -177,25 +183,104 @@ export class MerchantWalletsComponent implements OnInit {
   searchWallets(event: KeyboardEvent): void {
     const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
     this.searchTerm = searchTerm;
+    this.currentPage = 1; // Reset to first page when searching
     this.filterWallets();
   }
 
   filterWallets(): void {
     if (!this.searchTerm.trim()) {
-      this.filteredWallets = this.wallets;
-      return;
+      this.filteredWallets = [...this.wallets];
+    } else {
+      this.filteredWallets = this.wallets.filter(wallet => {
+        return (
+          wallet.accountNumber.toLowerCase().includes(this.searchTerm) ||
+          wallet.walletType.toLowerCase().includes(this.searchTerm) ||
+          wallet.currency.toLowerCase().includes(this.searchTerm) ||
+          wallet.accountType.toLowerCase().includes(this.searchTerm) ||
+          this.getMerchantName(wallet).toLowerCase().includes(this.searchTerm) ||
+          this.getMerchantEmail(wallet).toLowerCase().includes(this.searchTerm)
+        );
+      });
     }
+    this.sortWallets();
+  }
 
-    this.filteredWallets = this.wallets.filter(wallet => {
-      return (
-        wallet.accountNumber.toLowerCase().includes(this.searchTerm) ||
-        wallet.walletType.toLowerCase().includes(this.searchTerm) ||
-        wallet.currency.toLowerCase().includes(this.searchTerm) ||
-        wallet.accountType.toLowerCase().includes(this.searchTerm) ||
-        this.getMerchantName(wallet).toLowerCase().includes(this.searchTerm) ||
-        this.getMerchantEmail(wallet).toLowerCase().includes(this.searchTerm)
-      );
-    });
+  sortWallets(): void {
+    if (this.sortColumn) {
+      this.filteredWallets.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+        
+        switch (this.sortColumn) {
+          case 'merchant':
+            aValue = this.getMerchantName(a);
+            bValue = this.getMerchantName(b);
+            break;
+          case 'availableBalance':
+            aValue = a.availableBalance;
+            bValue = b.availableBalance;
+            break;
+          case 'blockedBalance':
+            aValue = a.blockedBalance;
+            bValue = b.blockedBalance;
+            break;
+          default:
+            aValue = a[this.sortColumn as keyof MerchantWallet];
+            bValue = b[this.sortColumn as keyof MerchantWallet];
+        }
+        
+        if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+  }
+
+  sort(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.sortWallets();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return 'bi bi-arrow-down-up';
+    return this.sortDirection === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+  }
+
+  get paginatedWallets(): MerchantWallet[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return this.filteredWallets.slice(startIndex, endIndex);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredWallets.length / this.itemsPerPage);
+  }
+
+  changePage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  getPages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   // Modal open/close methods

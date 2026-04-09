@@ -126,6 +126,27 @@ export interface SolanaBalances {
   totalUsdtValue: number;
 }
 
+export interface PolygonTokenInfo {
+  name: string;
+  symbol: string;
+  decimals: number;
+  address: string;
+  chainId: number;
+  network: string;
+}
+
+export interface PolygonBalances {
+  tokenInfo: PolygonTokenInfo;
+  activeAddresses: number;
+  addressBalances: any[];
+  lastBalanceUpdate: string;
+  totalMaticBalance: number;
+  totalMaticUsdValue: number;
+  totalTokenBalance: number;
+  totalTokenUsdValue: number;
+  totalUsdValue: number;
+}
+
 export interface P2pRate {
   price: number;
   provider: string;
@@ -171,6 +192,7 @@ export interface SystemSettings {
   btcBalances: BtcBalances;
   bep20Balances: Bep20Balances;
   solanaBalances: SolanaBalances;
+  polygonBalances: PolygonBalances; // Assuming similar structure to Bep20
   
   // Chain Trading Configuration
   chainTradingConfig: ChainTradingConfigs;

@@ -10,46 +10,20 @@
       </button>
     </div>
 
-    <!-- Navigation Menu -->
+    <!-- Navigation Menu - Flat structure without dropdowns -->
     <nav class="sidebar-nav">
       <ul class="nav-list">
-        <li *ngFor="let group of menuGroups" 
-            class="nav-group"
-            [class.active]="isGroupActive(group)"
-            [class.open]="group.isOpen">
-          
-          <!-- Main Menu Item -->
-          <div class="main-item">
-            <a class="nav-link cursor-pointer" 
-               (click)="toggleSubmenu(group, $event)"
-               [title]="isCollapsed ? group.title : ''">
-              <i [class]="group.icon"></i>
-              <span class="nav-text" *ngIf="!isCollapsed">{{ group.title }}</span>
-              
-              <!-- Dropdown Arrow -->
-              <i *ngIf="!isCollapsed" 
-                 class="submenu-arrow bi"
-                 [class.bi-chevron-down]="group.isOpen"
-                 [class.bi-chevron-right]="!group.isOpen"></i>
-                 
-              <span class="nav-indicator" 
-                    *ngIf="isGroupActive(group) && !group.isOpen"></span>
-            </a>
-          </div>
-
-          <!-- Submenu -->
-          <ul *ngIf="group.isOpen && !isCollapsed" class="submenu-list">
-            <li *ngFor="let menuItem of group.children" 
-                class="submenu-item"
-                [class.active]="router.isActive(menuItem.path, true)">
-              <a class="submenu-link" 
-                 [routerLink]="[menuItem.path]" 
-                 [title]="menuItem.title">
-                <i class="bi bi-dot"></i>
-                <span class="submenu-text">{{ menuItem.title }}</span>
-              </a>
-            </li>
-          </ul>
+        <!-- All menu items listed directly -->
+        <li *ngFor="let menuItem of menuItems" 
+            class="nav-item"
+            [class.active]="isActive(menuItem.path)">
+          <a class="nav-link" 
+             [routerLink]="[menuItem.path]" 
+             [title]="isCollapsed ? menuItem.title : ''">
+            <!-- Add appropriate icon based on parent module or default -->
+            <i [class]="getIconForMenuItem(menuItem)"></i>
+            <span class="nav-text" *ngIf="!isCollapsed">{{ menuItem.title }}</span>
+          </a>
         </li>
       </ul>
     </nav>

@@ -1,8 +1,8 @@
-<div class="dashboard-container">
+<div class="settings-container">
   <!-- Header -->
   <div class="dashboard-header">
     <div class="header-content">
-      <h1>System Dashboard</h1>
+      <h1>System Settings</h1>
       <p class="last-updated" *ngIf="settings">
         Last Updated: {{ formatDate(settings.lastUpdated) }}
       </p>
@@ -1404,6 +1404,59 @@
           <label>Last Updated:</label>
           <span>{{
             formatDate(settings.trc20Balances.lastBalanceUpdate)
+          }}</span>
+        </div>
+      </div>
+
+      <!-- Polygon Balances -->
+      <div class="network-section">
+        <h4>Polygon - {{ settings.polygonBalances.tokenInfo.symbol }}</h4>
+        <div class="setting-item">
+          <label>Token Balance:</label>
+          <span
+            >{{ settings.polygonBalances.totalTokenBalance | number : "1.2-6" }}
+            {{ settings.polygonBalances.tokenInfo.symbol }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>MATIC Balance:</label>
+          <span
+            >{{
+              formatSmallCurrency(settings.polygonBalances.totalMaticBalance)
+            }}
+            MATIC</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Token USD Value:</label>
+          <span
+            >${{
+              formatCurrency(settings.polygonBalances.totalTokenUsdValue)
+            }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>MATIC USD Value:</label>
+          <span
+            >${{
+              formatCurrency(settings.polygonBalances.totalMaticUsdValue)
+            }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Total USD Value:</label>
+          <span
+            >${{ formatCurrency(settings.polygonBalances.totalUsdValue) }}</span
+          >
+        </div>
+        <div class="setting-item">
+          <label>Active Addresses:</label>
+          <span>{{ settings.polygonBalances.activeAddresses }}</span>
+        </div>
+        <div class="setting-item">
+          <label>Last Updated:</label>
+          <span>{{
+            formatDate(settings.polygonBalances.lastBalanceUpdate)
           }}</span>
         </div>
       </div>

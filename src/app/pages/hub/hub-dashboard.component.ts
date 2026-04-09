@@ -22,6 +22,7 @@ interface App {
   createdAt: string;
   merchantId: {
     merchant_tradeName: string;
+      _id: string;
   };
 }
 
@@ -269,7 +270,7 @@ export class HubDashboardComponent implements OnInit {
   }
 
   viewTransactions(appId: string) {
-    this.router.navigate(['/transactions', appId]);
+    this.router.navigate(['/merchants/transactions', appId]);
   }
 
   formatDate(date: string): string {

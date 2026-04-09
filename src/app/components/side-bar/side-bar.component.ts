@@ -29,9 +29,9 @@ export const Routes: RouteInfo[] = [
   // Merchant Management
   { path: 'mechant', title: 'Merchants', class: 'false', permission: 'can view merchants module', parentModule: 'merchant-management' },
   { path: 'merchant-tiers', title: 'Merchant Tiers', class: 'false', permission: 'can view merchant tier module', parentModule: 'merchant-management' },
-  { path: 'merchant-statistics', title: 'Merchant Statistics', class: 'false', permission: 'can view merchant statistics module', parentModule: 'merchant-management' },
-  { path: 'balance-history', title: 'Balance History', class: 'false', permission: 'can view merchant balance history module', parentModule: 'merchant-management' },
-  { path: 'balance-summary', title: 'Balance Summary', class: 'false', permission: 'can view merchant balance summary module', parentModule: 'merchant-management' },
+  // { path: 'merchant-statistics', title: 'Merchant Statistics', class: 'false', permission: 'can view merchant statistics module', parentModule: 'merchant-management' },
+  // { path: 'balance-history', title: 'Balance History', class: 'false', permission: 'can view merchant balance history module', parentModule: 'merchant-management' },
+  // { path: 'balance-summary', title: 'Balance Summary', class: 'false', permission: 'can view merchant balance summary module', parentModule: 'merchant-management' },
   
   // Transactions
   { path: 'transactions', title: 'Transaction Filters', class: 'false', permission: 'can view transaction filters module', parentModule: 'transactions' },
@@ -44,13 +44,14 @@ export const Routes: RouteInfo[] = [
   { path: 'card-wallets', title: 'Customer Wallets', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
   { path: 'payment-links', title: 'Payment Links', class: 'false', permission: 'can view payment links module', parentModule: 'wallets-payments' },
   { path: 'terminals', title: 'Payment Terminals', class: 'false', permission: 'can view payment terminals module', parentModule: 'wallets-payments' },
-  { path: 'deposit-addresses', title: 'Deposit Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
+  // { path: 'deposit-addresses', title: 'Deposit Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
   {  path: 'wallet-addresses', title: 'Wallet Addresses', class: 'false', permission: 'can view admins module', parentModule: 'wallets-payments' },
   {  path: 'accounts/ledger', title: 'Account Ledger', class: 'false', permission: 'can view wallets module', parentModule: 'wallets-payments' },
+
   // Settlements & Payouts
   { path: 'settlements', title: 'Merchant Collections', class: 'false', permission: 'can view merchant collections module', parentModule: 'settlements-payouts' },
-  { path: 'payout-recon', title: 'Payout Reconciliation', class: 'false', permission: 'can view payout reconciliation module', parentModule: 'settlements-payouts' },
-  { path: 'payout-issues', title: 'Payout Issues', class: 'false', permission: 'can view payout issues module', parentModule: 'settlements-payouts' },
+  // { path: 'payout-recon', title: 'Payout Reconciliation', class: 'false', permission: 'can view payout reconciliation module', parentModule: 'settlements-payouts' },
+  // { path: 'payout-issues', title: 'Payout Issues', class: 'false', permission: 'can view payout issues module', parentModule: 'settlements-payouts' },
   { path: 'consolidations', title: 'Consolidations', class: 'false', permission: 'can view admins module', parentModule: 'settlements-payouts' },
   
   // Analytics & Reports
@@ -65,7 +66,7 @@ export const Routes: RouteInfo[] = [
   { path: 'charge-config', title: 'Charge Config', class: 'false', permission: 'can view charge config module', parentModule: 'system-config' },
   { path: 'velocity-rules', title: 'Velocity Rules', class: 'false', permission: 'can view velocity rules module', parentModule: 'system-config' },
   { path: 'valut-config', title: 'Vault Management', class: 'false', permission: 'can view operator switch module', parentModule: 'system-config' },
-  { path: 'operator-switch', title: 'Operator Switch', class: 'false', permission: 'can view operator switch module', parentModule: 'system-config' },
+  // { path: 'operator-switch', title: 'Operator Switch', class: 'false', permission: 'can view operator switch module', parentModule: 'system-config' },
   { path: 'account-blacklist', title: 'Account Blacklist', class: 'false', permission: 'can view account blacklist module', parentModule: 'system-config' },
   
   // System Management
@@ -92,8 +93,7 @@ export const Routes: RouteInfo[] = [
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   logo: string = "";
-  allMenuItems: RouteInfo[] = Routes;
-  menuGroups: MenuGroup[] = [];
+  menuItems: RouteInfo[] = [];
   user_name: string = "";
   isCollapsed: boolean = false;
   isMobile: boolean = false;
@@ -108,7 +108,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private permissionService: PermissionService
   ) {
     this.checkScreenSize();
-    this.initializeMenuGroups();
   }
 
   ngOnInit(): void {
@@ -150,76 +149,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.handleResize.bind(this));
   }
 
-  private initializeMenuGroups(): void {
-    this.menuGroups = [
-      {
-        title: 'Merchant Management',
-        icon: 'bi bi-people',
-        permission: 'merchant-management',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'Transactions',
-        icon: 'bi bi-arrow-left-right',
-        permission: 'transactions',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'Wallets & Payments',
-        icon: 'bi bi-wallet2',
-        permission: 'wallets-payments',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'Settlements & Payouts',
-        icon: 'bi bi-cash-stack',
-        permission: 'settlements-payouts',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'Analytics & Reports',
-        icon: 'bi bi-graph-up',
-        permission: 'analytics-reports',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'System Configuration',
-        icon: 'bi bi-gear',
-        permission: 'system-config',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'System Management',
-        icon: 'bi bi-person-badge',
-        permission: 'system-management',
-        isOpen: false,
-        children: []
-      },
-      {
-        title: 'Monitoring & Logs',
-        icon: 'bi bi-clipboard-data',
-        permission: 'monitoring-logs',
-        isOpen: false,
-        children: []
-      }
-    ];
-  }
-
   private filterMenuItems(permissions: string[]): void {
-    this.menuGroups.forEach(group => {
-      group.children = this.allMenuItems.filter(item => 
-        item.parentModule === group.permission && permissions.includes(item.permission)
-      );
-    });
-    
-    // Remove groups with no children
-    this.menuGroups = this.menuGroups.filter(group => group.children.length > 0);
+    // Filter menu items based on permissions
+    this.menuItems = Routes.filter(item => permissions.includes(item.permission));
   }
 
   private setupEventListeners(): void {
@@ -242,24 +174,32 @@ export class SidebarComponent implements OnInit, OnDestroy {
     localStorage.setItem('sidebarState', this.isCollapsed ? 'collapsed' : 'expanded');
   }
 
-  toggleSubmenu(group: MenuGroup, event?: Event): void {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    
-    if (!this.isCollapsed) {
-      group.isOpen = !group.isOpen;
-    }
+  isActive(path: string): boolean {
+    return this.router.isActive(path, true);
   }
 
-  isGroupActive(group: MenuGroup): boolean {
-    return group.children.some(child => this.router.isActive(child.path, true));
-  }
 
   logout(): void {
     if (confirm('Are you sure you want to logout?')) {
       this.store.dispatch(new Logout());
     }
   }
+
+  // Add this method to your SidebarComponent class
+getIconForMenuItem(menuItem: RouteInfo): string {
+  // Map parent modules to icons
+  const iconMap: { [key: string]: string } = {
+    'merchant-management': 'bi bi-people',
+    'transactions': 'bi bi-arrow-left-right',
+    'wallets-payments': 'bi bi-wallet2',
+    'settlements-payouts': 'bi bi-cash-stack',
+    'analytics-reports': 'bi bi-graph-up',
+    'system-config': 'bi bi-gear',
+    'system-management': 'bi bi-person-badge',
+    'monitoring-logs': 'bi bi-clipboard-data'
+  };
+  
+  // Return the icon based on parent module, or a default icon
+  return iconMap[menuItem.parentModule || ''] || 'bi bi-circle';
+}
 }

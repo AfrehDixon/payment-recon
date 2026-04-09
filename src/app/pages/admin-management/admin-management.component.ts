@@ -368,7 +368,7 @@ export class AdminManagementComponent implements OnInit, AfterViewInit {
   }
 
   onSubmit() {
-    if (this.adminForm.invalid) return;
+    // if (this.adminForm.invalid) return;
 
     this.isLoading = true;
     const adminData = this.adminForm.value;

@@ -494,6 +494,35 @@
   gap: 0.125rem;
 }
 
+/* Update the active state styles */
+.nav-item.active .nav-link {
+  background-color: #1d83e3 !important;
+  color: #fff !important;
+}
+
+.nav-item.active .nav-link i {
+  color: #fff !important;
+}
+
+.nav-item.active .nav-link .nav-text {
+  color: #fff !important;
+}
+
+/* Make sure the active class is visible */
+.nav-item.active {
+  background-color: transparent;
+}
+
+/* Ensure hover doesn't override active state */
+.nav-item.active .nav-link:hover {
+  background-color: #1d83e3 !important;
+  color: #fff !important;
+}
+
+.nav-item.active .nav-link:hover i {
+  color: #fff !important;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 991.98px) {
   .submenu-list {
