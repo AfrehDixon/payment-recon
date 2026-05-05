@@ -1,0 +1,352 @@
+<!-- admin-recent-transactions.component.html -->
+<div class="recent-transactions-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-history"></i>
+        Recent Transactions
+      </h1>
+      <p class="subtitle">Latest platform transactions and activities</p>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && transactions.length > 0">
+    <div *ngFor="let stat of getStats()" class="stat-card" [class]="stat.color">
+      <div class="stat-icon">
+        <i class="fas" [class]="stat.icon"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">{{ stat.label }}</span>
+        <span class="stat-value">{{ formatStatValue(stat) }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load transactions</h3>
+    <p>There was an error loading the transaction data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+  
+  <!-- Transactions List -->
+  <div *ngIf="!loading && !error" class="transactions-container">
+    <div class="transactions-list">
+      <div *ngFor="let transaction of transactions" class="transaction-item" (click)="viewTransactionDetails(transaction)">
+        <div class="transaction-icon" [class]="getTransactionTypeClass(transaction.transaction_type)">
+          <i class="fas" [class]="getTransactionTypeIcon(transaction.transaction_type)"></i>
+        </div>
+        
+        <div class="transaction-details">
+          <div class="transaction-header">
+            <div class="transaction-type">
+              <span class="type-badge" [class]="getTransactionTypeClass(transaction.transaction_type)">
+                {{ getTransactionTypeLabel(transaction.transaction_type) }}
+              </span>
+              <span class="transaction-ref" title="{{ transaction.transactionRef }}">
+                Ref: {{ transaction.transactionRef }}
+              </span>
+              <span class="transaction-operator" *ngIf="transaction.operator">
+                {{ transaction.operator }}
+              </span>
+            </div>
+            <div class="transaction-time">
+              <i class="fas fa-clock"></i>
+              {{ formatDate(transaction.createdAt) }}
+            </div>
+          </div>
+          
+          <div class="transaction-description">
+            {{ transaction.description || transaction.serviceType }}
+            <span class="transaction-reason" *ngIf="transaction.reason">
+              - {{ transaction.reason }}
+            </span>
+          </div>
+          
+          <div class="transaction-meta">
+            <div class="meta-item">
+              <i class="fas fa-user"></i>
+              {{ transaction.recipient_account_name || transaction.payment_account_name }}
+            </div>
+            <div class="meta-item" *ngIf="transaction.recipient_account_number">
+              <i class="fas fa-hashtag"></i>
+              {{ formatAddress(transaction.recipient_account_number) }}
+            </div>
+            <div class="meta-item" *ngIf="transaction.recipient_account_issuer">
+              <i class="fas fa-building"></i>
+              {{ transaction.recipient_account_issuer }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="transaction-amount" [class]="getAmountClass(transaction.transaction_type)">
+          <span class="amount-prefix">{{ getAmountPrefix(transaction.transaction_type) }}</span>
+          {{ formatNumber(transaction.actualAmount, 2) }}
+          <span class="amount-currency">{{ transaction.currency }}</span>
+          <div class="amount-fee" *ngIf="transaction.charges > 0">
+            Fee: {{ formatNumber(transaction.charges, 2) }}
+          </div>
+        </div>
+        
+        <div class="transaction-status">
+          <span [class]="'status-badge ' + getStatusClass(transaction.status)">
+            <i class="fas" [class]="getStatusIcon(transaction.status)"></i>
+            {{ getStatusLabel(transaction.status) }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Empty State -->
+      <div *ngIf="transactions.length === 0" class="empty-state">
+        <i class="fas fa-history"></i>
+        <p>No transactions found</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Transaction Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedTransaction" (click)="closeDetailsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Transaction Details
+        </h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Transaction Ref:</span>
+              <span class="value">{{ selectedTransaction.transactionRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">External ID:</span>
+              <span class="value mono">{{ selectedTransaction.externalTransactionId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Type:</span>
+              <span class="value">
+                <span class="type-badge" [class]="getTransactionTypeClass(selectedTransaction.transaction_type)">
+                  {{ getTransactionTypeLabel(selectedTransaction.transaction_type) }}
+                </span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'status-badge ' + getStatusClass(selectedTransaction.status)">
+                <i class="fas" [class]="getStatusIcon(selectedTransaction.status)"></i>
+                {{ getStatusLabel(selectedTransaction.status) }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.reason">
+              <span class="label">Reason:</span>
+              <span class="value">{{ selectedTransaction.reason }}</span>
+            </div>
+          </div>
+          
+          <!-- Amount Information -->
+          <div class="detail-section">
+            <h3>Amount Information</h3>
+            <div class="detail-row">
+              <span class="label">Amount:</span>
+              <span class="value highlight">{{ formatNumber(selectedTransaction.actualAmount, 2) }} {{ selectedTransaction.currency }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.charges">
+              <span class="label">Charges:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.charges, 2) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.profitEarned">
+              <span class="label">Profit Earned:</span>
+              <span class="value profit">{{ formatNumber(selectedTransaction.profitEarned, 2) }}</span>
+            </div>
+          </div>
+          
+          <!-- Payer Information -->
+          <div class="detail-section">
+            <h3>Payer Information</h3>
+            <div class="detail-row">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedTransaction.payment_account_name }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number:</span>
+              <span class="value">{{ selectedTransaction.payment_account_number }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Issuer:</span>
+              <span class="value">{{ selectedTransaction.payment_account_issuer }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Type:</span>
+              <span class="value">{{ selectedTransaction.payment_account_type }}</span>
+            </div>
+          </div>
+          
+          <!-- Recipient Information -->
+          <div class="detail-section">
+            <h3>Recipient Information</h3>
+            <div class="detail-row">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedTransaction.recipient_account_name }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number:</span>
+              <span class="value">{{ selectedTransaction.recipient_account_number }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Issuer:</span>
+              <span class="value">{{ selectedTransaction.recipient_account_issuer }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Type:</span>
+              <span class="value">{{ selectedTransaction.recipient_account_type }}</span>
+            </div>
+          </div>
+          
+          <!-- Service Information -->
+          <div class="detail-section">
+            <h3>Service Information</h3>
+            <div class="detail-row">
+              <span class="label">Service Type:</span>
+              <span class="value">{{ selectedTransaction.serviceType }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Operator:</span>
+              <span class="value">{{ selectedTransaction.operator }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Channel:</span>
+              <span class="value">{{ selectedTransaction.channel }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Wallet Type:</span>
+              <span class="value">{{ selectedTransaction.walletType }}</span>
+            </div>
+          </div>
+          
+          <!-- Balance Information -->
+          <div class="detail-section" *ngIf="selectedTransaction.transaction_type === 'DEBIT'">
+            <h3>Balance Information</h3>
+            <div class="detail-row" *ngIf="selectedTransaction.balanceBeforDebit">
+              <span class="label">Balance Before:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.balanceBeforDebit, 2) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.balanceAfterDebit">
+              <span class="label">Balance After:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.balanceAfterDebit, 2) }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section" *ngIf="selectedTransaction.transaction_type === 'CREDIT'">
+            <h3>Balance Information</h3>
+            <div class="detail-row" *ngIf="selectedTransaction.balanceBeforeCredit">
+              <span class="label">Balance Before:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.balanceBeforeCredit, 2) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.balanceAfterCredit">
+              <span class="label">Balance After:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.balanceAfterCredit, 2) }}</span>
+            </div>
+          </div>
+          
+          <!-- Profit Details -->
+          <div class="detail-section" *ngIf="selectedTransaction.profitDetails">
+            <h3>Profit Breakdown</h3>
+            <div class="detail-row">
+              <span class="label">Total Charge:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.profitDetails.charge, 2) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Partner Charge:</span>
+              <span class="value">{{ formatNumber(selectedTransaction.profitDetails.partnerCharge, 2) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Profit:</span>
+              <span class="value profit">{{ formatNumber(selectedTransaction.profitDetails.profit, 2) }}</span>
+            </div>
+          </div>
+          
+          <!-- Callback Response -->
+          <div class="detail-section full-width" *ngIf="selectedTransaction.callbackResponse">
+            <h3>Callback Response</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span class="value">{{ selectedTransaction.callbackResponse.Status }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Message:</span>
+              <span class="value">{{ selectedTransaction.callbackResponse.Message }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.callbackResponse.GTBTransId">
+              <span class="label">GTB Transaction ID:</span>
+              <span class="value mono">{{ selectedTransaction.callbackResponse.GTBTransId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.callbackResponse.ProviderTransId">
+              <span class="label">Provider Transaction ID:</span>
+              <span class="value mono">{{ selectedTransaction.callbackResponse.ProviderTransId }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedTransaction.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedTransaction.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

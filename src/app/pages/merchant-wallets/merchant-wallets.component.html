@@ -123,9 +123,12 @@
           </td>
           <td class="actions-cell">
             <div class="action-buttons">
-              <button class="action-icon view" (click)="openUpdateWalletModal(wallet)" title="View Details">
+              <!-- <button class="action-icon view" (click)="openUpdateWalletModal(wallet)" title="View Details">
                 <i class="bi bi-eye"></i>
-              </button>
+              </button> -->
+              <button class="action-icon view" (click)="openViewWalletModal(wallet)" title="View Details">
+  <i class="bi bi-eye"></i>
+</button>
               <button 
                 class="action-icon block" 
                 (click)="openBlockBalanceModal(wallet)"
@@ -230,117 +233,142 @@
   </div>
 
   <!-- Update Wallet Modal (View Details) -->
-  <div class="modal" *ngIf="showUpdateWalletModal && selectedWallet">
-    <div class="modal-content large-modal">
-      <div class="modal-header">
-        <h2>Wallet Details</h2>
-        <button class="close-btn" (click)="closeUpdateWalletModal()">&times;</button>
+<!-- View Wallet Modal (View-only, no edit functionality) -->
+<div class="modal" *ngIf="showViewWalletModal && selectedWallet">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2>Wallet Details</h2>
+      <button class="close-btn" (click)="closeViewWalletModal()">&times;</button>
+    </div>
+
+    <!-- Basic Wallet Information -->
+    <div class="details-section">
+      <h3>Basic Information</h3>
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Wallet ID:</span>
+          <span class="detail-value">{{ selectedWallet.walletId }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Account Number:</span>
+          <span class="detail-value">{{ selectedWallet.accountNumber }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Merchant:</span>
+          <span class="detail-value">{{ getMerchantName(selectedWallet) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Email:</span>
+          <span class="detail-value">{{ getMerchantEmail(selectedWallet) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Wallet Type:</span>
+          <span class="detail-value">{{ selectedWallet.walletType }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Currency:</span>
+          <span class="detail-value">{{ selectedWallet.currency }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedWallet.network">
+          <span class="detail-label">Network:</span>
+          <span class="detail-value">{{ selectedWallet.network }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedWallet.asset">
+          <span class="detail-label">Asset:</span>
+          <span class="detail-value">{{ selectedWallet.asset }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedWallet.scope">
+          <span class="detail-label">Scope:</span>
+          <span class="detail-value">{{ selectedWallet.scope }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Status:</span>
+          <span class="detail-value">
+            <span [class]="'status-badge ' + getStatusClass(selectedWallet.accountType)">
+              {{ selectedWallet.accountType }}
+            </span>
+            <span *ngIf="!selectedWallet.active" class="status-badge status-inactive">INACTIVE</span>
+          </span>
+        </div>
+        <div class="detail-item" *ngIf="selectedWallet.createdAt">
+          <span class="detail-label">Created At:</span>
+          <span class="detail-value">{{ formatDate(selectedWallet.createdAt) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedWallet.updatedAt">
+          <span class="detail-label">Last Updated:</span>
+          <span class="detail-value">{{ formatDate(selectedWallet.updatedAt) }}</span>
+        </div>
       </div>
+    </div>
 
-      <div class="wallet-info">
-        <div class="info-row">
-          <span class="label">Wallet ID:</span>
-          <span class="value">{{ selectedWallet.walletId }}</span>
+    <!-- Balance Information -->
+    <div class="details-section">
+      <h3>Balance Information</h3>
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Available Balance:</span>
+          <span class="detail-value available-balance">{{ formatCurrency(selectedWallet.availableBalance) }}</span>
         </div>
-        <div class="info-row">
-          <span class="label">Account Number:</span>
-          <span class="value">{{ selectedWallet.accountNumber }}</span>
+        <div class="detail-item">
+          <span class="detail-label">Blocked Balance:</span>
+          <span class="detail-value blocked-balance">{{ formatCurrency(selectedWallet.blockedBalance) }}</span>
         </div>
-        <div class="info-row">
-          <span class="label">Merchant:</span>
-          <span class="value">{{ getMerchantName(selectedWallet) }}</span>
+        <div class="detail-item">
+          <span class="detail-label">Confirmed Balance:</span>
+          <span class="detail-value">{{ formatCurrency(selectedWallet.confirmedBalance) }}</span>
         </div>
-        <div class="info-row">
-          <span class="label">Email:</span>
-          <span class="value">{{ getMerchantEmail(selectedWallet) }}</span>
+        <div class="detail-item">
+          <span class="detail-label">Unconfirmed Balance:</span>
+          <span class="detail-value">{{ formatCurrency(selectedWallet.unConfirmedBalance) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Last Balance:</span>
+          <span class="detail-value">{{ formatCurrency(selectedWallet.lastBalance) }}</span>
         </div>
       </div>
+    </div>
 
-      <form [formGroup]="updateWalletForm" (ngSubmit)="submitUpdateWallet()">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Account Type</label>
-            <select formControlName="accountType">
-              <option value="CLOSED">CLOSED</option>
-              <option value="OPEN">OPEN</option>
-            </select>
+    <!-- Valuation Information (New) -->
+    <div class="details-section" *ngIf="hasValuationData(selectedWallet)">
+      <h3>USD Valuation</h3>
+      <div class="valuation-info">
+        <div class="valuation-source" *ngIf="selectedWallet.valuation?.source">
+          <span class="source-label">Source:</span>
+          <span class="source-value">{{ selectedWallet.valuation?.source }}</span>
+          <span class="valuation-date" *ngIf="selectedWallet.valuation?.valuedAt">
+            (as of {{ formatDate(selectedWallet.valuation?.valuedAt) }})
+          </span>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">USD Rate:</span>
+            <span class="detail-value">{{ formatNumber(selectedWallet.valuation?.usdRate ?? null) }}</span>
           </div>
-
-          <div class="form-group">
-            <label>Wallet Type</label>
-            <select formControlName="walletType">
-              <option value="FIAT">FIAT</option>
-              <option value="BTC">BTC</option>
-            </select>
+          <div class="detail-item">
+            <span class="detail-label">USD Value (Confirmed):</span>
+            <span class="detail-value">{{ formatUSDValue(selectedWallet.valuation?.usdValueConfirmed ?? null) }}</span>
           </div>
-
-          <div class="form-group">
-            <label>Currency</label>
-            <select formControlName="currency">
-              <option value="GHS">GHS</option>
-              <option value="USD">USD</option>
-              <option value="BTC">BTC</option>
-            </select>
+          <div class="detail-item">
+            <span class="detail-label">USD Value (Unconfirmed):</span>
+            <span class="detail-value">{{ formatUSDValue(selectedWallet.valuation?.usdValueUnconfirmed ?? null) }}</span>
           </div>
-
-          <div class="form-group">
-            <label>Blocked Balance</label>
-            <input
-              type="number"
-              formControlName="blockedBalance"
-              placeholder="Enter blocked balance"
-              step="0.01"
-            />
+          <div class="detail-item">
+            <span class="detail-label">USD Value (Blocked):</span>
+            <span class="detail-value">{{ formatUSDValue(selectedWallet.valuation?.usdValueBlocked ?? null) }}</span>
           </div>
-
-          <div class="form-group">
-            <label>Confirmed Balance</label>
-            <input
-              type="number"
-              formControlName="confirmedBalance"
-              placeholder="Enter confirmed balance"
-              step="0.01"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Unconfirmed Balance</label>
-            <input
-              type="number"
-              formControlName="unConfirmedBalance"
-              placeholder="Enter total unconfirmed balance"
-              step="0.01"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Available Balance</label>
-            <input
-              type="number"
-              formControlName="availableBalance"
-              placeholder="Enter available balance"
-              step="0.01"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Status</label>
-            <select formControlName="active">
-              <option [ngValue]="true">Active</option>
-              <option [ngValue]="false">Inactive</option>
-            </select>
+          <div class="detail-item total-value">
+            <span class="detail-label">Total USD Value:</span>
+            <span class="detail-value total">{{ formatUSDValue(selectedWallet.valuation?.usdValueTotal ?? null) }}</span>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="modal-actions">
-          <button type="button" class="cancel-btn" (click)="closeUpdateWalletModal()">Cancel</button>
-          <button type="submit" class="submit-btn" [disabled]="!updateWalletForm.valid || loading">
-            Update Wallet
-          </button>
-        </div>
-      </form>
+    <div class="modal-actions">
+      <button type="button" class="cancel-btn" (click)="closeViewWalletModal()">Close</button>
     </div>
   </div>
+</div>
 
   <!-- Block Balance Modal -->
   <div class="modal" *ngIf="showBlockBalanceModal && selectedWallet">

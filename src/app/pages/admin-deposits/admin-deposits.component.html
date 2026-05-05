@@ -1,0 +1,536 @@
+<!-- admin-deposits.component.html -->
+<div class="deposits-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-arrow-down"></i>
+        Deposits
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Customer ID</label>
+        <input type="text" formControlName="endCustomerId" placeholder="Enter customer ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Network</label>
+        <select formControlName="network">
+          <option value="">All</option>
+          <option *ngFor="let network of networkOptions" [value]="network">{{ network }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Asset</label>
+        <input type="text" formControlName="asset" placeholder="USDT, USDC, BTC..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Intent Code</label>
+        <input type="text" formControlName="intentCode" placeholder="Deposit intent code" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Transaction Hash</label>
+        <input type="text" formControlName="txHash" placeholder="0x..." />
+      </div>
+      
+      <div formGroupName="dateRange" class="filter-group date-range">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="datetime-local" formControlName="from" placeholder="From" />
+          <input type="datetime-local" formControlName="to" placeholder="To" />
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && deposits.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-arrow-down"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Deposits</span>
+        <span class="stat-value">{{ totalDeposits }}</span>
+      </div>
+    </div>
+    
+    <!-- <div class="stat-card">
+      <div class="stat-icon volume">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Volume</span>
+        <span class="stat-value">{{ formatCurrency(totalVolume, 'USD') }}</span>
+      </div>
+    </div> -->
+    
+    <div class="stat-card">
+      <div class="stat-icon pending">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ pendingCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon confirmed">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Confirmed</span>
+        <span class="stat-value">{{ confirmedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon failed">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Failed</span>
+        <span class="stat-value">{{ failedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon completed">
+        <i class="fas fa-check-double"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Completed</span>
+        <span class="stat-value">{{ completedCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Deposits Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="deposits-table">
+      <thead>
+        <tr>
+          <th>Tx Hash</th>
+          <th>Asset</th>
+          <th>Network</th>
+          <th>Amount</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Status</th>
+          <th>Confirmations</th>
+          <th>Intent Code</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let deposit of deposits" class="deposit-row" [class.failed-row]="deposit.status === 'FAILED'">
+          <td class="tx-cell">
+            <div class="tx-hash" title="{{ deposit.txHash }}">
+              {{ formatAddress(deposit.txHash) }}
+            </div>
+          </td>
+          <td class="asset-cell">
+            <div class="asset-name">{{ deposit.asset }}</div>
+          </td>
+          <td class="network-cell">
+            <span class="network-badge" [style.backgroundColor]="getNetworkColor(deposit.network)">
+              {{ deposit.network }}
+            </span>
+          </td>
+          <td class="amount-cell">
+            <div class="amount">{{ formatNumber(deposit.amount, 4) }}</div>
+            <div class="amount-usd">{{ formatCurrency(deposit.amount, deposit.asset) }}</div>
+          </td>
+          <td class="address-cell">
+            <div class="from-address" title="{{ deposit.from }}">
+              {{ formatAddress(deposit.from) }}
+            </div>
+          </td>
+          <td class="address-cell">
+            <div class="to-address" title="{{ deposit.to }}">
+              {{ formatAddress(deposit.to) }}
+            </div>
+          </td>
+          <td class="status-cell">
+            <span [class]="'badge ' + getStatusClass(deposit.status)">
+              <i class="fas" [class]="getStatusIcon(deposit.status)"></i>
+              {{ deposit.status }}
+            </span>
+            <div class="error-message" *ngIf="getErrorMessage(deposit)" title="{{ getErrorMessage(deposit) }}">
+              <i class="fas fa-exclamation-circle"></i> Error
+            </div>
+          </td>
+          <td class="confirmations-cell">
+            <div class="progress-container">
+              <div class="progress-bar" 
+                   [style.width.%]="getConfirmationsProgress(deposit)"
+                   [class]="getConfirmationsClass(deposit)">
+              </div>
+            </div>
+            <div class="confirmations-text" [title]="'Required: ' + getRequiredConfirmations(deposit)">
+              {{ getConfirmationsStatus(deposit) }}
+            </div>
+          </td>
+          <td class="intent-cell">
+            <div class="intent-code">{{ getIntentInfo(deposit) }}</div>
+          </td>
+          <td class="date-cell">
+            {{ formatDate(deposit.createdAt) }}
+          </td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewDepositDetails(deposit)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button class="reprocess-btn" 
+                    *ngIf="canReprocess(deposit)"
+                    (click)="openReprocessModal(deposit)" 
+                    title="Reprocess">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="deposits.length === 0" class="empty-state">
+      <i class="fas fa-arrow-down"></i>
+      <p>No deposits found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} deposits
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal - Full Data Display -->
+  <div class="modal" *ngIf="showViewModal && selectedDeposit" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-arrow-down"></i>
+          Deposit Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Transaction Info -->
+          <div class="detail-section full-width">
+            <h3>Transaction Information</h3>
+            <div class="detail-row">
+              <span class="label">Transaction Hash:</span>
+              <span class="value mono">{{ selectedDeposit.txHash }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Intent Code:</span>
+              <span class="value">{{ selectedDeposit.intentCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Intent ID:</span>
+              <span class="value mono">{{ selectedDeposit.intentId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Reference ID:</span>
+              <span class="value mono">{{ selectedDeposit.referenceId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Idempotency Key:</span>
+              <span class="value mono">{{ selectedDeposit.idempotencyKey }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Log Index:</span>
+              <span class="value">{{ selectedDeposit.logIndex }}</span>
+            </div>
+          </div>
+          
+          <!-- Amount & Asset Info -->
+          <div class="detail-section">
+            <h3>Amount Information</h3>
+            <div class="detail-row">
+              <span class="label">Amount:</span>
+              <span class="value highlight">{{ formatNumber(selectedDeposit.amount, 8) }} {{ selectedDeposit.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">USD Value:</span>
+              <span class="value">{{ formatCurrency(selectedDeposit.amount, selectedDeposit.asset) }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Asset Information</h3>
+            <div class="detail-row">
+              <span class="label">Asset:</span>
+              <span class="value">{{ selectedDeposit.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedDeposit.network }}</span>
+            </div>
+          </div>
+          
+          <!-- Addresses -->
+          <div class="detail-section">
+            <h3>Sender Information</h3>
+            <div class="detail-row">
+              <span class="label">From Address:</span>
+              <span class="value mono">{{ selectedDeposit.from }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Receiver Information</h3>
+            <div class="detail-row">
+              <span class="label">To Address:</span>
+              <span class="value mono">{{ selectedDeposit.to }}</span>
+            </div>
+          </div>
+          
+          <!-- Block Info -->
+          <div class="detail-section">
+            <h3>Block Information</h3>
+            <div class="detail-row">
+              <span class="label">Block Number:</span>
+              <span class="value">{{ selectedDeposit.blockNumber }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Log Index:</span>
+              <span class="value">{{ selectedDeposit.logIndex }}</span>
+            </div>
+          </div>
+          
+          <!-- Status & Confirmations -->
+          <div class="detail-section">
+            <h3>Status & Confirmations</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedDeposit.status)">
+                <i class="fas" [class]="getStatusIcon(selectedDeposit.status)"></i>
+                {{ selectedDeposit.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Confirmations:</span>
+              <span class="value">{{ selectedDeposit.confirmations }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Required Confirmations:</span>
+              <span class="value">{{ getRequiredConfirmations(selectedDeposit) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Confirmation Progress:</span>
+              <span class="value">{{ getConfirmationsProgress(selectedDeposit).toFixed(1) }}%</span>
+            </div>
+            <div class="progress-bar-large" style="margin-top: 8px;">
+              <div class="progress-fill" 
+                   [style.width.%]="getConfirmationsProgress(selectedDeposit)"
+                   [class]="getConfirmationsClass(selectedDeposit)">
+              </div>
+            </div>
+            <div class="detail-row" *ngIf="getErrorMessage(selectedDeposit)">
+              <span class="label">Error:</span>
+              <span class="value error-text">{{ getErrorMessage(selectedDeposit) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="getErrorTime(selectedDeposit)">
+              <span class="label">Error At:</span>
+              <span class="value">{{ formatDate(getErrorTime(selectedDeposit) || '') }}</span>
+            </div>
+          </div>
+          
+          <!-- Customer Info -->
+          <div class="detail-section">
+            <h3>Customer Information</h3>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedDeposit.merchantId }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedDeposit.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedDeposit.updatedAt) }}</span>
+            </div>
+          </div>
+          
+          <!-- Raw Data Section (Collapsible/Expandable) -->
+          <div class="detail-section full-width">
+            <h3 style="cursor: pointer;" (click)="showRawData = !showRawData">
+              <i class="fas" [class.fa-chevron-down]="showRawData" [class.fa-chevron-right]="!showRawData"></i>
+              Raw Transaction Data
+            </h3>
+            <div *ngIf="showRawData" class="raw-data-container">
+              <div class="detail-row">
+                <span class="label">Block Hash:</span>
+                <span class="value mono">{{ selectedDeposit.raw?.block?.hash || 'N/A' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Block Timestamp:</span>
+                <span class="value">{{ selectedDeposit.raw?.block?.timestamp ? formatDate((selectedDeposit.raw.block.timestamp * 1000).toString()) : 'N/A' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Gas Used:</span>
+                <span class="value">{{ selectedDeposit.raw?.receipt?.gasUsed || 'N/A' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Effective Gas Price:</span>
+                <span class="value">{{ selectedDeposit.raw?.receipt?.effectiveGasPrice || 'N/A' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Transaction Status:</span>
+                <span class="value">{{ selectedDeposit.raw?.receipt?.status === 1 ? 'Success' : 'Failed' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">From (Raw):</span>
+                <span class="value mono">{{ selectedDeposit.raw?.receipt?.from || 'N/A' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">To (Raw):</span>
+                <span class="value mono">{{ selectedDeposit.raw?.receipt?.to || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="reprocess-btn" 
+                *ngIf="canReprocess(selectedDeposit)"
+                (click)="openReprocessModal(selectedDeposit); closeViewModal()">
+          <i class="fas fa-sync-alt"></i> Reprocess
+        </button>
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Reprocess Confirmation Modal -->
+  <div class="modal" *ngIf="showReprocessModal && selectedDeposit" (click)="cancelReprocess()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-sync-alt"></i>
+          Reprocess Deposit
+        </h2>
+        <button class="close-btn" (click)="cancelReprocess()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>You are about to reprocess deposit:</p>
+        <div class="deposit-info">
+          <code>{{ selectedDeposit.txHash }}</code>
+          <div class="deposit-details">
+            {{ formatNumber(selectedDeposit.amount, 4) }} {{ selectedDeposit.asset }} on {{ selectedDeposit.network }}
+          </div>
+          <div class="deposit-intent" *ngIf="selectedDeposit.intentCode">
+            Intent: {{ selectedDeposit.intentCode }}
+          </div>
+        </div>
+        
+        <div class="warning-box" *ngIf="getErrorMessage(selectedDeposit)">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Previous error: {{ getErrorMessage(selectedDeposit) }}</span>
+        </div>
+        
+        <div class="warning-box">
+          <i class="fas fa-info-circle"></i>
+          <span>Reprocessing will attempt to handle this deposit again. This action may take a few moments.</span>
+        </div>
+        
+        <form [formGroup]="reprocessForm" class="reprocess-form">
+          <div class="form-group">
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Enter reason for reprocessing..."></textarea>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelReprocess()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="executeReprocess()" [disabled]="actionInProgress || reprocessForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-sync-alt]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Processing...' : 'Reprocess' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

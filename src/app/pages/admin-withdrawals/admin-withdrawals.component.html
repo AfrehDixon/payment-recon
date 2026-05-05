@@ -1,0 +1,658 @@
+<!-- admin-withdrawals.component.html -->
+<div class="withdrawals-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-arrow-up"></i>
+        Withdrawals
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Customer ID</label>
+        <input type="text" formControlName="endCustomerId" placeholder="Enter customer ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Asset Wallet ID</label>
+        <input type="text" formControlName="assetWalletId" placeholder="Enter asset wallet ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Network</label>
+        <select formControlName="network">
+          <option value="">All</option>
+          <option *ngFor="let network of networkOptions" [value]="network">{{ network }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Asset</label>
+        <input type="text" formControlName="asset" placeholder="USDT, USDC, BTC..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Destination Address</label>
+        <input type="text" formControlName="destinationAddress" placeholder="0x..." />
+      </div>
+      
+      <div formGroupName="dateRange" class="filter-group date-range">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="datetime-local" formControlName="from" placeholder="From" />
+          <input type="datetime-local" formControlName="to" placeholder="To" />
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && withdrawals.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-arrow-up"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Withdrawals</span>
+        <span class="stat-value">{{ totalWithdrawals }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon volume">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Volume</span>
+        <span class="stat-value">{{ formatCurrency(totalVolume, 'USD') }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon fees">
+        <i class="fas fa-percent"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Fees</span>
+        <span class="stat-value">{{ formatCurrency(totalFees, 'USD') }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon pending">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ pendingCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon processing">
+        <i class="fas fa-spinner"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Processing</span>
+        <span class="stat-value">{{ processingCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon approved">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Approved</span>
+        <span class="stat-value">{{ approvedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon sent">
+        <i class="fas fa-paper-plane"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Sent</span>
+        <span class="stat-value">{{ sentCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon completed">
+        <i class="fas fa-check-double"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Completed</span>
+        <span class="stat-value">{{ completedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon failed">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Failed</span>
+        <span class="stat-value">{{ failedCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Withdrawals Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="withdrawals-table">
+      <thead>
+        <tr>
+          <th>Client Reference</th>
+          <th>Asset</th>
+          <th>Network</th>
+          <th>Amount</th>
+          <th>Fee</th>
+          <th>Destination</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let withdrawal of withdrawals" class="withdrawal-row" [class.failed-row]="withdrawal.status === 'FAILED'">
+          <td class="ref-cell">
+            <div class="client-ref" title="{{ withdrawal.clientReference }}">
+              {{ formatAddress(withdrawal.clientReference) }}
+            </div>
+            <div class="withdrawal-id" title="{{ withdrawal._id }}">
+              ID: {{ formatAddress(withdrawal._id) }}
+            </div>
+          </td>
+          <td class="asset-cell">
+            <div class="asset-name">{{ withdrawal.asset }}</div>
+          </td>
+          <td class="network-cell">
+            <span class="network-badge" [style.backgroundColor]="getNetworkColor(withdrawal.network)">
+              {{ withdrawal.network }}
+            </span>
+          </td>
+          <td class="amount-cell">
+            <div class="amount">{{ formatNumber(withdrawal.amount, 4) }}</div>
+            <div class="amount-usd">{{ formatCurrency(withdrawal.amount, withdrawal.asset) }}</div>
+          </td>
+          <td class="fee-cell">
+            <div class="fee">{{ formatNumber(withdrawal.feeAmount, 4) }}</div>
+            <div class="fee-usd">{{ formatCurrency(withdrawal.feeAmount, withdrawal.asset) }}</div>
+          </td>
+          <td class="address-cell">
+            <div class="destination" title="{{ withdrawal.destinationAddress }}">
+              {{ formatAddress(withdrawal.destinationAddress) }}
+            </div>
+          </td>
+          <td class="status-cell">
+            <span [class]="'badge ' + getStatusClass(withdrawal.status)">
+              <i class="fas" [class]="getStatusIcon(withdrawal.status)"></i>
+              {{ withdrawal.status }}
+            </span>
+            <div class="failure-reason" *ngIf="withdrawal.failureReason" title="{{ withdrawal.failureReason }}">
+              <i class="fas fa-exclamation-circle"></i> Failed
+            </div>
+          </td>
+          <td class="date-cell">
+            {{ formatDate(withdrawal.createdAt) }}
+          </td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewWithdrawalDetails(withdrawal)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            
+            <button class="retry-btn" 
+                    *ngIf="canPerformAction(withdrawal, 'retry')"
+                    (click)="openActionModal('retry', withdrawal)" 
+                    title="Retry">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            
+            <button class="cancel-btn" 
+                    *ngIf="canPerformAction(withdrawal, 'cancel')"
+                    (click)="openActionModal('cancel', withdrawal)" 
+                    title="Cancel">
+              <i class="fas fa-ban"></i>
+            </button>
+            
+            <button class="processing-btn" 
+                    *ngIf="canPerformAction(withdrawal, 'processing')"
+                    (click)="openActionModal('processing', withdrawal)" 
+                    title="Mark Processing">
+              <i class="fas fa-spinner"></i>
+            </button>
+            
+            <button class="sent-btn" 
+                    *ngIf="canPerformAction(withdrawal, 'sent')"
+                    (click)="openActionModal('sent', withdrawal)" 
+                    title="Mark Sent">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            
+            <button class="failed-btn" 
+                    *ngIf="canPerformAction(withdrawal, 'failed')"
+                    (click)="openActionModal('failed', withdrawal)" 
+                    title="Mark Failed">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="withdrawals.length === 0" class="empty-state">
+      <i class="fas fa-arrow-up"></i>
+      <p>No withdrawals found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} withdrawals
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedWithdrawal" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-arrow-up"></i>
+          Withdrawal Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Withdrawal ID:</span>
+              <span class="value mono">{{ selectedWithdrawal._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Client Reference:</span>
+              <span class="value">{{ selectedWithdrawal.clientReference }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Idempotency Key:</span>
+              <span class="value mono">{{ selectedWithdrawal.idempotencyKey }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedWithdrawal.merchantId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.endCustomerId">
+              <span class="label">Customer ID:</span>
+              <span class="value">{{ selectedWithdrawal.endCustomerId }}</span>
+            </div>
+          </div>
+          
+          <!-- Wallet Information -->
+          <div class="detail-section">
+            <h3>Wallet Information</h3>
+            <div class="detail-row">
+              <span class="label">Custody Wallet ID:</span>
+              <span class="value mono">{{ selectedWithdrawal.custodyWalletId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Asset Wallet ID:</span>
+              <span class="value mono">{{ selectedWithdrawal.assetWalletId }}</span>
+            </div>
+          </div>
+          
+          <!-- Amount Information -->
+          <div class="detail-section">
+            <h3>Amount Information</h3>
+            <div class="detail-row">
+              <span class="label">Amount:</span>
+              <span class="value highlight">{{ formatNumber(selectedWithdrawal.amount, 8) }} {{ selectedWithdrawal.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Fee Amount:</span>
+              <span class="value">{{ formatNumber(selectedWithdrawal.feeAmount, 8) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Amount:</span>
+              <span class="value">{{ formatNumber(selectedWithdrawal.amount + selectedWithdrawal.feeAmount, 8) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">USD Value:</span>
+              <span class="value">{{ formatCurrency(selectedWithdrawal.amount, selectedWithdrawal.asset) }}</span>
+            </div>
+          </div>
+          
+          <!-- Asset & Network -->
+          <div class="detail-section">
+            <h3>Asset Information</h3>
+            <div class="detail-row">
+              <span class="label">Asset:</span>
+              <span class="value">{{ selectedWithdrawal.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedWithdrawal.network }}</span>
+            </div>
+          </div>
+          
+          <!-- Destination -->
+          <div class="detail-section">
+            <h3>Destination</h3>
+            <div class="detail-row">
+              <span class="label">Destination Address:</span>
+              <span class="value mono">{{ selectedWithdrawal.destinationAddress }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.txHash">
+              <span class="label">Transaction Hash:</span>
+              <span class="value mono">{{ selectedWithdrawal.txHash }}</span>
+            </div>
+          </div>
+          
+          <!-- Status -->
+          <div class="detail-section">
+            <h3>Status</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedWithdrawal.status)">
+                <i class="fas" [class]="getStatusIcon(selectedWithdrawal.status)"></i>
+                {{ selectedWithdrawal.status }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.failureReason">
+              <span class="label">Failure Reason:</span>
+              <span class="value error-text">{{ selectedWithdrawal.failureReason }}</span>
+            </div>
+          </div>
+          
+          <!-- Processing Lock -->
+          <div class="detail-section" *ngIf="selectedWithdrawal.processingLock.isLocked">
+            <h3>Processing Lock</h3>
+            <div class="detail-row">
+              <span class="label">Locked:</span>
+              <span class="value">Yes</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.processingLock.lockedAt">
+              <span class="label">Locked At:</span>
+              <span class="value">{{ formatDate(selectedWithdrawal.processingLock.lockedAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.processingLock.lockedBy">
+              <span class="label">Locked By:</span>
+              <span class="value">{{ selectedWithdrawal.processingLock.lockedBy }}</span>
+            </div>
+          </div>
+          
+          <!-- Admin Action -->
+          <div class="detail-section" *ngIf="selectedWithdrawal.adminActionMeta?.action">
+            <h3>Admin Action</h3>
+            <div class="detail-row">
+              <span class="label">Action:</span>
+              <span class="value">{{ selectedWithdrawal.adminActionMeta.action }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.adminActionMeta.performedBy">
+              <span class="label">Performed By:</span>
+              <span class="value">{{ selectedWithdrawal.adminActionMeta.performedBy }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.adminActionMeta.reason">
+              <span class="label">Reason:</span>
+              <span class="value">{{ selectedWithdrawal.adminActionMeta.reason }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.adminActionMeta.at">
+              <span class="label">At:</span>
+              <span class="value">{{ formatDate(selectedWithdrawal.adminActionMeta.at) }}</span>
+            </div>
+          </div>
+          
+          <!-- Orchestration Metadata -->
+          <div class="detail-section full-width" *ngIf="selectedWithdrawal.orchestrationMeta.enabled">
+            <h3>Orchestration Metadata</h3>
+            <div class="detail-row" *ngIf="selectedWithdrawal.orchestrationMeta.payoutTransactionId">
+              <span class="label">Payout Transaction ID:</span>
+              <span class="value mono">{{ selectedWithdrawal.orchestrationMeta.payoutTransactionId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.orchestrationMeta.payoutExternalTransactionId">
+              <span class="label">External Transaction ID:</span>
+              <span class="value mono">{{ selectedWithdrawal.orchestrationMeta.payoutExternalTransactionId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.orchestrationMeta.payoutProviderStatus">
+              <span class="label">Provider Status:</span>
+              <span class="value">{{ selectedWithdrawal.orchestrationMeta.payoutProviderStatus }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.orchestrationMeta.submittedToDisburserAt">
+              <span class="label">Submitted To Disburser:</span>
+              <span class="value">{{ formatDate(selectedWithdrawal.orchestrationMeta.submittedToDisburserAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.orchestrationMeta.payoutFailureReason">
+              <span class="label">Payout Failure Reason:</span>
+              <span class="value error-text">{{ selectedWithdrawal.orchestrationMeta.payoutFailureReason }}</span>
+            </div>
+          </div>
+          
+          <!-- Metadata -->
+          <div class="detail-section full-width" *ngIf="selectedWithdrawal.metadata">
+            <h3>Additional Metadata</h3>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.source">
+              <span class="label">Source:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.source }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.appId">
+              <span class="label">App ID:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.appId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.callbackUrl">
+              <span class="label">Callback URL:</span>
+              <span class="value mono">{{ selectedWithdrawal.metadata.callbackUrl }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.accountName">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.accountName }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.accountIssuer">
+              <span class="label">Account Issuer:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.accountIssuer }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.accountType">
+              <span class="label">Account Type:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.accountType }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.serviceType">
+              <span class="label">Service Type:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.serviceType }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedWithdrawal.metadata.description">
+              <span class="label">Description:</span>
+              <span class="value">{{ selectedWithdrawal.metadata.description }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedWithdrawal.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedWithdrawal.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="retry-btn" 
+                *ngIf="canPerformAction(selectedWithdrawal, 'retry')"
+                (click)="openActionModal('retry', selectedWithdrawal); closeViewModal()">
+          <i class="fas fa-sync-alt"></i> Retry
+        </button>
+        <button class="cancel-btn" 
+                *ngIf="canPerformAction(selectedWithdrawal, 'cancel')"
+                (click)="openActionModal('cancel', selectedWithdrawal); closeViewModal()">
+          <i class="fas fa-ban"></i> Cancel
+        </button>
+        <button class="processing-btn" 
+                *ngIf="canPerformAction(selectedWithdrawal, 'processing')"
+                (click)="openActionModal('processing', selectedWithdrawal); closeViewModal()">
+          <i class="fas fa-spinner"></i> Mark Processing
+        </button>
+        <button class="sent-btn" 
+                *ngIf="canPerformAction(selectedWithdrawal, 'sent')"
+                (click)="openActionModal('sent', selectedWithdrawal); closeViewModal()">
+          <i class="fas fa-paper-plane"></i> Mark Sent
+        </button>
+        <button class="failed-btn" 
+                *ngIf="canPerformAction(selectedWithdrawal, 'failed')"
+                (click)="openActionModal('failed', selectedWithdrawal); closeViewModal()">
+          <i class="fas fa-times-circle"></i> Mark Failed
+        </button>
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Action Confirmation Modal -->
+  <div class="modal" *ngIf="showActionModal && selectedWithdrawal && currentAction" (click)="cancelActionModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas" [class.fa-sync-alt]="currentAction === 'retry'"
+             [class.fa-ban]="currentAction === 'cancel'"
+             [class.fa-spinner]="currentAction === 'processing'"
+             [class.fa-paper-plane]="currentAction === 'sent'"
+             [class.fa-times-circle]="currentAction === 'failed'"></i>
+          {{ getActionModalTitle() }}
+        </h2>
+        <button class="close-btn" (click)="cancelActionModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>You are about to <strong>{{ getActionButtonLabel(currentAction) }}</strong> withdrawal:</p>
+        <div class="withdrawal-info">
+          <code>{{ selectedWithdrawal.clientReference }}</code>
+          <div class="withdrawal-details">
+            {{ formatNumber(selectedWithdrawal.amount, 4) }} {{ selectedWithdrawal.asset }} to {{ formatAddress(selectedWithdrawal.destinationAddress) }}
+          </div>
+        </div>
+        
+        <div class="warning-box" [class.danger]="currentAction === 'cancel' || currentAction === 'failed'">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ getActionWarning() }}</span>
+        </div>
+        
+        <form [formGroup]="actionForm" class="action-form">
+          <div class="form-group">
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Enter reason for this action..."></textarea>
+          </div>
+          
+          <div class="form-group" *ngIf="currentAction === 'sent'">
+            <label>Transaction Hash *</label>
+            <input type="text" formControlName="txHash" placeholder="Enter transaction hash..." />
+          </div>
+          
+          <div class="form-group checkbox" *ngIf="currentAction === 'failed'">
+            <label>
+              <input type="checkbox" formControlName="refund" />
+              <span>Refund the withdrawal amount</span>
+            </label>
+            <small class="warning-text" *ngIf="actionForm.get('refund')?.value">
+              <i class="fas fa-exclamation-triangle"></i>
+              Funds will be returned to the source wallet.
+            </small>
+          </div>
+          
+          <div class="form-group">
+            <label>Additional Notes (Optional)</label>
+            <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelActionModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" 
+                [class.retry-btn]="currentAction === 'retry'"
+                [class.cancel-btn]="currentAction === 'cancel'"
+                [class.processing-btn]="currentAction === 'processing'"
+                [class.sent-btn]="currentAction === 'sent'"
+                [class.failed-btn]="currentAction === 'failed'"
+                (click)="executeAction()" 
+                [disabled]="actionInProgress || actionForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" 
+             [class.fa-check]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Processing...' : getActionButtonLabel(currentAction) }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

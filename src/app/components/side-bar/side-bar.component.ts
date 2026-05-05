@@ -27,12 +27,19 @@ export interface MenuGroup {
 
 export const Routes: RouteInfo[] = [
   // Merchant Management
+    { path: 'dashboard', title: 'Dashboard', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
   { path: 'mechant', title: 'Merchants', class: 'false', permission: 'can view merchants module', parentModule: 'merchant-management' },
   { path: 'merchant-tiers', title: 'Merchant Tiers', class: 'false', permission: 'can view merchant tier module', parentModule: 'merchant-management' },
   // { path: 'merchant-statistics', title: 'Merchant Statistics', class: 'false', permission: 'can view merchant statistics module', parentModule: 'merchant-management' },
   // { path: 'balance-history', title: 'Balance History', class: 'false', permission: 'can view merchant balance history module', parentModule: 'merchant-management' },
   // { path: 'balance-summary', title: 'Balance Summary', class: 'false', permission: 'can view merchant balance summary module', parentModule: 'merchant-management' },
-  
+  { path: 'dashboard/custody', title: 'Custody Summary', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  {  path: 'dashboard/trading-summary', title: 'Trading Summary', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  {  path: 'dashboard/liquidity-summary', title: 'Liquidity Summary', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  { path: 'dashboard/recent-transactions', title: 'Recent Transactions', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  { path: 'dashboard/recent-trades', title: 'Recent Trades', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  { path: 'dashboard/recent-withdrawals', title: 'Recent Withdrawals', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
+  { path: 'dashboard/rate-health', title: 'Rate Health', class: 'false', permission: 'can view merchants module', parentModule: 'dashboard' },
   // Transactions
   { path: 'transactions', title: 'Transaction Filters', class: 'false', permission: 'can view transaction filters module', parentModule: 'transactions' },
   { path: 'reversals', title: 'Reversals', class: 'false', permission: 'can view operator switch module', parentModule: 'transactions' },
@@ -74,7 +81,15 @@ export const Routes: RouteInfo[] = [
   { path: 'permission-management', title: 'Permission Management', class: 'false', permission: 'can view system settings module', parentModule: 'system-management' },
   { path: 'settings', title: 'System Settings', class: 'false', permission: 'can view system settings module', parentModule: 'system-management' },
   { path: 'tickets', title: 'Admin Tickets', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
-  
+  { path: 'trading/pairs', title: 'Trading Pairs', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'trading/rates', title: 'Trading Rates', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'trading/quotes', title: 'Trading Quotes', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'trading/executions', title: 'Trading Executions', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'custody/wallets', title: 'Custody Wallets', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'custody/asset-wallets', title: 'Asset Wallets', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'custody/addresses', title: 'Custody Addresses', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'custody/deposits', title: 'Custody Deposits', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'custody/withdrawals', title: 'Custody Withdrawals', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
   // Monitoring & Logs
   { path: 'logs', title: 'System Logs', class: 'false', permission: 'can view system logs module', parentModule: 'monitoring-logs' },
   { path: 'logs-summary', title: 'Logs Summary', class: 'false', permission: 'can view logs summary module', parentModule: 'monitoring-logs' },
@@ -187,8 +202,78 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   // Add this method to your SidebarComponent class
 getIconForMenuItem(menuItem: RouteInfo): string {
-  // Map parent modules to icons
-  const iconMap: { [key: string]: string } = {
+  // Map specific menu titles to appropriate icons
+  const specificIconMap: { [key: string]: string } = {
+    // Dashboard
+    'Dashboard': 'bi bi-speedometer2',
+    'Custody Summary': 'bi bi-safe',
+    
+    // Merchant Management
+    'Merchants': 'bi bi-shop',
+    'Merchant Tiers': 'bi bi-layers',
+    
+    // Transactions
+    'Transaction Filters': 'bi bi-funnel',
+    'Reversals': 'bi bi-arrow-return-left',
+    'Credit/Debit': 'bi bi-plus-slash-minus',
+    'Transaction Transfer': 'bi bi-send',
+    
+    // Wallets & Payments
+    'Wallets': 'bi bi-wallet2',
+    'Customer Wallets': 'bi bi-people',
+    'Payment Links': 'bi bi-link',
+    'Payment Terminals': 'bi bi-credit-card',
+    'Wallet Addresses': 'bi bi-qr-code',
+    'Account Ledger': 'bi bi-book',
+    
+    // Settlements & Payouts
+    'Merchant Collections': 'bi bi-cash',
+    'Consolidations': 'bi bi-stack',
+    
+    // Analytics & Reports
+    'Reports': 'bi bi-file-text',
+    'Daily Statistics': 'bi bi-calendar-day',
+    'Weekly Statistics': 'bi bi-calendar-week',
+    'Monthly Statistics': 'bi bi-calendar-month',
+    'Cumulative Statistics': 'bi bi-graph-up',
+    
+    // System Configuration
+    'Operator Config': 'bi bi-sliders',
+    'Charge Config': 'bi bi-calculator',
+    'Velocity Rules': 'bi bi-speedometer2',
+    'Vault Management': 'bi bi-shield-lock',
+    'Account Blacklist': 'bi bi-x-octagon',
+    
+    // System Management
+    'Admins': 'bi bi-person-badge',
+    'Permission Management': 'bi bi-key',
+    'System Settings': 'bi bi-gear-wide-connected',
+    'Admin Tickets': 'bi bi-ticket',
+    'Trading Pairs': 'bi bi-currency-exchange',
+    'Trading Rates': 'bi bi-percent',
+    'Trading Quotes': 'bi bi-file-text',
+    'Trading Executions': 'bi bi-play-circle',
+    'Custody Wallets': 'bi bi-safe',
+    'Asset Wallets': 'bi bi-database',
+    'Custody Addresses': 'bi bi-geo-alt',
+    'Custody Deposits': 'bi bi-download',
+    'Custody Withdrawals': 'bi bi-upload',
+    
+    // Monitoring & Logs
+    'System Logs': 'bi bi-file-earmark-text',
+    'Logs Summary': 'bi bi-bar-chart-steps',
+    'Hub': 'bi bi-hubspot',
+    'Credit Queue': 'bi bi-hourglass-split',
+    'Cron Jobs': 'bi bi-clock-history'
+  };
+  
+  // Check if we have a specific icon for this menu title
+  if (specificIconMap[menuItem.title]) {
+    return specificIconMap[menuItem.title];
+  }
+  
+  // Fallback to parent module mapping
+  const parentModuleMap: { [key: string]: string } = {
     'merchant-management': 'bi bi-people',
     'transactions': 'bi bi-arrow-left-right',
     'wallets-payments': 'bi bi-wallet2',
@@ -196,10 +281,11 @@ getIconForMenuItem(menuItem: RouteInfo): string {
     'analytics-reports': 'bi bi-graph-up',
     'system-config': 'bi bi-gear',
     'system-management': 'bi bi-person-badge',
-    'monitoring-logs': 'bi bi-clipboard-data'
+    'monitoring-logs': 'bi bi-clipboard-data',
+    'dashboard': 'bi bi-speedometer2'
   };
   
   // Return the icon based on parent module, or a default icon
-  return iconMap[menuItem.parentModule || ''] || 'bi bi-circle';
+  return parentModuleMap[menuItem.parentModule || ''] || 'bi bi-circle';
 }
 }

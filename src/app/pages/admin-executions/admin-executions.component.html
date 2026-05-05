@@ -1,0 +1,495 @@
+<!-- admin-executions.component.html -->
+<div class="executions-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-exchange-alt"></i>
+        Trade Executions
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>End Customer ID</label>
+        <input type="text" formControlName="endCustomerId" placeholder="Enter customer ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Pair Code</label>
+        <input type="text" formControlName="pairCode" placeholder="BTC_USDT, ETH_USDT..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Quote Ref</label>
+        <input type="text" formControlName="quoteRef" placeholder="Quote reference" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Execution Ref</label>
+        <input type="text" formControlName="executionRef" placeholder="Execution reference" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Side</label>
+        <select formControlName="side">
+          <option value="">All</option>
+          <option *ngFor="let side of sideOptions" [value]="side">{{ side }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div formGroupName="dateRange" class="filter-group date-range">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="datetime-local" formControlName="from" placeholder="From" />
+          <input type="datetime-local" formControlName="to" placeholder="To" />
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && executions.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-chart-simple"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Executions</span>
+        <span class="stat-value">{{ totalExecutions }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon pending">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ pendingCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon completed">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Completed</span>
+        <span class="stat-value">{{ completedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon reconciled">
+        <i class="fas fa-handshake"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Reconciled</span>
+        <span class="stat-value">{{ reconciledCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon settled">
+        <i class="fas fa-check-double"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Settled</span>
+        <span class="stat-value">{{ settledCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon failed">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Failed</span>
+        <span class="stat-value">{{ failedCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Executions Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="executions-table">
+      <thead>
+        <tr>
+          <th>Execution Ref</th>
+          <th>Quote Ref</th>
+          <th>Pair</th>
+          <th>Side</th>
+          <th>Amount</th>
+          <th>Rate</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let execution of executions" class="execution-row" [class.failed-row]="execution.status === 'FAILED'">
+          <td class="ref-cell">
+            <div class="execution-ref">{{ execution.executionRef }}</div>
+            <div class="execution-id" title="{{ execution._id }}">ID: {{ formatAddress(execution._id) }}</div>
+          </td>
+          <td class="ref-cell">
+            <div class="quote-ref">{{ execution.quoteRef }}</div>
+          </td>
+          <td class="pair-cell">
+            <div class="pair-code">{{ execution.pairCode }}</div>
+            <div class="pair-assets">{{ execution.baseAsset }}/{{ execution.quoteAsset }}</div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getSideClass(execution.side)">
+              <i class="fas" [class.fa-arrow-up]="execution.side === 'SELL'" [class.fa-arrow-down]="execution.side === 'BUY'" [class.fa-exchange-alt]="execution.side === 'SWAP'"></i>
+              {{ execution.side }}
+            </span>
+          </td>
+          <td class="amount-cell">
+            <div>{{ formatCurrency(execution.baseAmount, execution.baseAsset) }}</div>
+            <div class="small-text">Base</div>
+          </td>
+          <td class="rate-cell">
+            <div>{{ formatNumber(execution.rate, 4) }}</div>
+            <div class="small-text">{{ execution.quoteAsset }} per {{ execution.baseAsset }}</div>
+          </td>
+          <td class="amount-cell">
+            <div>{{ formatCurrency(execution.totalAmount, execution.quoteAsset) }}</div>
+            <div class="small-text">Total (incl. fee)</div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(execution.status)">
+              <i class="fas" [class]="getStatusIcon(execution.status)"></i>
+              {{ execution.status }}
+            </span>
+            <div *ngIf="execution.failureReason" class="failure-reason" title="{{ execution.failureReason }}">
+              <i class="fas fa-exclamation-circle"></i> Failed
+            </div>
+          </td>
+          <td class="date-cell">{{ formatDate(execution.createdAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewExecutionDetails(execution)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button class="reconcile-btn" 
+                    *ngIf="canReconcile(execution)"
+                    (click)="confirmReconcile(execution._id)" 
+                    title="Reconcile Execution">
+              <i class="fas fa-handshake"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="executions.length === 0" class="empty-state">
+      <i class="fas fa-exchange-alt"></i>
+      <p>No executions found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} executions
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedExecution" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exchange-alt"></i>
+          Execution Details: {{ selectedExecution.executionRef }}
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Execution ID:</span>
+              <span class="value mono">{{ selectedExecution._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Execution Ref:</span>
+              <span class="value">{{ selectedExecution.executionRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Ref:</span>
+              <span class="value">{{ selectedExecution.quoteRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote ID:</span>
+              <span class="value mono">{{ selectedExecution.quoteId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedExecution.merchantId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">End Customer ID:</span>
+              <span class="value">{{ selectedExecution.endCustomerId }}</span>
+            </div>
+          </div>
+          
+          <!-- Trading Details -->
+          <div class="detail-section">
+            <h3>Trading Details</h3>
+            <div class="detail-row">
+              <span class="label">Pair:</span>
+              <span class="value">{{ selectedExecution.pairCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Assets:</span>
+              <span class="value">{{ selectedExecution.baseAsset }}/{{ selectedExecution.quoteAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Side:</span>
+              <span [class]="'badge ' + getSideClass(selectedExecution.side)">
+                {{ selectedExecution.side }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Rate:</span>
+              <span class="value">{{ formatNumber(selectedExecution.rate, 4) }} {{ selectedExecution.quoteAsset }}/{{ selectedExecution.baseAsset }}</span>
+            </div>
+          </div>
+          
+          <!-- Amounts -->
+          <div class="detail-section">
+            <h3>Amounts</h3>
+            <div class="detail-row">
+              <span class="label">Base Amount:</span>
+              <span class="value">{{ formatCurrency(selectedExecution.baseAmount, selectedExecution.baseAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Amount:</span>
+              <span class="value">{{ formatCurrency(selectedExecution.quoteAmount, selectedExecution.quoteAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Fee:</span>
+              <span class="value">{{ formatCurrency(selectedExecution.fee, selectedExecution.quoteAsset) }} ({{ selectedExecution.feeBps }} bps)</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Amount:</span>
+              <span class="value highlight">{{ formatCurrency(selectedExecution.totalAmount, selectedExecution.quoteAsset) }}</span>
+            </div>
+          </div>
+          
+          <!-- Settlement Info -->
+          <div class="detail-section">
+            <h3>Settlement Information</h3>
+            <div class="detail-row" *ngIf="selectedExecution.settlementTxId">
+              <span class="label">Transaction ID:</span>
+              <span class="value mono">{{ formatAddress(selectedExecution.settlementTxId) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.settlementAddress">
+              <span class="label">Settlement Address:</span>
+              <span class="value mono">{{ formatAddress(selectedExecution.settlementAddress) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.settlementNetwork">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedExecution.settlementNetwork }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.settledAt">
+              <span class="label">Settled At:</span>
+              <span class="value">{{ formatDate(selectedExecution.settledAt) }}</span>
+            </div>
+          </div>
+          
+          <!-- Status & Reconciliation -->
+          <div class="detail-section">
+            <h3>Status & Reconciliation</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedExecution.status)">
+                <i class="fas" [class]="getStatusIcon(selectedExecution.status)"></i>
+                {{ selectedExecution.status }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.failureReason">
+              <span class="label">Failure Reason:</span>
+              <span class="value error-text">{{ selectedExecution.failureReason }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.reconciledAt">
+              <span class="label">Reconciled At:</span>
+              <span class="value">{{ formatDate(selectedExecution.reconciledAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.reconciledBy">
+              <span class="label">Reconciled By:</span>
+              <span class="value">{{ selectedExecution.reconciledBy }}</span>
+            </div>
+          </div>
+          
+          <!-- Metadata -->
+          <div class="detail-section full-width" *ngIf="selectedExecution.metadata">
+            <h3>Additional Information</h3>
+            <div class="detail-row" *ngIf="selectedExecution.metadata.source">
+              <span class="label">Source:</span>
+              <span class="value">{{ selectedExecution.metadata.source }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.metadata.ipAddress">
+              <span class="label">IP Address:</span>
+              <span class="value">{{ selectedExecution.metadata.ipAddress }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.metadata.userAgent">
+              <span class="label">User Agent:</span>
+              <span class="value small">{{ selectedExecution.metadata.userAgent }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.metadata.notes">
+              <span class="label">Notes:</span>
+              <span class="value">{{ selectedExecution.metadata.notes }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedExecution.metadata.reconciliationNotes">
+              <span class="label">Reconciliation Notes:</span>
+              <span class="value">{{ selectedExecution.metadata.reconciliationNotes }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section full-width">
+            <h3>System Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedExecution.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedExecution.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="reconcile-btn-modal" 
+                *ngIf="canReconcile(selectedExecution)"
+                (click)="confirmReconcile(selectedExecution._id); closeViewModal()">
+          <i class="fas fa-handshake"></i>
+          Reconcile Execution
+        </button>
+        <button class="cancel-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Reconcile Confirmation Modal -->
+  <div class="modal" *ngIf="showReconcileModal" (click)="cancelReconcile()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-handshake"></i>
+          Reconcile Execution
+        </h2>
+        <button class="close-btn" (click)="cancelReconcile()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Please provide reconciliation details:</p>
+        
+        <form [formGroup]="reconcileForm" class="reconcile-form">
+          <div class="form-group">
+            <label>Reason / Notes</label>
+            <textarea formControlName="reason" rows="3" placeholder="Enter reconciliation notes..."></textarea>
+          </div>
+          
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" formControlName="force" />
+              <span>Force reconciliation (bypass validation)</span>
+            </label>
+            <small class="warning-text" *ngIf="reconcileForm.get('force')?.value">
+              <i class="fas fa-exclamation-triangle"></i>
+              Warning: Force reconciliation will override any validation errors.
+            </small>
+          </div>
+        </form>
+        
+        <div class="info-box">
+          <i class="fas fa-info-circle"></i>
+          <span>Reconciliation will mark this execution as reconciled and update settlement status.</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelReconcile()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn reconcile-btn-modal" (click)="executeReconcile()" [disabled]="reconcileInProgress">
+          <i class="fas" [class.fa-spinner]="reconcileInProgress" [class.fa-spin]="reconcileInProgress" [class.fa-handshake]="!reconcileInProgress"></i>
+          {{ reconcileInProgress ? 'Processing...' : 'Reconcile Execution' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

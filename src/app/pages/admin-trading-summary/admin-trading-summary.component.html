@@ -1,0 +1,213 @@
+<!-- admin-trading-summary.component.html -->
+<div class="trading-summary-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-chart-line"></i>
+        Trading Summary
+      </h1>
+      <p class="subtitle">Monitor trading activity, volumes, and market performance</p>
+      <div class="date-range" *ngIf="summary">
+        <i class="fas fa-calendar"></i>
+        {{ getRangeLabel() }}
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load trading summary</h3>
+    <p>There was an error loading the trading data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading trading summary...</p>
+  </div>
+  
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error && summary">
+    <!-- No Data State -->
+    <div class="no-data-state" *ngIf="!hasData()">
+      <i class="fas fa-chart-line"></i>
+      <h3>No Trading Data Available</h3>
+      <p>There are no trades recorded for the selected period.</p>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="stats-grid" *ngIf="hasData()">
+      <div *ngFor="let stat of getMainStats()" class="stat-card" [class]="stat.color">
+        <div class="stat-icon">
+          <i class="fas" [class]="stat.icon"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">{{ stat.label }}</span>
+          <div class="stat-value-wrapper">
+            <span class="stat-value">
+              <span *ngIf="stat.prefix">{{ stat.prefix }}</span>
+              {{ formatCompactNumber(stat.value) }}
+              <span *ngIf="stat.suffix">{{ stat.suffix }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Status Breakdown -->
+    <div class="card full-width" *ngIf="summary.byStatus.length > 0">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-chart-pie"></i>
+          Trading Status Breakdown
+        </h3>
+        <span class="card-subtitle">Distribution by trade status</span>
+      </div>
+      <div class="card-body">
+        <div class="status-list">
+          <div *ngFor="let status of summary.byStatus" class="status-item">
+            <div class="status-header">
+              <div class="status-info">
+                <div class="status-dot" [style.backgroundColor]="getStatusColor(status._id)"></div>
+                <span class="status-name">{{ status._id || 'Unknown' }}</span>
+              </div>
+              <div class="status-stats">
+                <span class="status-count">{{ status.count }} trades</span>
+                <span class="status-amount">{{ formatCurrency(status.totalAmount, 'USD') }}</span>
+              </div>
+            </div>
+            <div class="status-bar-container">
+              <div class="status-bar" 
+                   [style.width.%]="(status.totalAmount / summary.totals.totalAmount) * 100"
+                   [style.backgroundColor]="getStatusColor(status._id)">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Top Trading Pairs -->
+    <div class="card full-width" *ngIf="summary.topPairs.length > 0">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-chart-bar"></i>
+          Top Trading Pairs
+        </h3>
+        <span class="card-subtitle">Most active trading pairs by volume</span>
+      </div>
+      <div class="card-body">
+        <div class="pair-list">
+          <div *ngFor="let pair of summary.topPairs" class="pair-item">
+            <div class="pair-header">
+              <div class="pair-info">
+                <div class="pair-color" [style.backgroundColor]="getPairColor(pair._id)"></div>
+                <span class="pair-name">{{ pair._id }}</span>
+                <span class="pair-count">{{ pair.count }} trades</span>
+              </div>
+              <div class="pair-volume">{{ formatCurrency(pair.totalAmount, 'USD') }}</div>
+            </div>
+            <div class="pair-bar-container">
+              <div class="pair-bar" 
+                   [style.width.%]="(pair.totalAmount / getMaxPairVolume()) * 100"
+                   [style.backgroundColor]="getPairColor(pair._id)">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="two-columns" *ngIf="hasData()">
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-info-circle"></i>
+            Summary Information
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="summary-info">
+            <div class="info-item">
+              <span class="info-label">Total Trades</span>
+              <span class="info-value">{{ formatNumber(summary.totals.totalCount) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Total Volume</span>
+              <span class="info-value">{{ formatCurrency(summary.totals.totalAmount, 'USD') }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Total Profit</span>
+              <span class="info-value profit">{{ formatCurrency(summary.totals.totalProfit, 'USD') }}</span>
+            </div>
+            <div class="info-item" *ngIf="summary.totals.totalCount > 0">
+              <span class="info-label">Average Trade Size</span>
+              <span class="info-value">{{ formatCurrency(summary.totals.totalAmount / summary.totals.totalCount, 'USD') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-chart-line"></i>
+            Performance Metrics
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="performance-metrics">
+            <div class="metric-item" *ngIf="summary.totals.totalAmount > 0">
+              <span class="metric-label">Profit Margin</span>
+              <span class="metric-value">{{ ((summary.totals.totalProfit / summary.totals.totalAmount) * 100).toFixed(2) }}%</span>
+              <div class="metric-bar">
+                <div class="metric-fill" 
+                     [style.width.%]="(summary.totals.totalProfit / summary.totals.totalAmount) * 100">
+                </div>
+              </div>
+            </div>
+            <div class="metric-item" *ngIf="summary.topPairs && summary.topPairs.length > 0 && summary.topPairs[0]">
+              <span class="metric-label">Top Pair Dominance</span>
+              <span class="metric-value">{{ ((summary.topPairs[0].totalAmount / summary.totals.totalAmount) * 100).toFixed(1) }}%</span>
+              <div class="metric-bar">
+                <div class="metric-fill" 
+                     [style.width.%]="(summary.topPairs[0].totalAmount / summary.totals.totalAmount) * 100">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

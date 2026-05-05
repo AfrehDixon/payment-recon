@@ -1,0 +1,930 @@
+// admin-withdrawals.component.scss
+.withdrawals-container {
+  padding: 24px;
+  margin-left: 200px;
+  background: #f8f9fa;
+  min-height: 100vh;
+  
+  .header {
+    margin-bottom: 24px;
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      h1 {
+        font-size: 1.8rem;
+        color: #2c3e50;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        
+        i {
+          color: #4CAF50;
+        }
+      }
+    }
+    
+    .header-actions {
+      .filter-toggle-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        
+        &:hover {
+          background-color: #f8f9fa;
+        }
+      }
+    }
+  }
+  
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          font-size: 24px;
+          color: #6c757d;
+        }
+        
+        &.volume i { color: #17a2b8; }
+        &.fees i { color: #fd7e14; }
+        &.pending i { color: #ffc107; }
+        &.processing i { color: #17a2b8; }
+        &.completed i { color: #28a745; }
+        &.failed i { color: #dc3545; }
+      }
+      
+      .stat-info {
+        flex: 1;
+        
+        .stat-label {
+          font-size: 0.75rem;
+          color: #6c757d;
+          display: block;
+          margin-bottom: 4px;
+        }
+        
+        .stat-value {
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+      }
+    }
+  }
+  
+  .filters-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    .filters-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      
+      .filter-group {
+        label {
+          font-size: 0.85rem;
+          color: #495057;
+          display: block;
+          margin-bottom: 6px;
+          font-weight: 500;
+        }
+        
+        input, select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          
+          &:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+          }
+        }
+        
+        &.date-range {
+          grid-column: span 2;
+          
+          .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+        }
+      }
+      
+      .filter-actions {
+        display: flex;
+        align-items: flex-end;
+        
+        .clear-btn {
+          padding: 8px 16px;
+          background-color: #6c757d;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          
+          &:hover {
+            background-color: #5a6268;
+          }
+        }
+      }
+    }
+  }
+  
+  .table-container {
+    background: white;
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    .withdrawals-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+      
+      th {
+        text-align: left;
+        padding: 16px;
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        font-size: 0.85rem;
+      }
+      
+      td {
+        padding: 16px;
+        border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
+      }
+      
+      .withdrawal-row {
+        transition: background-color 0.2s;
+        
+        &:hover {
+          background-color: #f8f9fa;
+        }
+        
+        &.failed-row {
+          background-color: #fff5f5;
+        }
+      }
+      
+      .id-cell {
+        .withdrawal-id {
+          font-family: monospace;
+          font-size: 0.8rem;
+          color: #2c3e50;
+          margin-bottom: 2px;
+        }
+        
+        .withdrawal-ref {
+          font-size: 0.65rem;
+          color: #6c757d;
+        }
+      }
+      
+      .asset-cell {
+        .asset-name {
+          font-weight: 600;
+          color: #2c3e50;
+        }
+      }
+      
+      .network-cell {
+        .network-badge {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: white;
+        }
+      }
+      
+      .amount-cell, .fee-cell, .total-cell {
+        .amount, .fee, .total {
+          font-family: monospace;
+          font-size: 0.85rem;
+        }
+        
+        .total-usd {
+          font-size: 0.7rem;
+          color: #6c757d;
+          margin-top: 2px;
+        }
+      }
+      
+      .address-cell {
+        .destination {
+          font-family: monospace;
+          font-size: 0.8rem;
+          color: #6c757d;
+        }
+      }
+      
+      .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        
+        i {
+          font-size: 0.7rem;
+        }
+        
+        &.status-pending {
+          background-color: #fff3cd;
+          color: #856404;
+        }
+        
+        &.status-processing {
+          background-color: #cce5ff;
+          color: #004085;
+        }
+        
+        &.status-sent {
+          background-color: #d1ecf1;
+          color: #0c5460;
+        }
+        
+        &.status-completed {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        
+        &.status-failed {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+        
+        &.status-cancelled {
+          background-color: #e2e3e5;
+          color: #383d41;
+        }
+      }
+      
+      .error-message {
+        font-size: 0.65rem;
+        color: #dc3545;
+        margin-top: 4px;
+        
+        i {
+          margin-right: 2px;
+        }
+      }
+      
+      .retry-cell {
+        .retry-count {
+          font-weight: 600;
+          color: #2c3e50;
+          text-align: center;
+        }
+      }
+      
+      .date-cell {
+        font-size: 0.75rem;
+        color: #6c757d;
+      }
+      
+      .actions-cell {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        
+        button {
+          padding: 6px 10px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+          
+          i {
+            font-size: 12px;
+          }
+          
+          &.view-btn {
+            background-color: #17a2b8;
+            color: white;
+            
+            &:hover {
+              background-color: #138496;
+            }
+          }
+          
+          &.retry-btn {
+            background-color: #28a745;
+            color: white;
+            
+            &:hover {
+              background-color: #218838;
+            }
+          }
+          
+          &.cancel-btn {
+            background-color: #6c757d;
+            color: white;
+            
+            &:hover {
+              background-color: #5a6268;
+            }
+          }
+          
+          &.processing-btn {
+            background-color: #17a2b8;
+            color: white;
+            
+            &:hover {
+              background-color: #138496;
+            }
+          }
+          
+          &.sent-btn {
+            background-color: #20c997;
+            color: white;
+            
+            &:hover {
+              background-color: #1ba87e;
+            }
+          }
+          
+          &.failed-btn {
+            background-color: #dc3545;
+            color: white;
+            
+            &:hover {
+              background-color: #c82333;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    color: #6c757d;
+    
+    i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #dee2e6;
+    }
+    
+    p {
+      margin-bottom: 16px;
+    }
+  }
+  
+  .pagination {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #dee2e6;
+    
+    .pagination-info {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+    
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      button {
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        
+        &:hover:not(:disabled) {
+          background-color: #f8f9fa;
+        }
+        
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        &.active {
+          background-color: #4CAF50;
+          color: white;
+          border-color: #4CAF50;
+        }
+      }
+      
+      .page-size-select {
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin-left: 12px;
+      }
+    }
+  }
+  
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 48px;
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #4CAF50;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+      
+      &.modal-large {
+        width: 90%;
+        max-width: 1000px;
+      }
+      
+      &.modal-medium {
+        width: 90%;
+        max-width: 550px;
+      }
+      
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        h2 {
+          margin: 0;
+          font-size: 1.3rem;
+          color: #2c3e50;
+          
+          i {
+            margin-right: 8px;
+          }
+        }
+        
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #6c757d;
+          
+          &:hover {
+            color: #343a40;
+          }
+        }
+      }
+      
+      .modal-body {
+        padding: 20px;
+      }
+      
+      .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+        
+        button {
+          padding: 8px 16px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+          
+          &.cancel-btn, &.close-modal-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            
+            &:hover {
+              background-color: #5a6268;
+            }
+          }
+          
+          &.submit-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            
+            &:hover:not(:disabled) {
+              background-color: #218838;
+            }
+            
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+            
+            &.retry-btn {
+              background-color: #28a745;
+            }
+            
+            &.cancel-btn {
+              background-color: #6c757d;
+            }
+            
+            &.processing-btn {
+              background-color: #17a2b8;
+            }
+            
+            &.sent-btn {
+              background-color: #20c997;
+            }
+            
+            &.failed-btn {
+              background-color: #dc3545;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    
+    .detail-section {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      
+      &.full-width {
+        grid-column: span 2;
+      }
+      
+      h3 {
+        font-size: 1rem;
+        color: #495057;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #dee2e6;
+      }
+      
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .label {
+          font-weight: 500;
+          color: #6c757d;
+          font-size: 0.85rem;
+        }
+        
+        .value {
+          font-weight: 500;
+          color: #2c3e50;
+          text-align: right;
+          
+          &.highlight {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #28a745;
+          }
+          
+          &.mono {
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+          }
+          
+          &.error-text {
+            color: #dc3545;
+          }
+          
+          &.small {
+            font-size: 0.75rem;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+  }
+  
+  .action-form {
+    .form-group {
+      margin-bottom: 20px;
+      
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #495057;
+      }
+      
+      input, textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        
+        &:focus {
+          outline: none;
+          border-color: #4CAF50;
+          box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+      }
+      
+      textarea {
+        resize: vertical;
+        font-family: inherit;
+      }
+      
+      &.checkbox {
+        label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          
+          input {
+            width: auto;
+            margin: 0;
+          }
+        }
+        
+        .warning-text {
+          display: block;
+          margin-top: 8px;
+          font-size: 0.75rem;
+          color: #dc3545;
+          
+          i {
+            margin-right: 4px;
+          }
+        }
+      }
+    }
+  }
+  
+  .withdrawal-info {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 16px 0;
+    
+    code {
+      font-family: monospace;
+      font-size: 0.8rem;
+      word-break: break-all;
+    }
+    
+    .withdrawal-details {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-top: 8px;
+    }
+  }
+  
+  .warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 6px;
+    margin: 16px 0;
+    
+    i {
+      color: #ffc107;
+      font-size: 18px;
+    }
+    
+    span {
+      flex: 1;
+      font-size: 0.85rem;
+      color: #856404;
+    }
+    
+    &.danger {
+      background-color: #f8d7da;
+      border-left-color: #dc3545;
+      
+      span {
+        color: #721c24;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .withdrawals-container {
+    .stats-summary {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .withdrawals-container {
+    padding: 16px;
+    margin-left: 0;
+    
+    .header .header-content {
+      flex-direction: column;
+      gap: 16px;
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filters-panel .filters-form {
+      grid-template-columns: 1fr;
+      
+      .filter-group.date-range {
+        grid-column: span 1;
+        
+        .date-inputs {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+    
+    .pagination {
+      flex-direction: column;
+      gap: 12px;
+      
+      .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+    
+    .modal .modal-content {
+      width: 95%;
+      
+      .details-grid {
+        grid-template-columns: 1fr;
+        
+        .detail-section.full-width {
+          grid-column: span 1;
+        }
+      }
+    }
+  }
+}
+
+.ref-cell {
+  .client-ref {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+  
+  .withdrawal-id {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-family: monospace;
+  }
+}
+
+.amount-cell, .fee-cell {
+  .amount, .fee {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .amount-usd, .fee-usd {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 2px;
+  }
+}
+
+.failure-reason {
+  font-size: 0.65rem;
+  color: #dc3545;
+  margin-top: 4px;
+  
+  i {
+    margin-right: 2px;
+  }
+}
+
+.status-approved {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-sent {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.stat-icon {
+  &.approved i { color: #007bff; }
+  &.sent i { color: #17a2b8; }
+  &.fees i { color: #fd7e14; }
+}
+
+.withdrawal-info {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 16px 0;
+  
+  code {
+    font-family: monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+  
+  .withdrawal-details {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 8px;
+  }
+}

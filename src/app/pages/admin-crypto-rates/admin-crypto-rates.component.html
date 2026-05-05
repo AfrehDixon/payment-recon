@@ -1,0 +1,394 @@
+<!-- admin-crypto-rates.component.html -->
+<div class="crypto-rates-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-chart-line"></i>
+        Crypto Rates
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+        
+        <button class="auto-refresh-btn" [class.active]="autoRefreshEnabled" (click)="toggleAutoRefresh()">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </button>
+        
+        <button class="refresh-btn" (click)="confirmRefreshAll()" [disabled]="refreshing">
+          <i class="fas" [class.fa-spinner]="refreshing" [class.fa-spin]="refreshing" [class.fa-sync-alt]="!refreshing"></i>
+          {{ refreshing ? 'Refreshing...' : 'Refresh All' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Pair Code</label>
+        <input type="text" formControlName="pairCode" placeholder="BTC_USDT, ETH_USDT..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Base Asset</label>
+        <input type="text" formControlName="baseAsset" placeholder="BTC, ETH, USDT..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Quote Asset</label>
+        <input type="text" formControlName="quoteAsset" placeholder="USD, USDT, GHS..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Source</label>
+        <select formControlName="source">
+          <option value="">All</option>
+          <option *ngFor="let source of sourceOptions" [value]="source">{{ source }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <!-- <div class="stats-summary" *ngIf="!loading && rates.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-chart-simple"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Pairs</span>
+        <span class="stat-value">{{ totalItems }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Active</span>
+        <span class="stat-value">{{ activeCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon stale">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Stale</span>
+        <span class="stat-value">{{ staleCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon error">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Error</span>
+        <span class="stat-value">{{ errorCount }}</span>
+      </div>
+    </div>
+  </div> -->
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Rates Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="rates-table">
+      <thead>
+        <tr>
+          <th>Pair</th>
+          <th>Bid</th>
+          <th>Ask</th>
+          <th>Mid</th>
+          <th>Last Trade</th>
+          <th>Spread</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Expires In</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rate of rates" class="rate-row" [class.stale-row]="rate.status !== 'ACTIVE'">
+          <td class="pair-cell">
+            <div class="pair-code">{{ rate.pairCode }}</div>
+            <div class="pair-assets">{{ rate.baseAsset }}/{{ rate.quoteAsset }}</div>
+          </td>
+          <td class="bid-cell">{{ formatCurrency(rate.bid, rate.quoteAsset) }}</td>
+          <td class="ask-cell">{{ formatCurrency(rate.ask, rate.quoteAsset) }}</td>
+          <td class="mid-cell">{{ formatCurrency(rate.mid, rate.quoteAsset) }}</td>
+          <td class="last-trade-cell">{{ formatCurrency(rate.lastTradePrice, rate.quoteAsset) }}</td>
+          <td class="spread-cell">
+            <span class="spread-value">{{ formatCurrency(calculateSpread(rate), rate.quoteAsset) }}</span>
+            <span class="spread-bps">({{ formatNumber(calculateSpreadBps(rate), 2) }} bps)</span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getSourceClass(rate.source)">
+              {{ rate.source }}
+            </span>
+            <div *ngIf="rate.providerPairCode" class="provider-ref">
+              {{ rate.providerPairCode }}
+            </div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(rate.status)">
+              {{ rate.status }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'expiry-badge ' + getExpiryClass(rate.expiresAt)">
+              {{ getTimeRemaining(rate.expiresAt) }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewRateDetails(rate)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button class="refresh-btn-small" (click)="confirmRefreshPair(rate.pairCode)" title="Refresh Rate" [disabled]="refreshing">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="rates.length === 0" class="empty-state">
+      <i class="fas fa-chart-line"></i>
+      <p>No crypto rates found</p>
+      <button class="refresh-btn" (click)="confirmRefreshAll()">Refresh Rates</button>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} rates
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedRate" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Rate Details: {{ selectedRate.pairCode }}
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Pair Info -->
+          <div class="detail-section">
+            <h3>Pair Information</h3>
+            <div class="detail-row">
+              <span class="label">Pair Code:</span>
+              <span class="value">{{ selectedRate.pairCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Base Asset:</span>
+              <span class="value">{{ selectedRate.baseAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Asset:</span>
+              <span class="value">{{ selectedRate.quoteAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Source:</span>
+              <span [class]="'badge ' + getSourceClass(selectedRate.source)">
+                {{ selectedRate.source }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Provider Pair:</span>
+              <span class="value">{{ selectedRate.providerPairCode }}</span>
+            </div>
+          </div>
+          
+          <!-- Rate Info -->
+          <div class="detail-section">
+            <h3>Rate Information</h3>
+            <div class="detail-row">
+              <span class="label">Bid Price:</span>
+              <span class="value highlight">{{ formatCurrency(selectedRate.bid, selectedRate.quoteAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Ask Price:</span>
+              <span class="value highlight">{{ formatCurrency(selectedRate.ask, selectedRate.quoteAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Mid Price:</span>
+              <span class="value highlight">{{ formatCurrency(selectedRate.mid, selectedRate.quoteAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Trade:</span>
+              <span class="value">{{ formatCurrency(selectedRate.lastTradePrice, selectedRate.quoteAsset) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Spread:</span>
+              <span class="value">{{ formatCurrency(calculateSpread(selectedRate), selectedRate.quoteAsset) }} ({{ formatNumber(calculateSpreadBps(selectedRate), 2) }} bps)</span>
+            </div>
+          </div>
+          
+          <!-- Status & Timing -->
+          <div class="detail-section">
+            <h3>Status & Timing</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedRate.status)">
+                {{ selectedRate.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Fetched At:</span>
+              <span class="value">{{ formatDate(selectedRate.fetchedAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Expires At:</span>
+              <span class="value" [class.expiring]="getExpiryClass(selectedRate.expiresAt) !== 'valid'">
+                {{ formatDate(selectedRate.expiresAt) }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Time Remaining:</span>
+              <span class="value">{{ getTimeRemaining(selectedRate.expiresAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRate.failureReason">
+              <span class="label">Failure Reason:</span>
+              <span class="value error-text">{{ selectedRate.failureReason }}</span>
+            </div>
+          </div>
+          
+          <!-- Metadata -->
+          <div class="detail-section">
+            <h3>Metadata</h3>
+            <div class="detail-row">
+              <span class="label">Source Type:</span>
+              <span class="value">{{ selectedRate.metadata.source }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section full-width">
+            <h3>System Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedRate.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedRate.updatedAt) }}</span>
+            </div>
+          </div>
+          
+          <!-- Raw Data (collapsible) -->
+          <div class="detail-section full-width" *ngIf="selectedRate.raw && (selectedRate.raw | keyvalue).length > 0">
+            <h3>Raw Data</h3>
+            <pre class="raw-data">{{ selectedRate.raw | json }}</pre>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="refresh-btn" (click)="confirmRefreshPair(selectedRate.pairCode); closeViewModal()">
+          <i class="fas fa-sync-alt"></i>
+          Refresh Rate
+        </button>
+        <button class="cancel-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Refresh Confirmation Modal -->
+  <div class="modal" *ngIf="showRefreshConfirmModal" (click)="cancelRefresh()">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-sync-alt"></i>
+          {{ refreshAllMode ? 'Refresh All Rates' : 'Refresh Rate' }}
+        </h2>
+        <button class="close-btn" (click)="cancelRefresh()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>
+          Are you sure you want to refresh 
+          <strong>{{ refreshAllMode ? 'ALL crypto rates' : refreshPairCode }}</strong>?
+        </p>
+        <div class="info-box">
+          <i class="fas fa-info-circle"></i>
+          <span>
+            This will fetch the latest rates from {{ refreshAllMode ? 'the configured pricing sources' : 'the pricing source' }}.
+            {{ refreshAllMode ? 'This may take a few moments.' : '' }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelRefresh()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn refresh-btn-modal" (click)="executeRefresh()" [disabled]="refreshing">
+          <i class="fas" [class.fa-spinner]="refreshing" [class.fa-spin]="refreshing" [class.fa-sync-alt]="!refreshing"></i>
+          {{ refreshing ? 'Refreshing...' : 'Refresh' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

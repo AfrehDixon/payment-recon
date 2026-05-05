@@ -1,0 +1,556 @@
+<!-- admin-trading-pairs.component.html -->
+<div class="trading-pairs-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-chart-line"></i>
+        Trading Pairs
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+        
+        <button class="create-btn" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i>
+          Create Pair
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Base Asset</label>
+        <input type="text" formControlName="baseAsset" placeholder="BTC, ETH, USDT..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Quote Asset</label>
+        <input type="text" formControlName="quoteAsset" placeholder="USD, EUR, USDC..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Pricing Source</label>
+        <select formControlName="pricingSource">
+          <option value="">All</option>
+          <option *ngFor="let source of pricingSourceOptions" [value]="source">{{ source }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Pairs Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="pairs-table">
+      <thead>
+        <tr>
+          <th>Pair Code</th>
+          <th>Min Amount</th>
+          <th>Max Amount</th>
+          <th>Precision</th>
+          <th>Fee (bps)</th>
+          <th>Pricing Source</th>
+          <th>Spreads</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let pair of pairs" class="pair-row">
+          <td class="pair-cell">
+            <div class="pair-symbol">{{ getPairSymbol(pair) }}</div>
+            <div class="pair-assets">{{ pair.baseAsset }} / {{ pair.quoteAsset }}</div>
+          </td>
+          <td>{{ formatNumber(pair.minTradeAmount, pair.amountPrecision) }}</td>
+          <td>{{ formatNumber(pair.maxTradeAmount, pair.amountPrecision) }}</td>
+          <td>
+            <div>Price: {{ pair.pricePrecision }}</div>
+            <div>Amount: {{ pair.amountPrecision }}</div>
+          </td>
+          <td>{{ pair.feeBps }} bps ({{ pair.feeBps / 100 }}%)</td>
+          <td>
+            <span [class]="'badge ' + getPricingSourceClass(pair.metadata.pricingSource)">
+              {{ pair.metadata.pricingSource }}
+            </span>
+            <div *ngIf="pair.metadata.krakenPair" class="kraken-ref">
+              {{ pair.metadata.krakenPair }}
+            </div>
+          </td>
+          <td>
+            <div class="spreads">
+              <span class="spread">Buy: {{ pair.metadata.buySpreadBps }} bps</span>
+              <span class="spread">Sell: {{ pair.metadata.sellSpreadBps }} bps</span>
+              <span class="spread">Swap: {{ pair.metadata.swapSpreadBps }} bps</span>
+            </div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(pair.status)">
+              {{ pair.status }}
+            </span>
+          </td>
+          <td class="date-cell">{{ formatDate(pair.updatedAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewPairDetails(pair)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button class="edit-btn" (click)="openEditModal(pair)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="toggle-btn" 
+                    [class.active]="pair.status === 'ACTIVE'"
+                    (click)="confirmToggleStatus(pair)" 
+                    [title]="pair.status === 'ACTIVE' ? 'Disable' : 'Enable'">
+              <i [class]="pair.status === 'ACTIVE' ? 'fas fa-pause' : 'fas fa-play'"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="pairs.length === 0" class="empty-state">
+      <i class="fas fa-chart-line"></i>
+      <p>No trading pairs found</p>
+      <button class="create-btn" (click)="openCreateModal()">Create your first pair</button>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} pairs
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Modal -->
+  <div class="modal" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-plus-circle"></i>
+          Create Trading Pair
+        </h2>
+        <button class="close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="pairForm" class="pair-form">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Base Asset *</label>
+                <input type="text" formControlName="baseAsset" placeholder="BTC, ETH, USDT..." />
+                <div class="error" *ngIf="pairForm.get('baseAsset')?.invalid && pairForm.get('baseAsset')?.touched">
+                  Base asset is required
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Quote Asset *</label>
+                <input type="text" formControlName="quoteAsset" placeholder="USD, EUR, USDC..." />
+                <div class="error" *ngIf="pairForm.get('quoteAsset')?.invalid && pairForm.get('quoteAsset')?.touched">
+                  Quote asset is required
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Min Trade Amount</label>
+                <input type="number" step="any" formControlName="minTradeAmount" />
+              </div>
+              
+              <div class="form-group">
+                <label>Max Trade Amount</label>
+                <input type="number" step="any" formControlName="maxTradeAmount" placeholder="Unlimited if empty" />
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Price Precision</label>
+                <input type="number" formControlName="pricePrecision" />
+                <small>Decimal places for price</small>
+              </div>
+              
+              <div class="form-group">
+                <label>Amount Precision</label>
+                <input type="number" formControlName="amountPrecision" />
+                <small>Decimal places for amount</small>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Fee (bps)</label>
+              <input type="number" step="any" formControlName="feeBps" />
+              <small>1 bps = 0.01%</small>
+            </div>
+          </div>
+          
+          <!-- Pricing Configuration -->
+          <div class="form-section">
+            <h3>Pricing Configuration</h3>
+            
+            <div class="form-group">
+              <label>Pricing Source</label>
+              <select formControlName="pricingSource">
+                <option value="KRAKEN">Kraken Exchange</option>
+                <option value="INTERNAL">Internal Pricing</option>
+              </select>
+            </div>
+            
+            <div class="form-group" *ngIf="pairForm.get('metadata')?.get('pricingSource')?.value === 'KRAKEN'">
+              <label>Kraken Pair</label>
+              <input type="text" formControlName="krakenPair" placeholder="XBT/USD, ETH/USD..." />
+              <small>Leave empty to use default format</small>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Buy Spread (bps)</label>
+                <input type="number" step="any" formControlName="buySpreadBps" />
+              </div>
+              
+              <div class="form-group">
+                <label>Sell Spread (bps)</label>
+                <input type="number" step="any" formControlName="sellSpreadBps" />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Swap Spread (bps)</label>
+              <input type="number" step="any" formControlName="swapSpreadBps" />
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeCreateModal()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn" (click)="createPair()" [disabled]="actionInProgress">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Creating...' : 'Create Pair' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Modal -->
+  <div class="modal" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-edit"></i>
+          Edit Trading Pair: {{ selectedPair?.pairCode }}
+        </h2>
+        <button class="close-btn" (click)="closeEditModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="pairForm" class="pair-form">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Min Trade Amount</label>
+                <input type="number" step="any" formControlName="minTradeAmount" />
+              </div>
+              
+              <div class="form-group">
+                <label>Max Trade Amount</label>
+                <input type="number" step="any" formControlName="maxTradeAmount" placeholder="Unlimited if empty" />
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Price Precision</label>
+                <input type="number" formControlName="pricePrecision" />
+              </div>
+              
+              <div class="form-group">
+                <label>Amount Precision</label>
+                <input type="number" formControlName="amountPrecision" />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Fee (bps)</label>
+              <input type="number" step="any" formControlName="feeBps" />
+            </div>
+          </div>
+          
+          <!-- Pricing Configuration -->
+          <div class="form-section">
+            <h3>Pricing Configuration</h3>
+            
+            <div class="form-group">
+              <label>Pricing Source</label>
+              <select formControlName="pricingSource">
+                <option value="KRAKEN">Kraken Exchange</option>
+                <option value="INTERNAL">Internal Pricing</option>
+              </select>
+            </div>
+            
+            <div class="form-group" *ngIf="pairForm.get('metadata')?.get('pricingSource')?.value === 'KRAKEN'">
+              <label>Kraken Pair</label>
+              <input type="text" formControlName="krakenPair" />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Buy Spread (bps)</label>
+                <input type="number" step="any" formControlName="buySpreadBps" />
+              </div>
+              
+              <div class="form-group">
+                <label>Sell Spread (bps)</label>
+                <input type="number" step="any" formControlName="sellSpreadBps" />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Swap Spread (bps)</label>
+              <input type="number" step="any" formControlName="swapSpreadBps" />
+            </div>
+          </div>
+          
+          <!-- Status -->
+          <div class="form-section">
+            <h3>Status</h3>
+            
+            <div class="form-group">
+              <label>Pair Status</label>
+              <select formControlName="status">
+                <option value="ACTIVE">Active</option>
+                <option value="DISABLED">Disabled</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeEditModal()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn" (click)="updatePair()" [disabled]="actionInProgress">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Updating...' : 'Update Pair' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && viewingPair" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Pair Details: {{ viewingPair.pairCode }}
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Pair Code:</span>
+              <span class="value">{{ viewingPair.pairCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Base Asset:</span>
+              <span class="value">{{ viewingPair.baseAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Asset:</span>
+              <span class="value">{{ viewingPair.quoteAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(viewingPair.status)">
+                {{ viewingPair.status }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Trading Limits -->
+          <div class="detail-section">
+            <h3>Trading Limits</h3>
+            <div class="detail-row">
+              <span class="label">Min Amount:</span>
+              <span class="value">{{ formatNumber(viewingPair.minTradeAmount, viewingPair.amountPrecision) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Max Amount:</span>
+              <span class="value">{{ formatNumber(viewingPair.maxTradeAmount, viewingPair.amountPrecision) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Fee:</span>
+              <span class="value">{{ viewingPair.feeBps }} bps ({{ viewingPair.feeBps / 100 }}%)</span>
+            </div>
+          </div>
+          
+          <!-- Precision -->
+          <div class="detail-section">
+            <h3>Precision</h3>
+            <div class="detail-row">
+              <span class="label">Price Precision:</span>
+              <span class="value">{{ viewingPair.pricePrecision }} decimals</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Amount Precision:</span>
+              <span class="value">{{ viewingPair.amountPrecision }} decimals</span>
+            </div>
+          </div>
+          
+          <!-- Pricing -->
+          <div class="detail-section">
+            <h3>Pricing Configuration</h3>
+            <div class="detail-row">
+              <span class="label">Source:</span>
+              <span [class]="'badge ' + getPricingSourceClass(viewingPair.metadata.pricingSource)">
+                {{ viewingPair.metadata.pricingSource }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="viewingPair.metadata.krakenPair">
+              <span class="label">Kraken Pair:</span>
+              <span class="value">{{ viewingPair.metadata.krakenPair }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Buy Spread:</span>
+              <span class="value">{{ viewingPair.metadata.buySpreadBps }} bps</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Sell Spread:</span>
+              <span class="value">{{ viewingPair.metadata.sellSpreadBps }} bps</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Swap Spread:</span>
+              <span class="value">{{ viewingPair.metadata.swapSpreadBps }} bps</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section full-width">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(viewingPair.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(viewingPair.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Confirmation Modal for Enable/Disable -->
+  <div class="modal" *ngIf="showConfirmModal && pendingPair" (click)="cancelConfirm()">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas" [class.fa-check-circle]="confirmAction === 'enable'" [class.fa-exclamation-triangle]="confirmAction === 'disable'"></i>
+          {{ confirmAction === 'enable' ? 'Enable Pair' : 'Disable Pair' }}
+        </h2>
+        <button class="close-btn" (click)="cancelConfirm()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Are you sure you want to {{ confirmAction }} the trading pair <strong>{{ pendingPair.pairCode }}</strong>?</p>
+        <div class="warning-box" *ngIf="confirmAction === 'disable'">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Disabling this pair will prevent any new trades from being created. Existing trades will not be affected.</span>
+        </div>
+        <div class="info-box" *ngIf="confirmAction === 'enable'">
+          <i class="fas fa-info-circle"></i>
+          <span>Enabling this pair will allow new trades to be created.</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelConfirm()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn" [class.enable-btn]="confirmAction === 'enable'" [class.disable-btn]="confirmAction === 'disable'" (click)="executeStatusToggle()" [disabled]="actionInProgress">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-check]="!actionInProgress && confirmAction === 'enable'" [class.fa-ban]="!actionInProgress && confirmAction === 'disable'"></i>
+          {{ actionInProgress ? 'Processing...' : (confirmAction === 'enable' ? 'Enable Pair' : 'Disable Pair') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

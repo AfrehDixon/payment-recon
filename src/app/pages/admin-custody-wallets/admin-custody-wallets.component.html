@@ -1,0 +1,368 @@
+<!-- admin-custody-wallets.component.html -->
+<div class="custody-wallets-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-wallet"></i>
+        Custody Wallets
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>End Customer ID</label>
+        <input type="text" formControlName="endCustomerId" placeholder="Enter customer ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Custody Mode</label>
+        <select formControlName="custodyMode">
+          <option value="">All</option>
+          <option *ngFor="let mode of custodyModeOptions" [value]="mode">{{ mode }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" formControlName="search" placeholder="Wallet Ref, Label, Customer ID..." />
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && wallets.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Wallets</span>
+        <span class="stat-value">{{ totalItems }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Active</span>
+        <span class="stat-value">{{ activeWalletsCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon segregated">
+        <i class="fas fa-layer-group"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Segregated</span>
+        <span class="stat-value">{{ segregatedWalletsCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon omnibus">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Omnibus</span>
+        <span class="stat-value">{{ omnibusWalletsCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Wallets Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="wallets-table">
+      <thead>
+        <tr>
+          <th>Wallet Reference</th>
+          <th>Customer ID</th>
+          <th>Label</th>
+          <th>Mode</th>
+          <th>Status</th>
+          <th>Last Deposit</th>
+          <th>Last Withdrawal</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let wallet of wallets" class="wallet-row">
+          <td class="wallet-cell">
+            <div class="wallet-ref">{{ wallet.walletRef }}</div>
+            <div class="wallet-id" title="{{ wallet._id }}">ID: {{ formatAddress(wallet._id) }}</div>
+          </td>
+          <td class="customer-cell">
+            <div class="customer-id">{{ wallet.endCustomerId }}</div>
+            <div class="merchant-id" *ngIf="wallet.merchantId">Merchant: {{ formatAddress(wallet.merchantId) }}</div>
+          </td>
+          <td class="label-cell">
+            <div class="wallet-label">{{ wallet.label }}</div>
+            <div class="source" *ngIf="wallet.metadata?.source">Source: {{ wallet.metadata.source }}</div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getCustodyModeClass(wallet.custodyMode)">
+              <i class="fas" [class]="getCustodyModeIcon(wallet.custodyMode)"></i>
+              {{ wallet.custodyMode }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(wallet.status)">
+              <i class="fas" [class]="getStatusIcon(wallet.status)"></i>
+              {{ wallet.status }}
+            </span>
+          </td>
+          <td class="date-cell">
+            <div *ngIf="wallet.lastDepositAt">
+              {{ formatDate(wallet.lastDepositAt) }}
+            </div>
+            <div *ngIf="!wallet.lastDepositAt" class="no-activity">No deposits</div>
+          </td>
+          <td class="date-cell">
+            <div *ngIf="wallet.lastWithdrawalAt">
+              {{ formatDate(wallet.lastWithdrawalAt) }}
+            </div>
+            <div *ngIf="!wallet.lastWithdrawalAt" class="no-activity">No withdrawals</div>
+          </td>
+          <td class="date-cell">{{ formatDate(wallet.createdAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewWalletDetails(wallet)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <!-- <button class="status-btn" (click)="openStatusModal(wallet)" title="Change Status">
+              <i class="fas fa-exchange-alt"></i>
+            </button> -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="wallets.length === 0" class="empty-state">
+      <i class="fas fa-wallet"></i>
+      <p>No wallets found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} wallets
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedWallet" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-wallet"></i>
+          Wallet Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Wallet ID:</span>
+              <span class="value mono">{{ selectedWallet?._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Wallet Reference:</span>
+              <span class="value">{{ selectedWallet?.walletRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Label:</span>
+              <span class="value">{{ selectedWallet?.label }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedWallet?.merchantId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Customer ID:</span>
+              <span class="value">{{ selectedWallet?.endCustomerId }}</span>
+            </div>
+          </div>
+          
+          <!-- Mode & Status -->
+          <div class="detail-section">
+            <h3>Configuration</h3>
+            <div class="detail-row">
+              <span class="label">Custody Mode:</span>
+              <span [class]="'badge ' + getCustodyModeClass(selectedWallet?.custodyMode || '')">
+                <i class="fas" [class]="getCustodyModeIcon(selectedWallet?.custodyMode || '')"></i>
+                {{ selectedWallet?.custodyMode }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedWallet?.status || '')">
+                <i class="fas" [class]="getStatusIcon(selectedWallet?.status || '')"></i>
+                {{ selectedWallet?.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Source:</span>
+              <span class="value">{{ selectedWallet?.metadata?.source }}</span>
+            </div>
+          </div>
+          
+          <!-- Activity -->
+          <div class="detail-section">
+            <h3>Activity</h3>
+            <div class="detail-row">
+              <span class="label">Last Deposit:</span>
+              <span class="value">{{ formatDate(selectedWallet?.lastDepositAt || '') }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Last Withdrawal:</span>
+              <span class="value">{{ formatDate(selectedWallet?.lastWithdrawalAt || '') }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>System Info</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedWallet?.createdAt || '') }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedWallet?.updatedAt || '') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <!-- <button class="action-btn status-btn" (click)="openStatusModal(selectedWallet!); closeViewModal()">
+          <i class="fas fa-exchange-alt"></i>
+          Change Status
+        </button> -->
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Update Status Modal -->
+  <div class="modal" *ngIf="showStatusModal && selectedWallet" (click)="cancelStatusModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exchange-alt"></i>
+          Update Wallet Status
+        </h2>
+        <button class="close-btn" (click)="cancelStatusModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Update status for wallet: <strong>{{ selectedWallet.walletRef }}</strong></p>
+        
+        <form [formGroup]="statusForm" class="status-form">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Enter reason for status change..."></textarea>
+          </div>
+        </form>
+        
+        <div class="warning-box" *ngIf="statusForm.get('status')?.value === 'FROZEN'">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Freezing this wallet will prevent all transactions until it is unfrozen.</span>
+        </div>
+        
+        <div class="warning-box danger" *ngIf="statusForm.get('status')?.value === 'CLOSED'">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Closing this wallet is permanent and cannot be undone.</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelStatusModal()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <button class="submit-btn" (click)="updateStatus()" [disabled]="actionInProgress || statusForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

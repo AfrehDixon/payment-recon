@@ -1,4 +1,4 @@
-// merchant-wallets.component.ts
+// merchant-wallets.component.ts (COMPLETE UPDATED VERSION)
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -14,9 +14,22 @@ interface Merchant {
   merchant_tradeName: string;
   type: string;
   active: boolean;
+  email?: string;
+  phone?: string;
+}
+
+interface Valuation {
+  usdRate: number | null;
+  usdValueConfirmed: number | null;
+  usdValueUnconfirmed: number | null;
+  usdValueBlocked: number | null;
+  usdValueTotal: number | null;
+  source: string;
+  valuedAt: string | null;
 }
 
 interface MerchantWallet {
+  valuation?: Valuation;
   accountType: string;
   walletType: string;
   currency: string;
@@ -26,7 +39,7 @@ interface MerchantWallet {
   merchantId: {
     _id: string;
     merchant_tradeName: string;
-email: string;
+    email: string;
     phone: string;
   } | null;
   totalBalance: number;
@@ -37,6 +50,14 @@ email: string;
   availableBalance: number;
   accountNumber: string;
   active: boolean;
+  network?: string;
+  asset?: string;
+  scope?: string;
+  unit?: string;
+  baseUnit?: string;
+  decimals?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface BalanceActionRequest {
@@ -72,6 +93,7 @@ export class MerchantWalletsComponent implements OnInit {
   // Modal states
   showAddWalletModal = false;
   showUpdateWalletModal = false;
+  showViewWalletModal = false;  // New view-only modal
   showBlockBalanceModal = false;
   showUnblockBalanceModal = false;
   showConsumeBlockedModal = false;
@@ -183,7 +205,7 @@ export class MerchantWalletsComponent implements OnInit {
   searchWallets(event: KeyboardEvent): void {
     const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
     this.searchTerm = searchTerm;
-    this.currentPage = 1; // Reset to first page when searching
+    this.currentPage = 1;
     this.filterWallets();
   }
 
@@ -297,6 +319,7 @@ export class MerchantWalletsComponent implements OnInit {
     });
   }
 
+  // Keep original update modal for editing
   openUpdateWalletModal(wallet: MerchantWallet): void {
     this.selectedWallet = wallet;
     this.updateWalletForm.patchValue({
@@ -316,6 +339,17 @@ export class MerchantWalletsComponent implements OnInit {
     this.showUpdateWalletModal = false;
     this.selectedWallet = null;
     this.updateWalletForm.reset();
+  }
+
+  // New view-only modal (no edit functionality)
+  openViewWalletModal(wallet: MerchantWallet): void {
+    this.selectedWallet = wallet;
+    this.showViewWalletModal = true;
+  }
+
+  closeViewWalletModal(): void {
+    this.showViewWalletModal = false;
+    this.selectedWallet = null;
   }
 
   openBlockBalanceModal(wallet: MerchantWallet): void {
@@ -536,6 +570,24 @@ export class MerchantWalletsComponent implements OnInit {
     }).format(amount);
   }
 
+  formatUSDValue(value: number | null): string {
+    if (value === null || value === undefined) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  }
+
+  formatNumber(value: number | null): string {
+    if (value === null || value === undefined) return 'N/A';
+    return value.toLocaleString();
+  }
+
+  formatDate(date: string | null | undefined): string {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString();
+  }
+
   getStatusClass(accountType: string): string {
     return accountType === 'CLOSED' ? 'status-closed' : 'status-active';
   }
@@ -558,5 +610,9 @@ export class MerchantWalletsComponent implements OnInit {
 
   canConsumeBlocked(wallet: MerchantWallet): boolean {
     return wallet.blockedBalance > 0 && wallet.merchantId !== null;
+  }
+
+  hasValuationData(wallet: MerchantWallet): boolean {
+    return wallet.valuation !== undefined && wallet.valuation !== null;
   }
 }

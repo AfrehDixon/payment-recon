@@ -1,0 +1,436 @@
+<!-- admin-addresses.component.html -->
+<div class="addresses-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-map-marker-alt"></i>
+        Custody Addresses
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Customer ID</label>
+        <input type="text" formControlName="endCustomerId" placeholder="Enter customer ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Custody Wallet ID</label>
+        <input type="text" formControlName="custodyWalletId" placeholder="Enter custody wallet ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Asset Wallet ID</label>
+        <input type="text" formControlName="assetWalletId" placeholder="Enter asset wallet ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Network</label>
+        <select formControlName="network">
+          <option value="">All</option>
+          <option *ngFor="let network of networkOptions" [value]="network">{{ network }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Asset</label>
+        <input type="text" formControlName="asset" placeholder="USDT, USDC, BTC..." />
+      </div>
+      
+      <div class="filter-group">
+        <label>State</label>
+        <select formControlName="state">
+          <option value="">All</option>
+          <option *ngFor="let state of stateOptions" [value]="state">{{ state }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" formControlName="search" placeholder="Address, Label, Customer ID..." />
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && addresses.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-map-marker-alt"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Addresses</span>
+        <span class="stat-value">{{ totalItems }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon assigned">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Assigned</span>
+        <span class="stat-value">{{ assignedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon warm">
+        <i class="fas fa-fire"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Warm</span>
+        <span class="stat-value">{{ warmCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon retired">
+        <i class="fas fa-flag-checkered"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Retired</span>
+        <span class="stat-value">{{ retiredCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon locked">
+        <i class="fas fa-lock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Locked</span>
+        <span class="stat-value">{{ lockedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon balance">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">With Balance</span>
+        <span class="stat-value">{{ addressesWithBalance }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Addresses Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="addresses-table">
+      <thead>
+        <tr>
+          <th>Address</th>
+          <th>Asset</th>
+          <th>Network</th>
+          <th>State</th>
+          <th>Balance</th>
+          <th>Total Received</th>
+          <th>Reuse Count</th>
+          <th>Sweep Policy</th>
+          <th>Last Activity</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let address of addresses" class="address-row" [class.retired-row]="address.state === 'RETIRED'">
+          <td class="address-cell">
+            <div class="address" title="{{ address.address }}">
+              {{ formatAddress(address.address) }}
+            </div>
+            <div class="address-label" *ngIf="address.label">
+              {{ address.label }}
+            </div>
+            <div class="lease-info" *ngIf="address.lease">
+              <i class="fas fa-handshake"></i> Leased
+            </div>
+          </td>
+          <td class="asset-cell">
+            <div class="asset-name">{{ address.asset }}</div>
+          </td>
+          <td class="network-cell">
+            <span class="network-badge" [style.backgroundColor]="getNetworkColor(address.network)">
+              {{ address.network }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStateClass(address.state)">
+              <i class="fas" [class]="getStateIcon(address.state)"></i>
+              {{ address.state }}
+            </span>
+            <span class="lock-badge" *ngIf="address.addressLocked">
+              <i class="fas fa-lock"></i> Locked
+            </span>
+          </td>
+          <td class="balance-cell">
+            <div class="balance">{{ formatNumber(address.currentBalance, 4) }}</div>
+            <div class="balance-usd" *ngIf="address.currentBalance > 0">
+              {{ formatCurrency(address.currentBalance, address.asset) }}
+            </div>
+          </td>
+          <td class="volume-cell">
+            <div class="received">{{ formatNumber(address.totalReceived, 4) }}</div>
+          </td>
+          <td class="reuse-cell">
+            <div class="reuse-count">{{ address.reuseCount }}</div>
+            <div class="reuse-label">uses</div>
+          </td>
+          <td class="policy-cell">
+            <div class="policy-mode">{{ address.sweepPolicy?.mode }}</div>
+            <div class="policy-threshold">Min: ${{ address.sweepPolicy?.minUsdThreshold }}</div>
+          </td>
+          <td class="date-cell">
+            <div *ngIf="address.lastTransactionAt">
+              {{ formatDate(address.lastTransactionAt) }}
+            </div>
+            <div *ngIf="!address.lastTransactionAt" class="no-activity">No activity</div>
+          </td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewAddressDetails(address)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            
+            <button class="lock-btn" 
+                    *ngIf="canPerformAction(address, 'lock')"
+                    (click)="openActionModal('lock', address)" 
+                    title="Lock Address">
+              <i class="fas fa-lock"></i>
+            </button>
+            
+            <button class="unlock-btn" 
+                    *ngIf="canPerformAction(address, 'unlock')"
+                    (click)="openActionModal('unlock', address)" 
+                    title="Unlock Address">
+              <i class="fas fa-lock-open"></i>
+            </button>
+            
+            <button class="retire-btn" 
+                    *ngIf="canPerformAction(address, 'retire')"
+                    (click)="openActionModal('retire', address)" 
+                    title="Retire Address">
+              <i class="fas fa-flag-checkered"></i>
+            </button>
+            
+            <button class="unretire-btn" 
+                    *ngIf="canPerformAction(address, 'unretire')"
+                    (click)="openActionModal('unretire', address)" 
+                    title="Unretire Address">
+              <i class="fas fa-undo-alt"></i>
+            </button>
+            
+            <button class="sweep-btn" 
+                    *ngIf="canPerformAction(address, 'sweep')"
+                    (click)="openActionModal('sweep', address)" 
+                    title="Force Sweep">
+              <i class="fas fa-broom"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="addresses.length === 0" class="empty-state">
+      <i class="fas fa-map-marker-alt"></i>
+      <p>No addresses found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} addresses
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedAddress" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-map-marker-alt"></i>
+          Address Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <div class="detail-section full-width">
+            <h3>Address</h3>
+            <div class="detail-row">
+              <span class="label">Address:</span>
+              <span class="value mono address">{{ selectedAddress.address }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Asset:</span>
+              <span class="value">{{ selectedAddress.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedAddress.network }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">State:</span>
+              <span [class]="'badge ' + getStateClass(selectedAddress.state)">
+                {{ selectedAddress.state }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Balance Information</h3>
+            <div class="detail-row">
+              <span class="label">Current Balance:</span>
+              <span class="value highlight">{{ formatNumber(selectedAddress.currentBalance, 4) }} {{ selectedAddress.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Received:</span>
+              <span class="value">{{ formatNumber(selectedAddress.totalReceived, 4) }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Usage Information</h3>
+            <div class="detail-row">
+              <span class="label">Reuse Count:</span>
+              <span class="value">{{ selectedAddress.reuseCount }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedAddress.lastTransactionAt">
+              <span class="label">Last Activity:</span>
+              <span class="value">{{ formatDate(selectedAddress.lastTransactionAt) }}</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h3>Sweep Policy</h3>
+            <div class="detail-row">
+              <span class="label">Mode:</span>
+              <span class="value">{{ selectedAddress.sweepPolicy?.mode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Min Threshold:</span>
+              <span class="value">${{ selectedAddress.sweepPolicy?.minUsdThreshold }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Action Confirmation Modal -->
+  <div class="modal" *ngIf="showActionModal && selectedAddress && currentAction" (click)="cancelActionModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas" [class.fa-flag-checkered]="currentAction === 'retire'"
+             [class.fa-undo-alt]="currentAction === 'unretire'"
+             [class.fa-lock]="currentAction === 'lock'"
+             [class.fa-lock-open]="currentAction === 'unlock'"
+             [class.fa-broom]="currentAction === 'sweep'"></i>
+          {{ getActionModalTitle() }}
+        </h2>
+        <button class="close-btn" (click)="cancelActionModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>You are about to <strong>{{ getActionButtonLabel(currentAction) }}</strong> address:</p>
+        <div class="address-info">
+          <code>{{ selectedAddress.address }}</code>
+          <div class="address-details">
+            {{ selectedAddress.asset }} on {{ selectedAddress.network }}
+          </div>
+        </div>
+        
+        <div class="warning-box" [class.danger]="currentAction === 'sweep' || currentAction === 'retire'">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ getActionWarning() }}</span>
+        </div>
+        
+        <form [formGroup]="actionForm" class="action-form">
+          <div class="form-group">
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Enter reason for this action..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Additional Notes (Optional)</label>
+            <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelActionModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="executeAction()" [disabled]="actionInProgress || actionForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" 
+             [class.fa-check]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Processing...' : getActionButtonLabel(currentAction) }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

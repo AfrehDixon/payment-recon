@@ -1,0 +1,235 @@
+<!-- admin-dashboard.component.html -->
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-tachometer-alt"></i>
+        Dashboard
+      </h1>
+      <p class="subtitle">Welcome back! Here's what's happening with your platform today.</p>
+      <div class="date-range" *ngIf="summary">
+        <i class="fas fa-calendar"></i>
+        {{ getRangeLabel() }}
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load dashboard</h3>
+    <p>There was an error loading the dashboard data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading dashboard...</p>
+  </div>
+  
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error && summary">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div *ngFor="let stat of getMainStats()" class="stat-card" [class]="stat.color">
+        <div class="stat-icon">
+          <i class="fas" [class]="stat.icon"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">{{ stat.label }}</span>
+          <div class="stat-value-wrapper">
+            <span class="stat-value">
+              <span *ngIf="stat.prefix">{{ stat.prefix }}</span>
+              {{ formatCompactNumber(stat.value) }}
+              <span *ngIf="stat.suffix">{{ stat.suffix }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Transaction Summary Section -->
+    <div class="two-columns">
+      <!-- Credits Summary -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-arrow-down text-success"></i>
+            Credits Summary
+          </h3>
+          <span class="card-subtitle">Incoming transaction overview</span>
+        </div>
+        <div class="card-body">
+          <div class="summary-stats">
+            <div class="summary-item">
+              <span class="summary-label">Total Count</span>
+              <span class="summary-value">{{ summary.credits.totalCount }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Amount</span>
+              <span class="summary-value">{{ formatCurrency(summary.credits.totalAmount, 'USD') }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Charges</span>
+              <span class="summary-value">{{ formatCurrency(summary.credits.totalCharges, 'USD') }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Profit</span>
+              <span class="summary-value profit">{{ formatCurrency(summary.credits.totalProfit, 'USD') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Debits Summary -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-arrow-up text-danger"></i>
+            Debits Summary
+          </h3>
+          <span class="card-subtitle">Outgoing transaction overview</span>
+        </div>
+        <div class="card-body">
+          <div class="summary-stats">
+            <div class="summary-item">
+              <span class="summary-label">Total Count</span>
+              <span class="summary-value">{{ summary.debits.totalCount }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Amount</span>
+              <span class="summary-value">{{ formatCurrency(summary.debits.totalAmount, 'USD') }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Charges</span>
+              <span class="summary-value">{{ formatCurrency(summary.debits.totalCharges, 'USD') }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Total Profit</span>
+              <span class="summary-value profit">{{ formatCurrency(summary.debits.totalProfit, 'USD') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Status Breakdown Section -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-chart-pie"></i>
+          Transaction Status Breakdown
+        </h3>
+        <span class="card-subtitle">Distribution by transaction status</span>
+      </div>
+      <div class="card-body">
+        <div class="status-breakdown">
+          <div class="status-item initiated">
+            <div class="status-header">
+              <span class="status-name">
+                <i class="fas fa-clock"></i> Initiated
+              </span>
+              <span class="status-count">{{ summary.statuses.INITIATED.count }} transactions</span>
+            </div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.INITIATED.totalAmount, 'USD') }}</div>
+            <div class="status-bar">
+              <div class="bar-fill initiated" 
+                   [style.width.%]="(summary.statuses.INITIATED.totalAmount / summary.today.volume) * 100">
+              </div>
+            </div>
+          </div>
+          
+          <div class="status-item paid">
+            <div class="status-header">
+              <span class="status-name">
+                <i class="fas fa-check-circle"></i> Paid
+              </span>
+              <span class="status-count">{{ summary.statuses.PAID.count }} transactions</span>
+            </div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.PAID.totalAmount, 'USD') }}</div>
+            <div class="status-bar">
+              <div class="bar-fill paid" 
+                   [style.width.%]="(summary.statuses.PAID.totalAmount / summary.today.volume) * 100">
+              </div>
+            </div>
+          </div>
+          
+          <div class="status-item failed">
+            <div class="status-header">
+              <span class="status-name">
+                <i class="fas fa-times-circle"></i> Failed
+              </span>
+              <span class="status-count">{{ summary.statuses.FAILED.count }} transactions</span>
+            </div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.FAILED.totalAmount, 'USD') }}</div>
+            <div class="status-bar">
+              <div class="bar-fill failed" 
+                   [style.width.%]="(summary.statuses.FAILED.totalAmount / summary.today.volume) * 100">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Today's Summary -->
+    <div class="today-summary">
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-calendar-day"></i>
+            Today's Summary
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="today-stats">
+            <div class="today-stat">
+              <span class="today-label">Volume</span>
+              <span class="today-value">{{ formatCurrency(summary.today.volume, 'USD') }}</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-label">Transactions</span>
+              <span class="today-value">{{ summary.today.count }}</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-label">Profit</span>
+              <span class="today-value profit">{{ formatCurrency(summary.today.profit, 'USD') }}</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-label">Avg. Transaction</span>
+              <span class="today-value">{{ formatCurrency(summary.today.volume / summary.today.count, 'USD') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

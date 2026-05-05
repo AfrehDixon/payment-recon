@@ -68,7 +68,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         const parsedData = JSON.parse(loginData);
         if (parsedData.token) {
           // Already logged in, redirect
-          this.router.navigate(['/mechant']);
+          this.router.navigate(['/dashboard']);
         }
       } catch (error) {
         console.error('Error parsing login data:', error);
@@ -203,9 +203,9 @@ export class LoginComponent implements OnInit, OnDestroy {
           // Force navigation directly here after action completes
           // Using a slight delay to ensure state updates complete
           setTimeout(() => {
-            console.log('Forced navigation to /mechant route');
+            console.log('Forced navigation to /dashboard route');
             // Use direct hash navigation to avoid any routing issues
-            window.location.hash = '#/mechant';
+            window.location.hash = '#/dashboard';
           }, 100);
         });
       },

@@ -1,0 +1,276 @@
+<!-- admin-recent-trades.component.html -->
+<div class="recent-trades-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-chart-line"></i>
+        Trading Pairs
+      </h1>
+      <p class="subtitle">Recent trading pairs configuration and spreads</p>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && trades.length > 0">
+    <div *ngFor="let stat of getStats()" class="stat-card" [class]="stat.color">
+      <div class="stat-icon">
+        <i class="fas" [class]="stat.icon"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">{{ stat.label }}</span>
+        <span class="stat-value">{{ formatStatValue(stat) }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load trading pairs</h3>
+    <p>There was an error loading the trading pair data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading trading pairs...</p>
+  </div>
+  
+  <!-- Trades List -->
+  <div *ngIf="!loading && !error" class="trades-container">
+    <div class="trades-list">
+      <div *ngFor="let trade of trades" class="trade-item" (click)="viewTradeDetails(trade)">
+        <div class="trade-pair-icon">
+          <div class="pair-icon">{{ trade.baseAsset.substring(0, 1) }}/{{ trade.quoteAsset.substring(0, 1) }}</div>
+        </div>
+        
+        <div class="trade-details">
+          <div class="trade-header">
+            <div class="trade-type">
+              <span class="pair-code">{{ trade.pairCode }}</span>
+              <span class="trade-assets">{{ trade.baseAsset }}/{{ trade.quoteAsset }}</span>
+            </div>
+            <div class="trade-status">
+              <span [class]="'status-badge ' + getStatusClass(trade.status)">
+                <i class="fas" [class]="getStatusIcon(trade.status)"></i>
+                {{ trade.status }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="trade-limits">
+            <span class="limit-badge">
+              <i class="fas fa-chart-line"></i>
+              Min: {{ formatNumber(trade.minTradeAmount, trade.amountPrecision) }}
+            </span>
+            <span class="limit-badge" *ngIf="trade.maxTradeAmount">
+              <i class="fas fa-chart-line"></i>
+              Max: {{ formatNumber(trade.maxTradeAmount, trade.amountPrecision) }}
+            </span>
+            <span class="limit-badge" *ngIf="!trade.maxTradeAmount">
+              <i class="fas fa-infinity"></i>
+              No Max Limit
+            </span>
+          </div>
+          
+          <div class="trade-meta">
+            <div class="meta-item">
+              <i class="fas fa-percent"></i>
+              Fee: {{ trade.feeBps }} bps ({{ trade.feeBps / 100 }}%)
+            </div>
+            <div class="meta-item">
+              <i class="fas fa-chart-simple"></i>
+              Precision: {{ trade.pricePrecision }}/{{ trade.amountPrecision }}
+            </div>
+            <div class="meta-item">
+              <i class="fas fa-dragon" *ngIf="trade.metadata.pricingSource === 'KRAKEN'"></i>
+              <i class="fas fa-server" *ngIf="trade.metadata.pricingSource === 'INTERNAL'"></i>
+              Source: {{ trade.metadata.pricingSource }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="trade-spreads">
+          <div class="spread-item buy" [class]="getSpreadClass(trade.metadata.buySpreadBps)">
+            <span class="spread-label">Buy</span>
+            <span class="spread-value">{{ trade.metadata.buySpreadBps }} bps</span>
+          </div>
+          <div class="spread-item sell" [class]="getSpreadClass(trade.metadata.sellSpreadBps)">
+            <span class="spread-label">Sell</span>
+            <span class="spread-value">{{ trade.metadata.sellSpreadBps }} bps</span>
+          </div>
+          <div class="spread-item swap" [class]="getSpreadClass(trade.metadata.swapSpreadBps)">
+            <span class="spread-label">Swap</span>
+            <span class="spread-value">{{ trade.metadata.swapSpreadBps }} bps</span>
+          </div>
+        </div>
+        
+        <div class="trade-time">
+          <i class="fas fa-clock"></i>
+          {{ formatDate(trade.updatedAt) }}
+        </div>
+      </div>
+      
+      <!-- Empty State -->
+      <div *ngIf="trades.length === 0" class="empty-state">
+        <i class="fas fa-chart-line"></i>
+        <p>No trading pairs found</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Trade Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedTrade" (click)="closeDetailsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Trading Pair Details
+        </h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Pair Code:</span>
+              <span class="value">{{ selectedTrade.pairCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Base Asset:</span>
+              <span class="value">{{ selectedTrade.baseAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Asset:</span>
+              <span class="value">{{ selectedTrade.quoteAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'status-badge ' + getStatusClass(selectedTrade.status)">
+                <i class="fas" [class]="getStatusIcon(selectedTrade.status)"></i>
+                {{ selectedTrade.status }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Trading Limits -->
+          <div class="detail-section">
+            <h3>Trading Limits</h3>
+            <div class="detail-row">
+              <span class="label">Min Trade Amount:</span>
+              <span class="value">{{ formatNumber(selectedTrade.minTradeAmount, selectedTrade.amountPrecision) }} {{ selectedTrade.baseAsset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Max Trade Amount:</span>
+              <span class="value">{{ selectedTrade.maxTradeAmount ? formatNumber(selectedTrade.maxTradeAmount, selectedTrade.amountPrecision) + ' ' + selectedTrade.baseAsset : 'Unlimited' }}</span>
+            </div>
+          </div>
+          
+          <!-- Precision -->
+          <div class="detail-section">
+            <h3>Precision</h3>
+            <div class="detail-row">
+              <span class="label">Price Precision:</span>
+              <span class="value">{{ selectedTrade.pricePrecision }} decimal places</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Amount Precision:</span>
+              <span class="value">{{ selectedTrade.amountPrecision }} decimal places</span>
+            </div>
+          </div>
+          
+          <!-- Fee -->
+          <div class="detail-section">
+            <h3>Fee Configuration</h3>
+            <div class="detail-row">
+              <span class="label">Fee Rate:</span>
+              <span class="value">{{ selectedTrade.feeBps }} bps ({{ selectedTrade.feeBps / 100 }}%)</span>
+            </div>
+          </div>
+          
+          <!-- Spreads -->
+          <div class="detail-section">
+            <h3>Spread Configuration</h3>
+            <div class="detail-row">
+              <span class="label">Buy Spread:</span>
+              <span class="value" [class]="getSpreadClass(selectedTrade.metadata.buySpreadBps)">{{ selectedTrade.metadata.buySpreadBps }} bps</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Sell Spread:</span>
+              <span class="value" [class]="getSpreadClass(selectedTrade.metadata.sellSpreadBps)">{{ selectedTrade.metadata.sellSpreadBps }} bps</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Swap Spread:</span>
+              <span class="value" [class]="getSpreadClass(selectedTrade.metadata.swapSpreadBps)">{{ selectedTrade.metadata.swapSpreadBps }} bps</span>
+            </div>
+          </div>
+          
+          <!-- Pricing Source -->
+          <div class="detail-section">
+            <h3>Pricing Source</h3>
+            <div class="detail-row">
+              <span class="label">Source:</span>
+              <span [class]="'source-badge ' + getPricingSourceClass(selectedTrade.metadata.pricingSource)">
+                {{ selectedTrade.metadata.pricingSource }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTrade.metadata.krakenPair">
+              <span class="label">Kraken Pair:</span>
+              <span class="value">{{ selectedTrade.metadata.krakenPair }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedTrade.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedTrade.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -44,6 +44,23 @@ import { WalletAddressesComponent } from './pages/wallet-addresses/wallet-addres
 import { AccountLedgerComponent } from './pages/account-ledger/account-ledger.component';
 import { CreditQueueComponent } from './pages/credit-queue/credit-queue.component';
 import { CronJobComponent } from './pages/cron-job/cron-job.component';
+import { AdminTradingPairsComponent } from './pages/admin-trading/admin-trading-pairs.component';
+import { AdminCryptoRatesComponent } from './pages/admin-crypto-rates/admin-crypto-rates.component';
+import { AdminQuotesComponent } from './pages/admin-quotes/admin-quotes.component';
+import { AdminExecutionsComponent } from './pages/admin-executions/admin-executions.component';
+import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
+import { AdminCustodySummaryComponent } from './pages/admin-custody-summary/admin-custody-summary.component';
+import { AdminCustodyWalletsComponent } from './pages/admin-custody-wallets/admin-custody-wallets.component';
+import { AdminAssetWalletsComponent } from './pages/admin-asset-wallets/admin-asset-wallets.component';
+import { AdminAddressesComponent } from './pages/admin-addresses/admin-addresses.component';
+import { AdminDepositsComponent } from './pages/admin-deposits/admin-deposits.component';
+import { AdminWithdrawalsComponent } from './pages/admin-withdrawals/admin-withdrawals.component';
+import { AdminTradingSummaryComponent } from './pages/admin-trading-summary/admin-trading-summary.component';
+import { AdminLiquiditySummaryComponent } from './pages/admin-liquidity-summary/admin-liquidity-summary.component';
+import { AdminRecentTransactionsComponent } from './pages/admin-recent-transactions/admin-recent-transactions.component';
+import { AdminRecentTradesComponent } from './pages/admin-recent-trades/admin-recent-trades.component';
+import { AdminRecentWithdrawalsComponent } from './pages/admin-recent-withdrawals/admin-recent-withdrawals.component';
+import { AdminRateHealthComponent } from './pages/admin-rate-health/admin-rate-health.component';
 
 export const routes: Routes = [
   {
@@ -87,6 +104,74 @@ export const routes: Routes = [
       {
         path: 'merchants/transactions/:id',
         component: MerchantTransactionsComponent,
+      },
+      {
+          path: 'custody/wallets',
+  component: AdminCustodyWalletsComponent,
+      },
+      {
+        path: 'trading/pairs',
+        component: AdminTradingPairsComponent,
+      },
+      {
+          path: 'custody/asset-wallets',
+  component: AdminAssetWalletsComponent,
+      },
+      {
+          path: 'custody/addresses',
+  component: AdminAddressesComponent,
+      },
+      {
+          path: 'dashboard/recent-transactions',
+  component: AdminRecentTransactionsComponent,
+      },
+      {
+          path: 'custody/deposits',
+  component: AdminDepositsComponent,
+      },
+      {
+          path: 'dashboard/recent-trades',
+  component: AdminRecentTradesComponent,
+      },
+      {
+          path: 'dashboard/recent-withdrawals',
+  component: AdminRecentWithdrawalsComponent,
+      },
+      {
+          path: 'dashboard/rate-health',
+  component: AdminRateHealthComponent,
+      },
+      {
+          path: 'dashboard/liquidity-summary',
+  component: AdminLiquiditySummaryComponent,
+      },
+      {
+          path: 'custody/withdrawals',
+  component: AdminWithdrawalsComponent,
+      },
+      {
+          path: 'dashboard/trading-summary',
+  component: AdminTradingSummaryComponent,
+      },
+      {
+          path: 'dashboard/custody',
+  component: AdminCustodySummaryComponent,
+      },
+      {
+          path: 'trading/executions',
+  component: AdminExecutionsComponent,
+      },
+      {
+          path: 'dashboard',
+  component: AdminDashboardComponent,
+      },
+      {
+          path: 'trading/quotes',
+  component: AdminQuotesComponent,
+      },
+      {
+          path: 'trading/rates',
+  component: AdminCryptoRatesComponent,
       },
       {
         path: 'merchant-tiers',

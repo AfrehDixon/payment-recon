@@ -1,0 +1,230 @@
+<!-- admin-rate-health.component.html -->
+<div class="rate-health-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-heartbeat"></i>
+        Rate Health
+      </h1>
+      <p class="subtitle">Monitor exchange rate sources, freshness, and availability</p>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Overall Health Banner -->
+  <div class="health-banner" *ngIf="summary" [class]="getOverallHealthClass(summary.overallStatus)">
+    <div class="health-icon">
+      <i class="fas" [class.fa-check-circle]="summary.overallStatus === 'HEALTHY'" 
+         [class.fa-exclamation-triangle]="summary.overallStatus === 'DEGRADED'"
+         [class.fa-times-circle]="summary.overallStatus === 'POOR'"></i>
+    </div>
+    <div class="health-info">
+      <span class="health-status">{{ getOverallHealthStatus() }}</span>
+      <span class="health-message" *ngIf="summary.overallStatus === 'HEALTHY'">All rate sources are operating normally</span>
+      <span class="health-message" *ngIf="summary.overallStatus === 'DEGRADED'">Some rate sources are experiencing issues</span>
+      <span class="health-message" *ngIf="summary.overallStatus === 'POOR'">Critical issues detected with rate sources</span>
+    </div>
+    <div class="health-uptime">
+      <span class="uptime-label">Uptime</span>
+      <span class="uptime-value">{{ getUptimePercentage().toFixed(1) }}%</span>
+    </div>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && summary">
+    <div *ngFor="let stat of getStats()" class="stat-card" [class]="stat.color">
+      <div class="stat-icon">
+        <i class="fas" [class]="stat.icon"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">{{ stat.label }}</span>
+        <span class="stat-value">{{ formatStatValue(stat) }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load rate health</h3>
+    <p>There was an error loading the rate health data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading rate health...</p>
+  </div>
+  
+  <!-- Rate Health Metrics List -->
+  <div *ngIf="!loading && !error && metrics.length > 0" class="metrics-container">
+    <div class="metrics-list">
+      <div *ngFor="let metric of metrics" class="metric-item" (click)="viewMetricDetails(metric)">
+        <div class="metric-status-icon">
+          <i class="fas" [class]="getStatusIcon(metric.status)" [class]="getStatusClass(metric.status)"></i>
+        </div>
+        
+        <div class="metric-details">
+          <div class="metric-header">
+            <div class="metric-pair">
+              <span class="pair-code">{{ getPairDisplay(metric.pair) }}</span>
+              <span class="pair-provider">{{ getProviderDisplay(metric.provider) }}</span>
+            </div>
+            <div class="metric-rate">
+              <span class="rate-value">{{ formatNumber(metric.rate, 4) }}</span>
+            </div>
+          </div>
+          
+          <div class="metric-meta">
+            <div class="meta-item">
+              <i class="fas fa-clock"></i>
+              Last update: {{ formatDate(metric.createdAt) }}
+            </div>
+            <div class="meta-item">
+              <i class="fas fa-hourglass-half"></i>
+              Age: <span [class]="getAgeClass(metric.ageMs)">{{ formatAge(metric.ageMs) }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="metric-status-badge">
+          <span [class]="'status-badge ' + getStatusClass(metric.status)">
+            <i class="fas" [class]="getStatusIcon(metric.status)"></i>
+            {{ getStatusLabel(metric.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && metrics.length === 0" class="empty-state">
+    <i class="fas fa-heartbeat"></i>
+    <p>No rate health metrics available</p>
+  </div>
+  
+  <!-- Metric Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedMetric" (click)="closeDetailsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Rate Source Details
+        </h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Source Information</h3>
+            <div class="detail-row">
+              <span class="label">Provider:</span>
+              <span class="value">{{ getProviderDisplay(selectedMetric.provider) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Pair:</span>
+              <span class="value">{{ getPairDisplay(selectedMetric.pair) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'status-badge ' + getStatusClass(selectedMetric.status)">
+                <i class="fas" [class]="getStatusIcon(selectedMetric.status)"></i>
+                {{ getStatusLabel(selectedMetric.status) }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Rate Information -->
+          <div class="detail-section">
+            <h3>Rate Information</h3>
+            <div class="detail-row">
+              <span class="label">Current Rate:</span>
+              <span class="value highlight">{{ formatNumber(selectedMetric.rate, 8) }}</span>
+            </div>
+          </div>
+          
+          <!-- Timing Information -->
+          <div class="detail-section">
+            <h3>Timing Information</h3>
+            <div class="detail-row">
+              <span class="label">Last Update:</span>
+              <span class="value">{{ formatDate(selectedMetric.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Age:</span>
+              <span class="value" [class]="getAgeClass(selectedMetric.ageMs)">{{ formatAge(selectedMetric.ageMs) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Age (ms):</span>
+              <span class="value">{{ formatNumber(selectedMetric.ageMs, 0) }} ms</span>
+            </div>
+          </div>
+          
+          <!-- Health Assessment -->
+          <div class="detail-section full-width">
+            <h3>Health Assessment</h3>
+            <div class="assessment-item" [class]="getStatusClass(selectedMetric.status)">
+              <div class="assessment-icon">
+                <i class="fas" [class]="getStatusIcon(selectedMetric.status)"></i>
+              </div>
+              <div class="assessment-info">
+                <span class="assessment-label">Status Check</span>
+                <span class="assessment-message" *ngIf="selectedMetric.status === 'UP'">Rate source is operating normally</span>
+                <span class="assessment-message" *ngIf="selectedMetric.status === 'DOWN'">Rate source is down/unavailable</span>
+                <span class="assessment-message" *ngIf="selectedMetric.status === 'DEGRADED'">Rate source is experiencing issues</span>
+                <span class="assessment-message" *ngIf="selectedMetric.status === 'STALE'">Rate data is stale</span>
+              </div>
+            </div>
+            
+            <div class="assessment-item" [class]="getAgeClass(selectedMetric.ageMs)">
+              <div class="assessment-icon">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+              <div class="assessment-info">
+                <span class="assessment-label">Freshness Check</span>
+                <span class="assessment-message" *ngIf="selectedMetric.ageMs < 3600000">Data is fresh (less than 1 hour old)</span>
+                <span class="assessment-message" *ngIf="selectedMetric.ageMs >= 3600000 && selectedMetric.ageMs < 86400000">Data is aging (1-24 hours old)</span>
+                <span class="assessment-message" *ngIf="selectedMetric.ageMs >= 86400000">Data is stale (over 24 hours old)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

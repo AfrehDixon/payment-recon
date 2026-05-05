@@ -44,7 +44,7 @@
   flex-direction: column;
   transition: width var(--transition-speed);
   border-right: 1px solid var(--border-color);
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+  /* box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05); */
   z-index: 1000;
 }
 

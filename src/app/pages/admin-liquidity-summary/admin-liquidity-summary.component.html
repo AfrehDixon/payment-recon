@@ -1,0 +1,313 @@
+<!-- admin-liquidity-summary.component.html -->
+<div class="liquidity-summary-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-water"></i>
+        Liquidity Summary
+      </h1>
+      <p class="subtitle">Monitor liquidity distribution and utilization across providers</p>
+    </div>
+    
+    <div class="header-right">
+      <div class="auto-refresh">
+        <span class="refresh-label">
+          <i class="fas fa-sync-alt" [class.fa-spin]="autoRefreshEnabled"></i>
+          Auto-refresh: {{ autoRefreshEnabled ? 'ON' : 'OFF' }}
+        </span>
+        <label class="switch">
+          <input type="checkbox" [checked]="autoRefreshEnabled" (change)="toggleAutoRefresh()">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-sync-alt]="!loading"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      
+      <div class="last-updated" *ngIf="lastUpdated">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3>Unable to load liquidity summary</h3>
+    <p>There was an error loading the liquidity data. Please try again.</p>
+    <button class="retry-btn" (click)="refresh()">
+      <i class="fas fa-sync-alt"></i>
+      Retry
+    </button>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading liquidity summary...</p>
+  </div>
+  
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error && summary">
+    <!-- No Data State -->
+    <div class="no-data-state" *ngIf="!hasData()">
+      <i class="fas fa-water"></i>
+      <h3>No Liquidity Data Available</h3>
+      <p>There are no liquidity records available at this time.</p>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="stats-grid" *ngIf="hasData()">
+      <div *ngFor="let stat of getMainStats()" class="stat-card" [class]="stat.color">
+        <div class="stat-icon">
+          <i class="fas" [class]="stat.icon"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">{{ stat.label }}</span>
+          <div class="stat-value-wrapper">
+            <span class="stat-value">
+              <span *ngIf="stat.prefix">{{ stat.prefix }}</span>
+              {{ formatCompactNumber(stat.value) }}
+              <span *ngIf="stat.suffix">{{ stat.suffix }}</span>
+            </span>
+          </div>
+          <span class="stat-subtext" *ngIf="stat.subtext">{{ stat.subtext }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Provider Summary Cards -->
+    <div class="provider-cards" *ngIf="summary.byProvider.length > 0 && hasData()">
+      <div class="section-header">
+        <h3>
+          <i class="fas fa-building"></i>
+          Liquidity by Provider
+        </h3>
+        <span class="section-subtitle">Distribution across liquidity providers</span>
+      </div>
+      <div class="cards-grid">
+        <div *ngFor="let provider of summary.byProvider" class="provider-card" (click)="viewDetails(provider, 'provider')">
+          <div class="card-header">
+            <div class="provider-icon" [style.backgroundColor]="getProviderColor(provider._id || 'Unknown')">
+              <i class="fas fa-building"></i>
+            </div>
+            <div class="provider-name">{{ provider._id || 'Unknown Provider' }}</div>
+          </div>
+          <div class="card-stats">
+            <div class="stat-row">
+              <span class="stat-label">Total Balance</span>
+              <span class="stat-value">{{ formatCurrency(provider.totalBalance, 'USD') }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Available</span>
+              <span class="stat-value available">{{ formatCurrency(provider.availableBalance, 'USD') }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Locked</span>
+              <span class="stat-value locked">{{ formatCurrency(provider.lockedBalance, 'USD') }}</span>
+            </div>
+          </div>
+          <div class="balance-bar">
+            <div class="available-bar" [style.width.%]="getAvailableRatio(provider.totalBalance, provider.availableBalance)"></div>
+            <div class="locked-bar" [style.width.%]="getLockedRatio(provider.totalBalance, provider.lockedBalance)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Asset Breakdown by Provider -->
+    <div class="asset-breakdown" *ngIf="summary.byProviderAndAsset.length > 0 && hasData()">
+      <div class="section-header">
+        <h3>
+          <i class="fas fa-chart-pie"></i>
+          Asset Breakdown by Provider
+        </h3>
+        <span class="section-subtitle">Liquidity distribution by asset and provider</span>
+      </div>
+      <div class="table-container">
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Asset</th>
+              <th>Total Balance</th>
+              <th>Available</th>
+              <th>Locked</th>
+              <th>Utilization</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of summary.byProviderAndAsset" 
+                (click)="viewDetails(item, 'asset')">
+              <td>
+                <span class="provider-badge" [style.backgroundColor]="getProviderColor(item._id.provider || 'Unknown')">
+                  {{ item._id.provider || 'Unknown' }}
+                </span>
+              </td>
+              <td>
+                <span class="asset-badge" [style.backgroundColor]="getAssetColor(item._id.asset || 'Unknown')">
+                  {{ item._id.asset || 'Unknown' }}
+                </span>
+              </td>
+              <td class="amount-cell">{{ formatCurrency(item.totalBalance, 'USD') }}</td>
+              <td class="amount-cell available">{{ formatCurrency(item.availableBalance, 'USD') }}</td>
+              <td class="amount-cell locked">{{ formatCurrency(item.lockedBalance, 'USD') }}</td>
+              <td>
+                <div class="utilization-cell">
+                  <div class="utilization-bar">
+                    <div class="utilization-fill" 
+                         [style.width.%]="getLockedRatio(item.totalBalance, item.lockedBalance)"
+                         [class]="getUtilizationClass(getLockedRatio(item.totalBalance, item.lockedBalance))">
+                    </div>
+                  </div>
+                  <span class="utilization-text">{{ getLockedRatio(item.totalBalance, item.lockedBalance).toFixed(1) }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="two-columns" *ngIf="hasData()">
+      <div class="info-card">
+        <div class="card-header">
+          <i class="fas fa-chart-pie"></i>
+          <h3>Liquidity Composition</h3>
+        </div>
+        <div class="card-body">
+          <div class="composition-item">
+            <div class="composition-label">Available Liquidity</div>
+            <div class="composition-value">{{ formatCurrency(getTotalAvailable(), 'USD') }}</div>
+            <div class="composition-bar">
+              <div class="composition-fill available" [style.width.%]="getAvailableRate()"></div>
+            </div>
+            <div class="composition-percent">{{ getAvailableRate().toFixed(1) }}% of total</div>
+          </div>
+          <div class="composition-item">
+            <div class="composition-label">Locked Liquidity</div>
+            <div class="composition-value">{{ formatCurrency(getTotalLocked(), 'USD') }}</div>
+            <div class="composition-bar">
+              <div class="composition-fill locked" [style.width.%]="getOverallUtilizationRate()"></div>
+            </div>
+            <div class="composition-percent">{{ getOverallUtilizationRate().toFixed(1) }}% of total</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-card">
+        <div class="card-header">
+          <i class="fas fa-chart-line"></i>
+          <h3>Liquidity Health</h3>
+        </div>
+        <div class="card-body">
+          <div class="health-metric">
+            <span class="metric-label">Available Ratio</span>
+            <span class="metric-value" [class]="getAvailableRate() > 50 ? 'good' : 'warning'">
+              {{ getAvailableRate().toFixed(1) }}%
+            </span>
+            <div class="metric-bar">
+              <div class="metric-fill available" [style.width.%]="getAvailableRate()"></div>
+            </div>
+            <div class="metric-note" *ngIf="getAvailableRate() > 50">
+              <i class="fas fa-check-circle"></i> Healthy available liquidity
+            </div>
+            <div class="metric-note warning" *ngIf="getAvailableRate() <= 50">
+              <i class="fas fa-exclamation-triangle"></i> Low available liquidity
+            </div>
+          </div>
+          
+          <div class="health-metric">
+            <span class="metric-label">Utilization Rate</span>
+            <span class="metric-value" [class]="getOverallUtilizationRate() < 50 ? 'good' : 'warning'">
+              {{ getOverallUtilizationRate().toFixed(1) }}%
+            </span>
+            <div class="metric-bar">
+              <div class="metric-fill utilized" [style.width.%]="getOverallUtilizationRate()"></div>
+            </div>
+            <div class="metric-note" *ngIf="getOverallUtilizationRate() < 50">
+              <i class="fas fa-check-circle"></i> Good utilization level
+            </div>
+            <div class="metric-note warning" *ngIf="getOverallUtilizationRate() >= 50">
+              <i class="fas fa-exclamation-triangle"></i> High utilization - monitor closely
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Detail Modal -->
+  <div class="modal" *ngIf="showDetailModal && selectedItem" (click)="closeDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          {{ selectedItem.type === 'provider' ? 'Provider Details' : 'Asset Details' }}
+        </h2>
+        <button class="close-btn" (click)="closeDetailModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="detail-info" *ngIf="selectedItem.type === 'provider'">
+          <div class="info-row">
+            <span class="info-label">Provider:</span>
+            <span class="info-value">{{ selectedItem._id || 'Unknown Provider' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total Balance:</span>
+            <span class="info-value">{{ formatCurrency(selectedItem.totalBalance, 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Available:</span>
+            <span class="info-value available">{{ formatCurrency(selectedItem.availableBalance, 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Locked:</span>
+            <span class="info-value locked">{{ formatCurrency(selectedItem.lockedBalance, 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Utilization:</span>
+            <span class="info-value">{{ getLockedRatio(selectedItem.totalBalance, selectedItem.lockedBalance).toFixed(1) }}%</span>
+          </div>
+        </div>
+        
+        <div class="detail-info" *ngIf="selectedItem.type === 'asset'">
+          <div class="info-row">
+            <span class="info-label">Provider:</span>
+            <span class="info-value">{{ selectedItem._id.provider || 'Unknown' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Asset:</span>
+            <span class="info-value">{{ selectedItem._id.asset || 'Unknown' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total Balance:</span>
+            <span class="info-value">{{ formatCurrency(selectedItem.totalBalance, selectedItem._id.asset || 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Available:</span>
+            <span class="info-value available">{{ formatCurrency(selectedItem.availableBalance, selectedItem._id.asset || 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Locked:</span>
+            <span class="info-value locked">{{ formatCurrency(selectedItem.lockedBalance, selectedItem._id.asset || 'USD') }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Utilization:</span>
+            <span class="info-value">{{ getLockedRatio(selectedItem.totalBalance, selectedItem.lockedBalance).toFixed(1) }}%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
