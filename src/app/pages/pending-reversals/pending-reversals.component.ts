@@ -737,11 +737,82 @@ export class PendingReversalsComponent implements OnInit {
   }
 
   // Rest of the existing methods remain unchanged...
+  // searchReversals(event: KeyboardEvent): void {
+  //   const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
+  //   this.searchTerm = searchTerm;
+  //   this.filterReversals();
+  // }
+
   searchReversals(event: KeyboardEvent): void {
-    const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
-    this.searchTerm = searchTerm;
-    this.filterReversals();
+  const searchTerm = (event.target as HTMLInputElement).value;
+  this.searchTerm = searchTerm;
+  this.currentPage = 1; // Reset to first page when searching
+  
+  // If there's a search term, call the search endpoint
+  if (this.searchTerm && this.searchTerm.trim()) {
+    this.searchReversalsFromAPI();
+  } else {
+    // If search is empty, load all reversals normally
+    this.loadReversals();
   }
+}
+
+// New method to call the search endpoint
+searchReversalsFromAPI(): void {
+  this.loading = true;
+  const searchId = this.searchTerm.trim();
+  
+  // If no search term, don't search
+  if (!searchId) {
+    this.loading = false;
+    return;
+  }
+
+  // Use the search endpoint with the ID in the path
+  this.http
+    .get<any>(`${BASE_URL}/reversals/pending/${searchId}`)
+    .subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Handle single reversal response
+          const reversalData = response.data;
+          this.reversals = reversalData ? [reversalData] : [];
+          this.filteredReversals = this.reversals;
+          
+          // Update pagination for single result
+          this.totalItems = this.reversals.length;
+          this.totalPages = 1;
+          this.currentPage = 1;
+
+          // Update selection state after loading
+          this.updateSelectAllState();
+
+          // Clear invalid selections
+          const validIds = new Set(this.reversals.map((r) => r.reversalId));
+          this.selectedReversals.forEach((id) => {
+            if (!validIds.has(id)) {
+              this.selectedReversals.delete(id);
+            }
+          });
+        } else {
+          this.error = response.message || 'Reversal not found';
+          this.reversals = [];
+          this.filteredReversals = [];
+          this.totalItems = 0;
+          this.totalPages = 0;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.error = 'Reversal not found or an error occurred';
+        this.reversals = [];
+        this.filteredReversals = [];
+        this.totalItems = 0;
+        this.totalPages = 0;
+        this.loading = false;
+      },
+    });
+}
 
   filterReversals(): void {
     let filtered = [...this.reversals];
@@ -783,17 +854,27 @@ export class PendingReversalsComponent implements OnInit {
     this.updateSelectAllState();
   }
 
-  onStatusFilterChange(): void {
-    this.currentPage = 1;
-    this.clearSelection();
+ onStatusFilterChange(): void {
+  this.currentPage = 1;
+  this.clearSelection();
+  // If there's an active search, use search endpoint, otherwise normal load
+  if (this.searchTerm && this.searchTerm.trim()) {
+    this.searchReversalsFromAPI();
+  } else {
     this.loadReversals();
   }
+}
 
-  onMerchantFilterChange(): void {
-    this.currentPage = 1;
-    this.clearSelection();
+onMerchantFilterChange(): void {
+  this.currentPage = 1;
+  this.clearSelection();
+  // If there's an active search, use search endpoint, otherwise normal load
+  if (this.searchTerm && this.searchTerm.trim()) {
+    this.searchReversalsFromAPI();
+  } else {
     this.loadReversals();
   }
+}
 
   changePage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
