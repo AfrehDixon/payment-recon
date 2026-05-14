@@ -90,6 +90,11 @@ export const Routes: RouteInfo[] = [
   { path: 'custody/addresses', title: 'Custody Addresses', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
   {  path: 'custody/deposits', title: 'Custody Deposits', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
   {  path: 'custody/withdrawals', title: 'Custody Withdrawals', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  { path: 'payout-approval-rules', title: 'Payout Approval Rules', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'crypto-remittances', title: 'Crypto Remittances', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'treasury/quotes', title: 'Treasury Quotes', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'platform-accounts', title: 'Platform Accounts', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
+  {  path: 'platform-account-ledgers', title: 'Platform Account Ledgers', class: 'false', permission: 'can view admins module', parentModule: 'system-management' },
   // Monitoring & Logs
   { path: 'logs', title: 'System Logs', class: 'false', permission: 'can view system logs module', parentModule: 'monitoring-logs' },
   { path: 'logs-summary', title: 'Logs Summary', class: 'false', permission: 'can view logs summary module', parentModule: 'monitoring-logs' },

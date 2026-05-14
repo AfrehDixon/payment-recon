@@ -1,0 +1,579 @@
+<!-- admin-payout-approval-rules.component.html -->
+<div class="approval-rules-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-check-double"></i>
+        Payout Approval Rules
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+        
+        <button class="create-btn" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i>
+          Create Rule
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Rail</label>
+        <select formControlName="rail">
+          <option value="">All</option>
+          <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Transaction Type</label>
+        <select formControlName="transactionType">
+          <option value="">All</option>
+          <option *ngFor="let type of transactionTypeOptions" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" formControlName="search" placeholder="Search by name or description..." />
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && rules.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-list"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Rules</span>
+        <span class="stat-value">{{ totalItems }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Active</span>
+        <span class="stat-value">{{ activeRulesCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon inactive">
+        <i class="fas fa-pause-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Inactive</span>
+        <span class="stat-value">{{ inactiveRulesCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon fiat">
+        <i class="fas fa-money-bill-wave"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">FIAT Rules</span>
+        <span class="stat-value">{{ fiatRulesCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon crypto">
+        <i class="fas fa-bitcoin"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Crypto Rules</span>
+        <span class="stat-value">{{ cryptoRulesCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Rules Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="rules-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Rail</th>
+          <th>Condition</th>
+          <th>Approver Roles</th>
+          <th>Required Approvals</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rule of rules" class="rule-row">
+          <td class="name-cell">
+            <div class="rule-name">{{ rule.name }}</div>
+            <div class="rule-desc" *ngIf="rule.description">{{ rule.description }}</div>
+          </td>
+          <td class="rail-cell">
+            <span [class]="'rail-badge ' + getRailClass(rule.rail)">
+              <i class="fas" [class]="getRailIcon(rule.rail)"></i>
+              {{ rule.rail }}
+            </span>
+          </td>
+          <td class="condition-cell">
+            <div *ngIf="rule.amountGreaterThanOrEqual" class="condition">
+              Amount ≥ {{ formatAmount(rule.amountGreaterThanOrEqual) }}
+              <span *ngIf="rule.currency"> {{ rule.currency }}</span>
+              <span *ngIf="rule.asset"> {{ rule.asset }}</span>
+            </div>
+            <div *ngIf="rule.amountLessThanOrEqual" class="condition">
+              Amount ≤ {{ formatAmount(rule.amountLessThanOrEqual) }}
+            </div>
+            <div *ngIf="rule.currency" class="condition">
+              Currency: {{ rule.currency }}
+            </div>
+            <div *ngIf="rule.asset" class="condition">
+              Asset: {{ rule.asset }}
+            </div>
+            <div *ngIf="rule.network" class="condition">
+              Network: {{ rule.network }}
+            </div>
+            <div *ngIf="!rule.amountGreaterThanOrEqual && !rule.amountLessThanOrEqual && !rule.currency && !rule.asset" class="condition">
+              All transactions
+            </div>
+          </td>
+          <td class="roles-cell">
+            <div class="roles-list">
+              <span *ngFor="let role of rule.approverRoles.slice(0, 2)" class="role-badge">
+                {{ role }}
+              </span>
+              <span *ngIf="rule.approverRoles.length > 2" class="role-more">
+                +{{ rule.approverRoles.length - 2 }} more
+              </span>
+            </div>
+          </td>
+          <td class="approvals-cell">
+            <span class="approvals-badge">{{ rule.requiredApprovals }}</span>
+          </td>
+          <td class="priority-cell">
+            <span class="priority-badge">{{ rule.priority }}</span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(rule.status)">
+              <i class="fas" [class]="getStatusIcon(rule.status)"></i>
+              {{ rule.status }}
+            </span>
+          </td>
+          <td class="date-cell">{{ formatDate(rule.createdAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewRuleDetails(rule)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button class="edit-btn" (click)="openEditModal(rule)" title="Edit Rule">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="enable-btn" 
+                    *ngIf="rule.status === 'INACTIVE'"
+                    (click)="confirmToggleStatus(rule, 'enable')" 
+                    title="Enable Rule">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="disable-btn" 
+                    *ngIf="rule.status === 'ACTIVE'"
+                    (click)="confirmToggleStatus(rule, 'disable')" 
+                    title="Disable Rule">
+              <i class="fas fa-pause"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="rules.length === 0" class="empty-state">
+      <i class="fas fa-check-double"></i>
+      <p>No approval rules found</p>
+      <button class="create-btn" (click)="openCreateModal()">Create your first rule</button>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} rules
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedRule" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-check-double"></i>
+          Rule Details: {{ selectedRule.name }}
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Rule ID:</span>
+              <span class="value mono">{{ selectedRule._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Name:</span>
+              <span class="value">{{ selectedRule.name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRule.description">
+              <span class="label">Description:</span>
+              <span class="value">{{ selectedRule.description }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Priority:</span>
+              <span class="value">{{ selectedRule.priority }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedRule.status)">
+                <i class="fas" [class]="getStatusIcon(selectedRule.status)"></i>
+                {{ selectedRule.status }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Transaction Details -->
+          <div class="detail-section">
+            <h3>Transaction Details</h3>
+            <div class="detail-row">
+              <span class="label">Rail:</span>
+              <span [class]="'rail-badge ' + getRailClass(selectedRule.rail)">
+                {{ selectedRule.rail }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Transaction Type:</span>
+              <span class="value">{{ selectedRule.transactionType }}</span>
+            </div>
+          </div>
+          
+          <!-- Amount Conditions -->
+          <div class="detail-section">
+            <h3>Amount Conditions</h3>
+            <div class="detail-row" *ngIf="selectedRule.amountGreaterThanOrEqual">
+              <span class="label">Min Amount:</span>
+              <span class="value">{{ formatAmount(selectedRule.amountGreaterThanOrEqual) }} {{ selectedRule.currency || selectedRule.asset || '' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRule.amountLessThanOrEqual">
+              <span class="label">Max Amount:</span>
+              <span class="value">{{ formatAmount(selectedRule.amountLessThanOrEqual) }} {{ selectedRule.currency || selectedRule.asset || '' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="!selectedRule.amountGreaterThanOrEqual && !selectedRule.amountLessThanOrEqual">
+              <span class="label">Amount:</span>
+              <span class="value">All amounts</span>
+            </div>
+          </div>
+          
+          <!-- Asset Details -->
+          <div class="detail-section" *ngIf="selectedRule.currency || selectedRule.asset || selectedRule.network">
+            <h3>Asset Details</h3>
+            <div class="detail-row" *ngIf="selectedRule.currency">
+              <span class="label">Currency:</span>
+              <span class="value">{{ selectedRule.currency }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRule.asset">
+              <span class="label">Asset:</span>
+              <span class="value">{{ selectedRule.asset }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRule.network">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedRule.network }}</span>
+            </div>
+          </div>
+          
+          <!-- Approval Settings -->
+          <div class="detail-section">
+            <h3>Approval Settings</h3>
+            <div class="detail-row">
+              <span class="label">Required Approvals:</span>
+              <span class="value">{{ selectedRule.requiredApprovals }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Approver Roles:</span>
+              <span class="value">
+                <span *ngFor="let role of selectedRule.approverRoles" class="role-badge">
+                  {{ role }}
+                </span>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedRule.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedRule.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="edit-btn" (click)="openEditModal(selectedRule); closeViewModal()">
+          <i class="fas fa-edit"></i> Edit Rule
+        </button>
+        <button class="enable-btn" 
+                *ngIf="selectedRule.status === 'INACTIVE'"
+                (click)="confirmToggleStatus(selectedRule, 'enable'); closeViewModal()">
+          <i class="fas fa-play"></i> Enable
+        </button>
+        <button class="disable-btn" 
+                *ngIf="selectedRule.status === 'ACTIVE'"
+                (click)="confirmToggleStatus(selectedRule, 'disable'); closeViewModal()">
+          <i class="fas fa-pause"></i> Disable
+        </button>
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create/Edit Modal -->
+  <div class="modal" *ngIf="showCreateModal || showEditModal" (click)="showEditModal ? closeEditModal() : closeCreateModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas" [class.fa-plus-circle]="showCreateModal" [class.fa-edit]="showEditModal"></i>
+          {{ showCreateModal ? 'Create Approval Rule' : 'Edit Approval Rule' }}
+        </h2>
+        <button class="close-btn" (click)="showEditModal ? closeEditModal() : closeCreateModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="ruleForm" class="rule-form">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Rule Name *</label>
+                <input type="text" formControlName="name" placeholder="Enter rule name" />
+                <div class="error" *ngIf="ruleForm.get('name')?.invalid && ruleForm.get('name')?.touched">
+                  Rule name is required
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Priority *</label>
+                <input type="number" formControlName="priority" min="1" max="999" />
+                <small>Lower number = higher priority</small>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Description</label>
+              <textarea formControlName="description" rows="2" placeholder="Enter rule description"></textarea>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Rail *</label>
+                <select formControlName="rail">
+                  <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Transaction Type *</label>
+                <select formControlName="transactionType">
+                  <option *ngFor="let type of transactionTypeOptions" [value]="type">{{ type }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Amount Conditions -->
+          <div class="form-section">
+            <h3>Amount Conditions</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Min Amount (≥)</label>
+                <input type="number" formControlName="amountGreaterThanOrEqual" step="0.01" placeholder="Leave empty for no minimum" />
+              </div>
+              
+              <div class="form-group">
+                <label>Max Amount (≤)</label>
+                <input type="number" formControlName="amountLessThanOrEqual" step="0.01" placeholder="Leave empty for no maximum" />
+              </div>
+            </div>
+          </div>
+          
+          <!-- Asset Details -->
+          <div class="form-section">
+            <h3>Asset Details (Optional)</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Currency / Asset</label>
+                <input type="text" formControlName="currency" placeholder="e.g., GHS, USD" />
+                <small>For FIAT rails</small>
+              </div>
+              
+              <div class="form-group" *ngIf="ruleForm.get('rail')?.value === 'CRYPTO'">
+                <label>Asset</label>
+                <input type="text" formControlName="asset" placeholder="e.g., BTC, ETH, USDT" />
+              </div>
+            </div>
+            
+            <div class="form-group" *ngIf="ruleForm.get('rail')?.value === 'CRYPTO'">
+              <label>Network</label>
+              <input type="text" formControlName="network" placeholder="e.g., ERC20, TRC20, BEP20" />
+            </div>
+          </div>
+          
+          <!-- Approval Settings -->
+          <div class="form-section">
+            <h3>Approval Settings</h3>
+            
+            <div class="form-group">
+              <label>Required Approvals *</label>
+              <input type="number" formControlName="requiredApprovals" min="1" max="10" />
+              <small>Number of approvers required</small>
+            </div>
+            
+            <div class="form-group">
+              <label>Approver Roles *</label>
+              <div class="roles-selector">
+                <select class="role-select" (change)="addRole($any($event.target).value)" #roleSelect>
+                  <option value="">Select a role to add</option>
+                  <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+                </select>
+                <div class="selected-roles">
+                  <span *ngFor="let role of ruleForm.get('approverRoles')?.value" class="role-tag">
+                    {{ role }}
+                    <button type="button" (click)="removeRole(role)" class="remove-role">&times;</button>
+                  </span>
+                  <span *ngIf="ruleForm.get('approverRoles')?.value?.length === 0" class="no-roles">
+                    No roles selected
+                  </span>
+                </div>
+              </div>
+              <div class="error" *ngIf="ruleForm.get('approverRoles')?.invalid && ruleForm.get('approverRoles')?.touched">
+                At least one approver role is required
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="showEditModal ? closeEditModal() : closeCreateModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="showEditModal ? updateRule() : createRule()" 
+                [disabled]="actionInProgress || ruleForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Saving...' : (showEditModal ? 'Update Rule' : 'Create Rule') }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Confirmation Modal for Enable/Disable -->
+  <div class="modal" *ngIf="showConfirmModal && pendingRule" (click)="cancelConfirm()">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas" [class.fa-play]="confirmAction === 'enable'" [class.fa-pause]="confirmAction === 'disable'"></i>
+          {{ confirmAction === 'enable' ? 'Enable Rule' : 'Disable Rule' }}
+        </h2>
+        <button class="close-btn" (click)="cancelConfirm()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Are you sure you want to {{ confirmAction }} the approval rule <strong>{{ pendingRule.name }}</strong>?</p>
+        <div class="warning-box" *ngIf="confirmAction === 'disable'">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Disabled rules will not be applied to new payout requests.</span>
+        </div>
+        <div class="info-box" *ngIf="confirmAction === 'enable'">
+          <i class="fas fa-info-circle"></i>
+          <span>Enabled rules will be evaluated for all new payout requests.</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelConfirm()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" [class.enable-btn]="confirmAction === 'enable'" [class.disable-btn]="confirmAction === 'disable'" (click)="executeStatusToggle()" [disabled]="actionInProgress">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-check]="!actionInProgress && confirmAction === 'enable'" [class.fa-ban]="!actionInProgress && confirmAction === 'disable'"></i>
+          {{ actionInProgress ? 'Processing...' : (confirmAction === 'enable' ? 'Enable Rule' : 'Disable Rule') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

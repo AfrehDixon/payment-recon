@@ -744,3 +744,12 @@
     }
   }
 }
+
+.status-executed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.stat-icon {
+  &.executed i { color: #28a745; }
+}

@@ -95,15 +95,15 @@
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Amount</span>
-              <span class="summary-value">{{ formatCurrency(summary.credits.totalAmount, 'USD') }}</span>
+              <span class="summary-value">{{ formatCurrency(summary.credits.totalAmount, 'GHS') }}</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Charges</span>
-              <span class="summary-value">{{ formatCurrency(summary.credits.totalCharges, 'USD') }}</span>
+              <span class="summary-value">{{ formatCurrency(summary.credits.totalCharges, 'GHS') }}</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Profit</span>
-              <span class="summary-value profit">{{ formatCurrency(summary.credits.totalProfit, 'USD') }}</span>
+              <span class="summary-value profit">{{ formatCurrency(summary.credits.totalProfit, 'GHS') }}</span>
             </div>
           </div>
         </div>
@@ -126,15 +126,15 @@
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Amount</span>
-              <span class="summary-value">{{ formatCurrency(summary.debits.totalAmount, 'USD') }}</span>
+              <span class="summary-value">{{ formatCurrency(summary.debits.totalAmount, 'GHS') }}</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Charges</span>
-              <span class="summary-value">{{ formatCurrency(summary.debits.totalCharges, 'USD') }}</span>
+              <span class="summary-value">{{ formatCurrency(summary.debits.totalCharges, 'GHS') }}</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">Total Profit</span>
-              <span class="summary-value profit">{{ formatCurrency(summary.debits.totalProfit, 'USD') }}</span>
+              <span class="summary-value profit">{{ formatCurrency(summary.debits.totalProfit, 'GHS') }}</span>
             </div>
           </div>
         </div>
@@ -159,7 +159,7 @@
               </span>
               <span class="status-count">{{ summary.statuses.INITIATED.count }} transactions</span>
             </div>
-            <div class="status-amount">{{ formatCurrency(summary.statuses.INITIATED.totalAmount, 'USD') }}</div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.INITIATED.totalAmount, 'GHS') }}</div>
             <div class="status-bar">
               <div class="bar-fill initiated" 
                    [style.width.%]="(summary.statuses.INITIATED.totalAmount / summary.today.volume) * 100">
@@ -174,7 +174,7 @@
               </span>
               <span class="status-count">{{ summary.statuses.PAID.count }} transactions</span>
             </div>
-            <div class="status-amount">{{ formatCurrency(summary.statuses.PAID.totalAmount, 'USD') }}</div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.PAID.totalAmount, 'GHS') }}</div>
             <div class="status-bar">
               <div class="bar-fill paid" 
                    [style.width.%]="(summary.statuses.PAID.totalAmount / summary.today.volume) * 100">
@@ -189,7 +189,7 @@
               </span>
               <span class="status-count">{{ summary.statuses.FAILED.count }} transactions</span>
             </div>
-            <div class="status-amount">{{ formatCurrency(summary.statuses.FAILED.totalAmount, 'USD') }}</div>
+            <div class="status-amount">{{ formatCurrency(summary.statuses.FAILED.totalAmount, 'GHS') }}</div>
             <div class="status-bar">
               <div class="bar-fill failed" 
                    [style.width.%]="(summary.statuses.FAILED.totalAmount / summary.today.volume) * 100">
@@ -213,7 +213,7 @@
           <div class="today-stats">
             <div class="today-stat">
               <span class="today-label">Volume</span>
-              <span class="today-value">{{ formatCurrency(summary.today.volume, 'USD') }}</span>
+              <span class="today-value">{{ formatCurrency(summary.today.volume, 'GHS') }}</span>
             </div>
             <div class="today-stat">
               <span class="today-label">Transactions</span>
@@ -221,11 +221,11 @@
             </div>
             <div class="today-stat">
               <span class="today-label">Profit</span>
-              <span class="today-value profit">{{ formatCurrency(summary.today.profit, 'USD') }}</span>
+              <span class="today-value profit">{{ formatCurrency(summary.today.profit, 'GHS') }}</span>
             </div>
             <div class="today-stat">
               <span class="today-label">Avg. Transaction</span>
-              <span class="today-value">{{ formatCurrency(summary.today.volume / summary.today.count, 'USD') }}</span>
+              <span class="today-value">{{ formatCurrency(summary.today.volume / summary.today.count, 'GHS') }}</span>
             </div>
           </div>
         </div>

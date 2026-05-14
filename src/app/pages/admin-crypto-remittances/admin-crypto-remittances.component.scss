@@ -1,5 +1,5 @@
-// Add to admin-quotes.component.scss
-.quotes-container {
+// admin-crypto-remittances.component.scss
+.crypto-remittances-container {
   padding: 24px;
   margin-left: 200px;
   background: #f8f9fa;
@@ -50,7 +50,7 @@
   
   .stats-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
     
@@ -77,25 +77,35 @@
           color: #6c757d;
         }
         
+        &.volume i { color: #17a2b8; }
+        &.fees i { color: #fd7e14; }
+        &.rate i { color: #6c757d; }
+        &.completed i { color: #28a745; }
         &.pending i { color: #ffc107; }
-        &.accepted i { color: #28a745; }
-        &.expired i { color: #dc3545; }
+        &.today i { color: #4CAF50; }
       }
       
       .stat-info {
         flex: 1;
         
         .stat-label {
-          font-size: 0.85rem;
+          font-size: 0.75rem;
           color: #6c757d;
           display: block;
           margin-bottom: 4px;
         }
         
         .stat-value {
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           font-weight: 600;
           color: #2c3e50;
+        }
+        
+        .stat-sub {
+          font-size: 0.7rem;
+          color: #6c757d;
+          display: block;
+          margin-top: 2px;
         }
       }
     }
@@ -110,7 +120,7 @@
     
     .filters-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       
       .filter-group {
@@ -170,12 +180,13 @@
   .table-container {
     background: white;
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     
-    .quotes-table {
+    .remittances-table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 1200px;
       
       th {
         text-align: left;
@@ -193,54 +204,99 @@
         vertical-align: middle;
       }
       
-      .quote-row {
-        &.expired-row {
-          background-color: #f8f9fa;
-          opacity: 0.8;
-        }
+      .remittance-row {
+        transition: background-color 0.2s;
         
         &:hover {
           background-color: #f8f9fa;
         }
+        
+        &.failed-row {
+          background-color: #fff5f5;
+        }
+      }
+      
+      .id-cell {
+        .remittance-id {
+          font-family: monospace;
+          font-size: 0.8rem;
+          color: #2c3e50;
+          margin-bottom: 2px;
+        }
+        
+        .remittance-ref {
+          font-size: 0.65rem;
+          color: #6c757d;
+        }
       }
       
       .ref-cell {
-        .quote-ref {
-          font-weight: 600;
-          color: #2c3e50;
-          margin-bottom: 4px;
-        }
-        
-        .quote-id {
-          font-size: 0.7rem;
+        .external-ref {
+          font-size: 0.75rem;
           color: #6c757d;
           font-family: monospace;
         }
       }
       
-      .pair-cell {
-        .pair-code {
-          font-weight: 500;
+      .collection-cell, .payout-cell {
+        .collection-amount, .payout-amount {
+          font-weight: 600;
           color: #2c3e50;
+          margin-bottom: 4px;
         }
         
-        .pair-assets {
+        .collection-status, .payout-status {
           font-size: 0.7rem;
-          color: #6c757d;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          margin-bottom: 4px;
+          
+          &.status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+          }
+          
+          &.status-completed {
+            background-color: #d4edda;
+            color: #155724;
+          }
+          
+          &.status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+          }
         }
-      }
-      
-      .amount-cell {
-        .small-text {
-          font-size: 0.7rem;
+        
+        .collection-tx, .payout-address {
+          font-size: 0.65rem;
           color: #6c757d;
-          margin-top: 2px;
+          font-family: monospace;
         }
       }
       
       .rate-cell {
-        .small-text {
-          font-size: 0.7rem;
+        .rate {
+          font-weight: 600;
+          color: #2c3e50;
+        }
+        
+        .rate-desc {
+          font-size: 0.65rem;
+          color: #6c757d;
+        }
+      }
+      
+      .fees-cell {
+        .fee {
+          font-weight: 500;
+          color: #dc3545;
+        }
+        
+        .fee-bps {
+          font-size: 0.65rem;
           color: #6c757d;
         }
       }
@@ -248,7 +304,7 @@
       .badge {
         padding: 4px 8px;
         border-radius: 4px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 500;
         display: inline-flex;
         align-items: center;
@@ -258,39 +314,24 @@
           font-size: 0.7rem;
         }
         
-        &.side-buy {
-          background-color: #d4edda;
-          color: #155724;
-        }
-        
-        &.side-sell {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-        
-        &.side-swap {
-          background-color: #cce5ff;
-          color: #004085;
-        }
-        
         &.status-pending {
           background-color: #fff3cd;
           color: #856404;
         }
         
-        &.status-accepted {
+        &.status-processing {
+          background-color: #cce5ff;
+          color: #004085;
+        }
+        
+        &.status-completed {
           background-color: #d4edda;
           color: #155724;
         }
         
-        &.status-rejected {
+        &.status-failed {
           background-color: #f8d7da;
           color: #721c24;
-        }
-        
-        &.status-expired {
-          background-color: #e2e3e5;
-          color: #383d41;
         }
         
         &.status-cancelled {
@@ -299,35 +340,8 @@
         }
       }
       
-      .expiry-badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        
-        &.valid {
-          background-color: #d4edda;
-          color: #155724;
-        }
-        
-        &.expiring-soon {
-          background-color: #fff3cd;
-          color: #856404;
-        }
-        
-        &.expired {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-      }
-      
-      .expiry-finished {
-        font-size: 0.8rem;
-        color: #6c757d;
-      }
-      
       .date-cell {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #6c757d;
       }
       
@@ -352,15 +366,6 @@
             
             &:hover {
               background-color: #138496;
-            }
-          }
-          
-          &.expire-btn {
-            background-color: #dc3545;
-            color: white;
-            
-            &:hover {
-              background-color: #c82333;
             }
           }
         }
@@ -463,30 +468,25 @@
     
     .modal-content {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       max-height: 90vh;
       overflow-y: auto;
       
       &.modal-large {
         width: 90%;
-        max-width: 900px;
-      }
-      
-      &.modal-small {
-        width: 90%;
-        max-width: 500px;
+        max-width: 1000px;
       }
       
       .modal-header {
         padding: 20px;
-        border-bottom: 1px solid #dee2e6;
+        border-bottom: 1px solid #e9ecef;
         display: flex;
         justify-content: space-between;
         align-items: center;
         
         h2 {
           margin: 0;
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           color: #2c3e50;
           
           i {
@@ -513,35 +513,20 @@
       
       .modal-footer {
         padding: 20px;
-        border-top: 1px solid #dee2e6;
+        border-top: 1px solid #e9ecef;
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
         
-        button {
+        .close-modal-btn {
           padding: 8px 16px;
-          border-radius: 4px;
+          background-color: #6c757d;
+          color: white;
+          border: none;
+          border-radius: 6px;
           cursor: pointer;
-          font-weight: 500;
           
-          &.cancel-btn {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            
-            &:hover {
-              background-color: #5a6268;
-            }
-          }
-          
-          &.expire-btn-modal {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            
-            &:hover:not(:disabled) {
-              background-color: #c82333;
-            }
+          &:hover {
+            background-color: #5a6268;
           }
         }
       }
@@ -597,49 +582,17 @@
             color: #28a745;
           }
           
-          &.error-text {
-            color: #dc3545;
-          }
-          
           &.mono {
             font-family: monospace;
             font-size: 0.8rem;
+            word-break: break-all;
           }
           
-          &.small {
-            font-size: 0.8rem;
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-          
-          &.expiring {
+          &.error-text {
             color: #dc3545;
           }
         }
       }
-    }
-  }
-  
-  .warning-box {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px;
-    background-color: #fff3cd;
-    border-left: 4px solid #ffc107;
-    border-radius: 6px;
-    margin-top: 16px;
-    
-    i {
-      color: #ffc107;
-      font-size: 18px;
-    }
-    
-    span {
-      flex: 1;
-      font-size: 0.9rem;
-      color: #856404;
     }
   }
 }
@@ -650,9 +603,18 @@
 }
 
 // Responsive
+@media (max-width: 1200px) {
+  .crypto-remittances-container {
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
 @media (max-width: 768px) {
-  .quotes-container {
+  .crypto-remittances-container {
     padding: 16px;
+    margin-left: 0;
     
     .header .header-content {
       flex-direction: column;
@@ -664,7 +626,7 @@
     }
     
     .stats-summary {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
     }
     
     .filters-panel .filters-form {
@@ -676,14 +638,6 @@
         .date-inputs {
           grid-template-columns: 1fr;
         }
-      }
-    }
-    
-    .table-container {
-      overflow-x: auto;
-      
-      .quotes-table {
-        min-width: 1200px;
       }
     }
     
@@ -711,18 +665,91 @@
   }
 }
 
-.status-executed {
-  background-color: #d4edda;
-  color: #155724;
+.rail-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  
+  i {
+    font-size: 0.7rem;
+  }
+  
+  &.rail-crypto {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  &.rail-fiat {
+    background-color: #cce5ff;
+    color: #004085;
+  }
 }
 
-.stat-icon {
-  &.executed i { color: #28a745; }
+.source-cell, .destination-cell {
+  .source-details, .destination-details {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    
+    .source-network, .destination-account, .destination-provider {
+      font-size: 0.7rem;
+      color: #6c757d;
+    }
+  }
+}
+
+.amount-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .source-amount {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .arrow-icon {
+    color: #6c757d;
+  }
+  
+  .destination-amount {
+    font-weight: 600;
+    color: #28a745;
+  }
 }
 
 .rate-cell {
-  .small-text {
-    font-size: 0.7rem;
+  .rate {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .rate-desc {
+    font-size: 0.65rem;
     color: #6c757d;
   }
+  
+  .spread {
+    font-size: 0.65rem;
+    color: #fd7e14;
+  }
+}
+
+.collection-status {
+  font-size: 0.65rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.stat-icon {
+  &.destination i { color: #28a745; }
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 0.75rem;
+  word-break: break-word;
 }

@@ -1,0 +1,800 @@
+<!-- admin-platform-accounts.component.html -->
+<div class="platform-accounts-container">
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage" [class.toast-success]="toastType === 'success'" [class.toast-error]="toastType === 'error'">
+    <i class="fas" [class.fa-check-circle]="toastType === 'success'" [class.fa-exclamation-circle]="toastType === 'error'"></i>
+    <span>{{ toastMessage }}</span>
+    <button class="toast-close" (click)="toastMessage = null">&times;</button>
+  </div>
+  
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-university"></i>
+        Platform Accounts
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+        
+        <button class="seed-btn" (click)="openSeedModal()">
+          <i class="fas fa-seedling"></i>
+          Seed Defaults
+        </button>
+        
+        <button class="create-btn" (click)="openCreateModal()">
+          <i class="fas fa-plus-circle"></i>
+          Create Account
+        </button>
+        
+        <button class="adjustment-btn" (click)="openAdjustmentModal()">
+          <i class="fas fa-chart-line"></i>
+          Manual Adjustment
+        </button>
+        
+        <button class="vat-btn" (click)="openVatModal()">
+          <i class="fas fa-percent"></i>
+          VAT Remittance
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Account Code</label>
+        <select formControlName="code">
+          <option value="">All</option>
+          <option *ngFor="let code of codeOptions" [value]="code">{{ code }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Category</label>
+        <select formControlName="category">
+          <option value="">All</option>
+          <option *ngFor="let category of categoryOptions" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Currency</label>
+        <select formControlName="currency">
+          <option value="">All</option>
+          <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select formControlName="sortBy">
+          <option *ngFor="let sort of sortOptions" [value]="sort.value">{{ sort.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Sort Order</label>
+        <select formControlName="sortOrder">
+          <option *ngFor="let order of sortOrderOptions" [value]="order.value">{{ order.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && accounts.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-university"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Accounts</span>
+        <span class="stat-value">{{ totalItems }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Active</span>
+        <span class="stat-value">{{ activeAccountsCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon suspended">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Suspended</span>
+        <span class="stat-value">{{ suspendedAccountsCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon asset">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Balance</span>
+        <span class="stat-value">{{ formatCurrency(totalBalance, 'USD') }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Accounts Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="accounts-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Currency</th>
+          <th>Balance</th>
+          <th>Total Credits</th>
+          <th>Total Debits</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let account of accounts" class="account-row">
+          <td class="code-cell">
+            <div class="account-code">{{ account.code }}</div>
+          </td>
+          <td class="name-cell">
+            <div class="account-name">{{ account.name }}</div>
+            <div class="account-desc" *ngIf="account.description">{{ account.description }}</div>
+          </td>
+          <td class="category-cell">
+            <span [class]="'category-badge ' + getCategoryClass(account.category)">
+              {{ account.category }}
+            </span>
+          </td>
+          <td class="currency-cell">
+            <span class="currency-badge">{{ account.currency }}</span>
+          </td>
+          <td class="balance-cell" [class]="getBalanceClass(account.balance)">
+            <div class="balance">{{ formatCurrency(account.balance, account.currency) }}</div>
+          </td>
+          <td class="credits-cell">
+            <div class="credits">{{ formatCurrency(account.totalCredits, account.currency) }}</div>
+          </td>
+          <td class="debits-cell">
+            <div class="debits">{{ formatCurrency(account.totalDebits, account.currency) }}</div>
+          </td>
+          <td class="status-cell">
+            <span [class]="'status-badge ' + getStatusClass(account.status)">
+              <i class="fas" [class]="getStatusIcon(account.status)"></i>
+              {{ account.status }}
+            </span>
+          </td>
+          <td class="date-cell">{{ formatDate(account.createdAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewAccountDetails(account)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="edit-btn" (click)="openEditModal(account)" title="Edit Account">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="accounts.length === 0" class="empty-state">
+      <i class="fas fa-university"></i>
+      <p>No platform accounts found</p>
+      <button class="seed-btn" (click)="openSeedModal()">Seed Default Accounts</button>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} accounts
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedAccount" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-university"></i>
+          Account Details: {{ selectedAccount.name }}
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Info -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Account ID:</span>
+              <span class="value mono">{{ selectedAccount._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Code:</span>
+              <span class="value">{{ selectedAccount.code }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Name:</span>
+              <span class="value">{{ selectedAccount.name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedAccount.description">
+              <span class="label">Description:</span>
+              <span class="value">{{ selectedAccount.description }}</span>
+            </div>
+          </div>
+          
+          <!-- Balance Information -->
+          <div class="detail-section">
+            <h3>Balance Information</h3>
+            <div class="detail-row">
+              <span class="label">Current Balance:</span>
+              <span class="value highlight" [class]="getBalanceClass(selectedAccount.balance)">
+                {{ formatCurrency(selectedAccount.balance, selectedAccount.currency) }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Credits:</span>
+              <span class="value">{{ formatCurrency(selectedAccount.totalCredits, selectedAccount.currency) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Debits:</span>
+              <span class="value">{{ formatCurrency(selectedAccount.totalDebits, selectedAccount.currency) }}</span>
+            </div>
+          </div>
+          
+          <!-- Classification -->
+          <div class="detail-section">
+            <h3>Classification</h3>
+            <div class="detail-row">
+              <span class="label">Category:</span>
+              <span [class]="'category-badge ' + getCategoryClass(selectedAccount.category)">
+                {{ selectedAccount.category }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Currency:</span>
+              <span class="value">{{ selectedAccount.currency }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'status-badge ' + getStatusClass(selectedAccount.status)">
+                <i class="fas" [class]="getStatusIcon(selectedAccount.status)"></i>
+                {{ selectedAccount.status }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Settlement Account -->
+          <div class="detail-section" *ngIf="selectedAccount.settlementAccount?.accountNumber">
+            <h3>Settlement Account</h3>
+            <div class="detail-row">
+              <span class="label">Type:</span>
+              <span class="value">{{ selectedAccount.settlementAccount?.type || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedAccount.settlementAccount?.accountName || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number:</span>
+              <span class="value mono">{{ selectedAccount.settlementAccount?.accountNumber }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Issuer:</span>
+              <span class="value">{{ selectedAccount.settlementAccount?.issuer || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Currency:</span>
+              <span class="value">{{ selectedAccount.settlementAccount?.currency || selectedAccount.currency }}</span>
+            </div>
+          </div>
+          
+          <!-- Metadata -->
+          <div class="detail-section full-width" *ngIf="selectedAccount.metadata">
+            <h3>Additional Information</h3>
+            <div class="detail-row" *ngIf="selectedAccount.metadata.notes">
+              <span class="label">Notes:</span>
+              <span class="value">{{ selectedAccount.metadata.notes }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedAccount.metadata.createdBy">
+              <span class="label">Created By:</span>
+              <span class="value">{{ selectedAccount.metadata.createdBy }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedAccount.metadata.source">
+              <span class="label">Source:</span>
+              <span class="value">{{ selectedAccount.metadata.source }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedAccount.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedAccount.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="edit-btn" (click)="openEditModal(selectedAccount); closeViewModal()">
+          <i class="fas fa-edit"></i> Edit Account
+        </button>
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Account Modal -->
+  <div class="modal" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-plus-circle"></i>
+          Create Platform Account
+        </h2>
+        <button class="close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="createAccountForm" class="account-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Account Code *</label>
+              <select formControlName="code">
+                <option *ngFor="let code of codeOptions" [value]="code">{{ code }}</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Category *</label>
+              <select formControlName="category">
+                <option *ngFor="let category of categoryOptions" [value]="category">{{ category }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Account Name *</label>
+            <input type="text" formControlName="name" placeholder="Enter account name" />
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" placeholder="Enter description"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Currency *</label>
+              <select formControlName="currency">
+                <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Settlement Account (Optional)</h4>
+            <div formGroupName="settlementAccount">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Type</label>
+                  <input type="text" formControlName="type" placeholder="e.g., BANK, MOMO" />
+                </div>
+                <div class="form-group">
+                  <label>Account Name</label>
+                  <input type="text" formControlName="accountName" placeholder="Account holder name" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Account Number</label>
+                  <input type="text" formControlName="accountNumber" placeholder="Account number" />
+                </div>
+                <div class="form-group">
+                  <label>Issuer</label>
+                  <input type="text" formControlName="issuer" placeholder="Bank/Provider name" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Currency</label>
+                <input type="text" formControlName="currency" placeholder="Leave empty to use account currency" />
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Additional Information</h4>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeCreateModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="createAccount()" [disabled]="actionInProgress || createAccountForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Creating...' : 'Create Account' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Account Modal -->
+  <div class="modal" *ngIf="showEditModal && selectedAccount" (click)="closeEditModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-edit"></i>
+          Edit Account: {{ selectedAccount.name }}
+        </h2>
+        <button class="close-btn" (click)="closeEditModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="updateAccountForm" class="account-form">
+          <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" formControlName="name" placeholder="Enter account name" />
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" placeholder="Enter description"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Status</label>
+            <select formControlName="status">
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+          
+          <div class="form-section">
+            <h4>Settlement Account</h4>
+            <div formGroupName="settlementAccount">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Type</label>
+                  <input type="text" formControlName="type" placeholder="e.g., BANK, MOMO" />
+                </div>
+                <div class="form-group">
+                  <label>Account Name</label>
+                  <input type="text" formControlName="accountName" placeholder="Account holder name" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Account Number</label>
+                  <input type="text" formControlName="accountNumber" placeholder="Account number" />
+                </div>
+                <div class="form-group">
+                  <label>Issuer</label>
+                  <input type="text" formControlName="issuer" placeholder="Bank/Provider name" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Currency</label>
+                <input type="text" formControlName="currency" placeholder="Leave empty to use account currency" />
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Additional Information</h4>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeEditModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="updateAccount()" [disabled]="actionInProgress || updateAccountForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Updating...' : 'Update Account' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Manual Adjustment Modal -->
+  <div class="modal" *ngIf="showAdjustmentModal" (click)="closeAdjustmentModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-chart-line"></i>
+          Manual Account Adjustment
+        </h2>
+        <button class="close-btn" (click)="closeAdjustmentModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Success State -->
+        <div class="success-state" *ngIf="adjustmentSuccess && adjustmentResult">
+          <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3>Adjustment Completed Successfully!</h3>
+          <div class="adjustment-details">
+            <div class="detail-item">
+              <span class="detail-label">Ledger Entry ID:</span>
+              <span class="detail-value mono">{{ adjustmentResult.ledgerEntryId }}</span>
+            </div>
+            <div class="detail-item" *ngIf="adjustmentResult.transactionId">
+              <span class="detail-label">Transaction ID:</span>
+              <span class="detail-value mono">{{ adjustmentResult.transactionId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Account:</span>
+              <span class="detail-value">{{ adjustmentResult.account.code }} - {{ adjustmentResult.account.name }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">New Balance:</span>
+              <span class="detail-value">{{ formatCurrency(adjustmentResult.account.balance, adjustmentResult.account.currency) }}</span>
+            </div>
+          </div>
+          <button class="new-adjustment-btn" (click)="closeAdjustmentModal()">
+            <i class="fas fa-check"></i> Close
+          </button>
+        </div>
+        
+        <!-- Form State -->
+        <form [formGroup]="adjustmentForm" class="adjustment-form" *ngIf="!adjustmentSuccess" (ngSubmit)="submitAdjustment()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Account Code *</label>
+              <select formControlName="accountCode">
+                <option *ngFor="let code of codeOptions" [value]="code">{{ code }}</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Currency *</label>
+              <select formControlName="currency">
+                <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Direction *</label>
+              <select formControlName="direction">
+                <option *ngFor="let direction of directionOptions" [value]="direction">
+                  {{ direction }} ({{ direction === 'CREDIT' ? '+' : '-' }})
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Amount *</label>
+              <input type="number" step="any" formControlName="amount" placeholder="Enter amount" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Reference</label>
+            <input type="text" formControlName="reference" placeholder="Optional reference" />
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" placeholder="Description of adjustment"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Idempotency Key</label>
+            <input type="text" formControlName="idempotencyKey" placeholder="Optional - prevents duplicate processing" />
+          </div>
+          
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="metadata.notes" rows="2" placeholder="Internal notes"></textarea>
+          </div>
+          
+          <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>This will create a ledger entry and adjust the account balance. This action cannot be automatically reversed.</span>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer" *ngIf="!adjustmentSuccess">
+        <button class="cancel-btn" (click)="closeAdjustmentModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="submitAdjustment()" [disabled]="actionInProgress || adjustmentForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Processing...' : 'Process Adjustment' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- VAT Remittance Modal -->
+  <div class="modal" *ngIf="showVatModal" (click)="closeVatModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-percent"></i>
+          VAT Remittance
+        </h2>
+        <button class="close-btn" (click)="closeVatModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Debit VAT Payable account when remitting VAT to tax authority.</p>
+        
+        <form [formGroup]="vatForm" class="vat-form" (ngSubmit)="submitVatRemittance()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Currency *</label>
+              <select formControlName="currency">
+                <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Amount *</label>
+              <input type="number" step="any" formControlName="amount" placeholder="Enter amount" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Reference *</label>
+            <input type="text" formControlName="reference" placeholder="Tax reference / receipt number" />
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" placeholder="Description of VAT remittance"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Idempotency Key</label>
+            <input type="text" formControlName="idempotencyKey" placeholder="Optional - prevents duplicate processing" />
+          </div>
+          
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="metadata.notes" rows="2" placeholder="Internal notes"></textarea>
+          </div>
+          
+          <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>This will debit the VAT_PAYABLE account. Ensure you have sufficient VAT liability before proceeding.</span>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeVatModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="submitVatRemittance()" [disabled]="actionInProgress || vatForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-save]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Processing...' : 'Remit VAT' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Seed Defaults Modal -->
+  <div class="modal" *ngIf="showSeedModal" (click)="closeSeedModal()">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-seedling"></i>
+          Seed Default Platform Accounts
+        </h2>
+        <button class="close-btn" (click)="closeSeedModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>This will create default platform accounts for the selected currency if they don't already exist.</p>
+        
+        <form [formGroup]="seedForm" class="seed-form" (ngSubmit)="seedDefaults()">
+          <div class="form-group">
+            <label>Currency</label>
+            <select formControlName="currency">
+              <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+            </select>
+          </div>
+          
+          <div class="warning-box">
+            <i class="fas fa-info-circle"></i>
+            <span>This operation is idempotent. Existing accounts will not be modified.</span>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeSeedModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="seedDefaults()" [disabled]="actionInProgress || seedForm.invalid">
+          <i class="fas" [class.fa-spinner]="actionInProgress" [class.fa-spin]="actionInProgress" [class.fa-seedling]="!actionInProgress"></i>
+          {{ actionInProgress ? 'Seeding...' : 'Seed Accounts' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

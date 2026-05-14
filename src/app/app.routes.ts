@@ -61,6 +61,11 @@ import { AdminRecentTransactionsComponent } from './pages/admin-recent-transacti
 import { AdminRecentTradesComponent } from './pages/admin-recent-trades/admin-recent-trades.component';
 import { AdminRecentWithdrawalsComponent } from './pages/admin-recent-withdrawals/admin-recent-withdrawals.component';
 import { AdminRateHealthComponent } from './pages/admin-rate-health/admin-rate-health.component';
+import { AdminPayoutApprovalRulesComponent } from './pages/admin-payout-approval-rules/admin-payout-approval-rules.component';
+import { AdminCryptoRemittancesComponent } from './pages/admin-crypto-remittances/admin-crypto-remittances.component';
+import { AdminTreasuryQuotesComponent } from './pages/admin-treasury-quotes/admin-treasury-quotes.component';
+import { AdminPlatformAccountsComponent } from './pages/admin-platform-accounts/admin-platform-accounts.component';
+import { AdminPlatformAccountLedgersComponent } from './pages/admin-platform-account-ledgers/admin-platform-account-ledgers.component';
 
 export const routes: Routes = [
   {
@@ -180,6 +185,26 @@ export const routes: Routes = [
       {
         path: 'tickets',
         component: AdminTicketManagementComponent,
+      },
+      {
+          path: 'payout-approval-rules',
+  component: AdminPayoutApprovalRulesComponent
+      },
+      {
+          path: 'crypto-remittances',
+  component: AdminCryptoRemittancesComponent,
+      },
+      {
+          path: 'platform-account-ledgers',
+  component: AdminPlatformAccountLedgersComponent,
+      },
+      {
+          path: 'platform-accounts',
+  component: AdminPlatformAccountsComponent,
+      },
+      {
+          path: 'treasury/quotes',
+  component: AdminTreasuryQuotesComponent,
       },
       {
         path: 'daily-statistics',

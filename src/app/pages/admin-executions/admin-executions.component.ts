@@ -44,15 +44,15 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
   
   // Filters state
   sideOptions = ['BUY', 'SELL', 'SWAP'];
-  statusOptions = ['PENDING', 'COMPLETED', 'FAILED', 'RECONCILED', 'SETTLED'];
+  statusOptions = ['PENDING', 'EXECUTED', 'FAILED', 'RECONCILED', 'SETTLED'];
   
   // Destroy subject
   private destroy$ = new Subject<void>();
   
-  // Current admin user (should come from auth service)
+  // Current admin user
   currentAdmin = 'admin@doronpay.com';
   
-  // Valid ISO currency codes
+  // Valid currencies for formatting
   private validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'CHF', 'AUD', 'CNY', 'INR', 'BRL', 'GHS', 'NGN', 'ZAR', 'KES', 'UGX', 'TZS'];
   
   // Computed properties for stats
@@ -64,8 +64,8 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
     return this.executions.filter(e => e.status === 'PENDING').length;
   }
   
-  get completedCount(): number {
-    return this.executions.filter(e => e.status === 'COMPLETED').length;
+  get executedCount(): number {
+    return this.executions.filter(e => e.status === 'EXECUTED').length;
   }
   
   get reconciledCount(): number {
@@ -148,7 +148,6 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
     if (formValue.pairCode) filters.pairCode = formValue.pairCode;
     if (formValue.quoteRef) filters.quoteRef = formValue.quoteRef;
     if (formValue.executionRef) filters.executionRef = formValue.executionRef;
-    if (formValue.side) (filters as any).side = formValue.side;
     if (formValue.status) filters.status = formValue.status;
     
     if (formValue.dateRange?.from) {
@@ -274,7 +273,7 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
       'PENDING': 'status-pending',
-      'COMPLETED': 'status-completed',
+      'EXECUTED': 'status-executed',
       'FAILED': 'status-failed',
       'RECONCILED': 'status-reconciled',
       'SETTLED': 'status-settled'
@@ -294,7 +293,7 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
   getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
       'PENDING': 'fa-clock',
-      'COMPLETED': 'fa-check-circle',
+      'EXECUTED': 'fa-check-circle',
       'FAILED': 'fa-times-circle',
       'RECONCILED': 'fa-handshake',
       'SETTLED': 'fa-check-double'
@@ -338,7 +337,7 @@ export class AdminExecutionsComponent implements OnInit, OnDestroy {
   }
   
   canReconcile(execution: Execution): boolean {
-    return ['PENDING', 'COMPLETED'].includes(execution.status);
+    return execution.status === 'PENDING' || execution.status === 'EXECUTED';
   }
   
   getPageNumbers(): number[] {

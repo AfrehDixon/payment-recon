@@ -1,5 +1,5 @@
-// Add to admin-quotes.component.scss
-.quotes-container {
+// admin-platform-account-ledgers.component.scss
+.platform-account-ledgers-container {
   padding: 24px;
   margin-left: 200px;
   background: #f8f9fa;
@@ -12,6 +12,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
       
       h1 {
         font-size: 1.8rem;
@@ -48,59 +50,6 @@
     }
   }
   
-  .stats-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-    
-    .stat-card {
-      background: white;
-      border-radius: 8px;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      
-      .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
-        background-color: #e9ecef;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        
-        i {
-          font-size: 24px;
-          color: #6c757d;
-        }
-        
-        &.pending i { color: #ffc107; }
-        &.accepted i { color: #28a745; }
-        &.expired i { color: #dc3545; }
-      }
-      
-      .stat-info {
-        flex: 1;
-        
-        .stat-label {
-          font-size: 0.85rem;
-          color: #6c757d;
-          display: block;
-          margin-bottom: 4px;
-        }
-        
-        .stat-value {
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: #2c3e50;
-        }
-      }
-    }
-  }
-  
   .filters-panel {
     background: white;
     border-radius: 8px;
@@ -110,7 +59,7 @@
     
     .filters-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
       
       .filter-group {
@@ -167,15 +116,69 @@
     }
   }
   
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          font-size: 24px;
+          color: #6c757d;
+        }
+        
+        &.credit i { color: #28a745; }
+        &.debit i { color: #dc3545; }
+        &.accounts i { color: #17a2b8; }
+      }
+      
+      .stat-info {
+        flex: 1;
+        
+        .stat-label {
+          font-size: 0.75rem;
+          color: #6c757d;
+          display: block;
+          margin-bottom: 4px;
+        }
+        
+        .stat-value {
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+      }
+    }
+  }
+  
   .table-container {
     background: white;
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     
-    .quotes-table {
+    .ledgers-table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 1200px;
       
       th {
         text-align: left;
@@ -193,62 +196,85 @@
         vertical-align: middle;
       }
       
-      .quote-row {
-        &.expired-row {
-          background-color: #f8f9fa;
-          opacity: 0.8;
-        }
-        
-        &:hover {
-          background-color: #f8f9fa;
-        }
+      .ledger-row:hover {
+        background-color: #f8f9fa;
       }
       
-      .ref-cell {
-        .quote-ref {
+      .date-cell {
+        font-size: 0.8rem;
+        color: #6c757d;
+      }
+      
+      .account-cell {
+        .account-name {
           font-weight: 600;
           color: #2c3e50;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
         
-        .quote-id {
+        .account-code {
           font-size: 0.7rem;
           color: #6c757d;
           font-family: monospace;
         }
       }
       
-      .pair-cell {
-        .pair-code {
-          font-weight: 500;
-          color: #2c3e50;
-        }
-        
-        .pair-assets {
-          font-size: 0.7rem;
-          color: #6c757d;
-        }
-      }
-      
-      .amount-cell {
-        .small-text {
-          font-size: 0.7rem;
-          color: #6c757d;
-          margin-top: 2px;
-        }
-      }
-      
-      .rate-cell {
-        .small-text {
-          font-size: 0.7rem;
-          color: #6c757d;
-        }
-      }
-      
-      .badge {
+      .type-badge {
         padding: 4px 8px;
         border-radius: 4px;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
+        font-weight: 500;
+        
+        &.type-manual {
+          background-color: #e2e3e5;
+          color: #383d41;
+        }
+        
+        &.type-fee {
+          background-color: #fff3cd;
+          color: #856404;
+        }
+        
+        &.type-vat {
+          background-color: #cce5ff;
+          color: #004085;
+        }
+        
+        &.type-settlement {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        
+        &.type-disbursement {
+          background-color: #d1ecf1;
+          color: #0c5460;
+        }
+        
+        &.type-deposit {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        
+        &.type-withdrawal {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+        
+        &.type-refund {
+          background-color: #cce5ff;
+          color: #004085;
+        }
+        
+        &.type-chargeback {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+      }
+      
+      .direction-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
         font-weight: 500;
         display: inline-flex;
         align-items: center;
@@ -258,77 +284,71 @@
           font-size: 0.7rem;
         }
         
-        &.side-buy {
+        &.direction-credit {
           background-color: #d4edda;
           color: #155724;
         }
         
-        &.side-sell {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-        
-        &.side-swap {
-          background-color: #cce5ff;
-          color: #004085;
-        }
-        
-        &.status-pending {
-          background-color: #fff3cd;
-          color: #856404;
-        }
-        
-        &.status-accepted {
-          background-color: #d4edda;
-          color: #155724;
-        }
-        
-        &.status-rejected {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-        
-        &.status-expired {
-          background-color: #e2e3e5;
-          color: #383d41;
-        }
-        
-        &.status-cancelled {
-          background-color: #e2e3e5;
-          color: #383d41;
-        }
-      }
-      
-      .expiry-badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        
-        &.valid {
-          background-color: #d4edda;
-          color: #155724;
-        }
-        
-        &.expiring-soon {
-          background-color: #fff3cd;
-          color: #856404;
-        }
-        
-        &.expired {
+        &.direction-debit {
           background-color: #f8d7da;
           color: #721c24;
         }
       }
       
-      .expiry-finished {
-        font-size: 0.8rem;
-        color: #6c757d;
+      .amount-cell {
+        font-weight: 600;
+        
+        &.direction-credit {
+          color: #28a745;
+        }
+        
+        &.direction-debit {
+          color: #dc3545;
+        }
       }
       
-      .date-cell {
-        font-size: 0.8rem;
-        color: #6c757d;
+      .balance-cell {
+        font-size: 0.75rem;
+        
+        .balance-before {
+          color: #6c757d;
+        }
+        
+        .balance-after {
+          color: #2c3e50;
+          font-weight: 500;
+          margin-top: 2px;
+        }
+      }
+      
+      .reference-cell {
+        .reference {
+          font-family: monospace;
+          font-size: 0.75rem;
+          color: #6c757d;
+        }
+        
+        .description {
+          font-size: 0.7rem;
+          color: #495057;
+          margin-top: 4px;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+      
+      .transaction-cell {
+        .transaction-id, .merchant-id {
+          font-size: 0.7rem;
+          font-family: monospace;
+          color: #6c757d;
+        }
+        
+        .merchant-id {
+          margin-top: 4px;
+        }
       }
       
       .actions-cell {
@@ -354,15 +374,6 @@
               background-color: #138496;
             }
           }
-          
-          &.expire-btn {
-            background-color: #dc3545;
-            color: white;
-            
-            &:hover {
-              background-color: #c82333;
-            }
-          }
         }
       }
     }
@@ -372,6 +383,8 @@
     text-align: center;
     padding: 48px;
     color: #6c757d;
+    background: white;
+    border-radius: 8px;
     
     i {
       font-size: 48px;
@@ -386,10 +399,12 @@
   
   .pagination {
     padding: 16px;
+    background: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid #dee2e6;
+    border-radius: 0 0 8px 8px;
     
     .pagination-info {
       color: #6c757d;
@@ -407,9 +422,11 @@
         background: white;
         border-radius: 4px;
         cursor: pointer;
+        transition: all 0.2s;
         
         &:hover:not(:disabled) {
           background-color: #f8f9fa;
+          border-color: #4CAF50;
         }
         
         &:disabled {
@@ -429,6 +446,7 @@
         border: 1px solid #dee2e6;
         border-radius: 4px;
         margin-left: 12px;
+        cursor: pointer;
       }
     }
   }
@@ -438,6 +456,8 @@
     justify-content: center;
     align-items: center;
     padding: 48px;
+    background: white;
+    border-radius: 8px;
     
     .spinner {
       width: 40px;
@@ -463,30 +483,25 @@
     
     .modal-content {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       max-height: 90vh;
       overflow-y: auto;
       
       &.modal-large {
         width: 90%;
-        max-width: 900px;
-      }
-      
-      &.modal-small {
-        width: 90%;
-        max-width: 500px;
+        max-width: 800px;
       }
       
       .modal-header {
         padding: 20px;
-        border-bottom: 1px solid #dee2e6;
+        border-bottom: 1px solid #e9ecef;
         display: flex;
         justify-content: space-between;
         align-items: center;
         
         h2 {
           margin: 0;
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           color: #2c3e50;
           
           i {
@@ -513,35 +528,20 @@
       
       .modal-footer {
         padding: 20px;
-        border-top: 1px solid #dee2e6;
+        border-top: 1px solid #e9ecef;
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
         
-        button {
+        .close-modal-btn {
           padding: 8px 16px;
-          border-radius: 4px;
+          background-color: #6c757d;
+          color: white;
+          border: none;
+          border-radius: 6px;
           cursor: pointer;
-          font-weight: 500;
           
-          &.cancel-btn {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            
-            &:hover {
-              background-color: #5a6268;
-            }
-          }
-          
-          &.expire-btn-modal {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            
-            &:hover:not(:disabled) {
-              background-color: #c82333;
-            }
+          &:hover {
+            background-color: #5a6268;
           }
         }
       }
@@ -594,52 +594,14 @@
           &.highlight {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #28a745;
-          }
-          
-          &.error-text {
-            color: #dc3545;
           }
           
           &.mono {
             font-family: monospace;
             font-size: 0.8rem;
           }
-          
-          &.small {
-            font-size: 0.8rem;
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-          
-          &.expiring {
-            color: #dc3545;
-          }
         }
       }
-    }
-  }
-  
-  .warning-box {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px;
-    background-color: #fff3cd;
-    border-left: 4px solid #ffc107;
-    border-radius: 6px;
-    margin-top: 16px;
-    
-    i {
-      color: #ffc107;
-      font-size: 18px;
-    }
-    
-    span {
-      flex: 1;
-      font-size: 0.9rem;
-      color: #856404;
     }
   }
 }
@@ -650,21 +612,38 @@
 }
 
 // Responsive
+@media (max-width: 1200px) {
+  .platform-account-ledgers-container {
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
 @media (max-width: 768px) {
-  .quotes-container {
+  .platform-account-ledgers-container {
     padding: 16px;
+    margin-left: 0;
     
     .header .header-content {
       flex-direction: column;
-      gap: 16px;
       
       h1 {
         font-size: 1.5rem;
       }
+      
+      .header-actions {
+        width: 100%;
+        
+        .filter-toggle-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     }
     
     .stats-summary {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
     }
     
     .filters-panel .filters-form {
@@ -679,17 +658,13 @@
       }
     }
     
-    .table-container {
-      overflow-x: auto;
-      
-      .quotes-table {
-        min-width: 1200px;
-      }
-    }
-    
     .pagination {
       flex-direction: column;
       gap: 12px;
+      
+      .pagination-info {
+        text-align: center;
+      }
       
       .pagination-controls {
         flex-wrap: wrap;
@@ -711,18 +686,41 @@
   }
 }
 
-.status-executed {
+.type-fee-revenue {
   background-color: #d4edda;
   color: #155724;
 }
 
-.stat-icon {
-  &.executed i { color: #28a745; }
+.transaction-cell {
+  .transaction-ref {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #2c3e50;
+    margin-bottom: 2px;
+  }
+  
+  .external-id {
+    font-size: 0.65rem;
+    color: #6c757d;
+    font-family: monospace;
+  }
 }
 
-.rate-cell {
-  .small-text {
-    font-size: 0.7rem;
-    color: #6c757d;
+.balance-before, .balance-after {
+  font-size: 0.7rem;
+}
+
+.balance-after {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-top: 2px;
+}
+
+// Responsive updates
+@media (max-width: 1200px) {
+  .platform-account-ledgers-container {
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 }

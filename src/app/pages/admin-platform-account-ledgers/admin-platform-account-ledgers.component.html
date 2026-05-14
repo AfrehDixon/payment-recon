@@ -1,0 +1,435 @@
+<!-- admin-platform-account-ledgers.component.html -->
+<div class="platform-account-ledgers-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-book"></i>
+        Platform Account Ledgers
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Platform Account ID</label>
+        <input type="text" formControlName="platformAccountId" placeholder="Enter account ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Account Code</label>
+        <select formControlName="accountCode">
+          <option value="">All</option>
+          <option *ngFor="let code of accountCodeOptions" [value]="code">{{ code }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Account Category</label>
+        <select formControlName="accountCategory">
+          <option value="">All</option>
+          <option *ngFor="let category of accountCategoryOptions" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Entry Type</label>
+        <select formControlName="entryType">
+          <option value="">All</option>
+          <option *ngFor="let type of entryTypeOptions" [value]="type">{{ getEntryTypeLabel(type) }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Direction</label>
+        <select formControlName="direction">
+          <option value="">All</option>
+          <option *ngFor="let direction of directionOptions" [value]="direction">{{ direction }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Currency</label>
+        <select formControlName="currency">
+          <option value="">All</option>
+          <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Transaction ID</label>
+        <input type="text" formControlName="transactionId" placeholder="Transaction ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Reference</label>
+        <input type="text" formControlName="reference" placeholder="Reference" />
+      </div>
+      
+      <div formGroupName="dateRange" class="filter-group date-range">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="datetime-local" formControlName="from" placeholder="From" />
+          <input type="datetime-local" formControlName="to" placeholder="To" />
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select formControlName="sortBy">
+          <option *ngFor="let sort of sortOptions" [value]="sort.value">{{ sort.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Sort Order</label>
+        <select formControlName="sortOrder">
+          <option *ngFor="let order of sortOrderOptions" [value]="order.value">{{ order.label }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loading && ledgers.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-book"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Entries</span>
+        <span class="stat-value">{{ totalEntries | number }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon credit">
+        <i class="fas fa-arrow-up"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Credits</span>
+        <span class="stat-value">{{ formatCurrency(totalCreditVolume, 'GHS') }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon debit">
+        <i class="fas fa-arrow-down"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Debits</span>
+        <span class="stat-value">{{ formatCurrency(totalDebitVolume, 'GHS') }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon accounts">
+        <i class="fas fa-university"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Unique Accounts</span>
+        <span class="stat-value">{{ uniqueAccounts }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Ledgers Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="ledgers-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Account</th>
+          <th>Entry Type</th>
+          <th>Direction</th>
+          <th>Amount</th>
+          <th>Balance</th>
+          <th>Reference</th>
+          <th>Transaction Ref</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ledger of ledgers" class="ledger-row">
+          <td class="date-cell">{{ formatDate(ledger.createdAt) }}</td>
+          <td class="account-cell">
+            <div class="account-name">{{ ledger.platformAccountId?.name }}</div>
+            <div class="account-code">{{ ledger.accountCode }}</div>
+          </td>
+          <td class="type-cell">
+            <span [class]="'type-badge ' + getEntryTypeClass(ledger.entryType)">
+              {{ getEntryTypeLabel(ledger.entryType) }}
+            </span>
+          </td>
+          <td class="direction-cell">
+            <span [class]="'direction-badge ' + getDirectionClass(ledger.direction)">
+              <i class="fas" [class]="getDirectionIcon(ledger.direction)"></i>
+              {{ ledger.direction }}
+            </span>
+          </td>
+          <td class="amount-cell" [class]="getDirectionClass(ledger.direction)">
+            <div class="amount">{{ formatCurrency(ledger.amount, ledger.currency) }}</div>
+          </td>
+          <td class="balance-cell">
+            <div class="balance-before" title="Before">B: {{ formatCurrency(ledger.balanceBefore, ledger.currency) }}</div>
+            <div class="balance-after" title="After">A: {{ formatCurrency(ledger.balanceAfter, ledger.currency) }}</div>
+          </td>
+          <td class="reference-cell">
+            <div class="reference">{{ ledger.reference || '-' }}</div>
+            <div class="description" *ngIf="ledger.description">{{ ledger.description }}</div>
+          </td>
+          <td class="transaction-cell">
+            <div class="transaction-ref" *ngIf="ledger.transactionId?.transactionRef">
+              {{ ledger.transactionId.transactionRef }}
+            </div>
+            <div class="external-id" *ngIf="ledger.transactionId?.externalTransactionId">
+              {{ formatAddress(ledger.transactionId.externalTransactionId) }}
+            </div>
+          </td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewLedgerDetails(ledger)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="ledgers.length === 0" class="empty-state">
+      <i class="fas fa-book"></i>
+      <p>No ledger entries found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems | number }} entries
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedLedger" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-book"></i>
+          Ledger Entry Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Entry ID:</span>
+              <span class="value mono">{{ selectedLedger._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Entry Type:</span>
+              <span [class]="'type-badge ' + getEntryTypeClass(selectedLedger.entryType)">
+                {{ getEntryTypeLabel(selectedLedger.entryType) }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Direction:</span>
+              <span [class]="'direction-badge ' + getDirectionClass(selectedLedger.direction)">
+                <i class="fas" [class]="getDirectionIcon(selectedLedger.direction)"></i>
+                {{ selectedLedger.direction }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Description:</span>
+              <span class="value">{{ selectedLedger.description }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Reference:</span>
+              <span class="value">{{ selectedLedger.reference }}</span>
+            </div>
+          </div>
+          
+          <!-- Account Information -->
+          <div class="detail-section">
+            <h3>Account Information</h3>
+            <div class="detail-row">
+              <span class="label">Account ID:</span>
+              <span class="value mono">{{ selectedLedger.platformAccountId?._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedLedger.platformAccountId?.name }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Code:</span>
+              <span class="value">{{ selectedLedger.accountCode }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Category:</span>
+              <span class="value">{{ selectedLedger.accountCategory }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Currency:</span>
+              <span class="value">{{ selectedLedger.currency }}</span>
+            </div>
+          </div>
+          
+          <!-- Amount Information -->
+          <div class="detail-section">
+            <h3>Amount Information</h3>
+            <div class="detail-row">
+              <span class="label">Amount:</span>
+              <span class="value highlight" [class]="getDirectionClass(selectedLedger.direction)">
+                {{ formatCurrency(selectedLedger.amount, selectedLedger.currency) }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Balance Before:</span>
+              <span class="value">{{ formatCurrency(selectedLedger.balanceBefore, selectedLedger.currency) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Balance After:</span>
+              <span class="value">{{ formatCurrency(selectedLedger.balanceAfter, selectedLedger.currency) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Net Change:</span>
+              <span class="value" [class]="getDirectionClass(selectedLedger.direction)">
+                {{ selectedLedger.direction === 'CREDIT' ? '+' : '-' }}{{ formatCurrency(selectedLedger.amount, selectedLedger.currency) }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Transaction Information -->
+          <div class="detail-section" *ngIf="selectedLedger.transactionId">
+            <h3>Transaction Information</h3>
+            <div class="detail-row">
+              <span class="label">Transaction ID:</span>
+              <span class="value mono">{{ selectedLedger.transactionId?._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Transaction Ref:</span>
+              <span class="value">{{ selectedLedger.transactionId?.transactionRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">External ID:</span>
+              <span class="value mono">{{ selectedLedger.transactionId?.externalTransactionId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Transaction Amount:</span>
+              <span class="value">{{ formatCurrency(selectedLedger.transactionId?.amount || 0, 'GHS') }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Transaction Status:</span>
+              <span class="value">{{ selectedLedger.transactionId?.status }}</span>
+            </div>
+          </div>
+          
+          <!-- Metadata -->
+          <div class="detail-section full-width" *ngIf="selectedLedger.metadata">
+            <h3>Additional Information</h3>
+            <div class="detail-row" *ngIf="selectedLedger.metadata.source">
+              <span class="label">Source:</span>
+              <span class="value">{{ selectedLedger.metadata.source }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedLedger.metadata.externalTransactionId">
+              <span class="label">External Transaction ID:</span>
+              <span class="value mono">{{ selectedLedger.metadata.externalTransactionId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedLedger.metadata.transactionRef">
+              <span class="label">Transaction Ref:</span>
+              <span class="value">{{ selectedLedger.metadata.transactionRef }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedLedger.metadata.operator">
+              <span class="label">Operator:</span>
+              <span class="value">{{ selectedLedger.metadata.operator }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedLedger.metadata.rail">
+              <span class="label">Rail:</span>
+              <span class="value">{{ selectedLedger.metadata.rail }}</span>
+            </div>
+          </div>
+          
+          <!-- Idempotency -->
+          <div class="detail-section">
+            <h3>Idempotency</h3>
+            <div class="detail-row">
+              <span class="label">Idempotency Key:</span>
+              <span class="value mono">{{ selectedLedger.idempotencyKey }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedLedger.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedLedger.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

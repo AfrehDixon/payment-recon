@@ -100,7 +100,7 @@
       </div>
     </div>
     
-    <div class="stat-card">
+    <!-- <div class="stat-card">
       <div class="stat-icon completed">
         <i class="fas fa-check-circle"></i>
       </div>
@@ -108,7 +108,7 @@
         <span class="stat-label">Completed</span>
         <span class="stat-value">{{ completedCount }}</span>
       </div>
-    </div>
+    </div> -->
     
     <div class="stat-card">
       <div class="stat-icon reconciled">
@@ -155,9 +155,9 @@
           <th>Quote Ref</th>
           <th>Pair</th>
           <th>Side</th>
-          <th>Amount</th>
-          <th>Rate</th>
-          <th>Total</th>
+          <th>From Amount</th>
+          <th>Price</th>
+          <th>Net Amount</th>
           <th>Status</th>
           <th>Created</th>
           <th>Actions</th>
@@ -174,7 +174,7 @@
           </td>
           <td class="pair-cell">
             <div class="pair-code">{{ execution.pairCode }}</div>
-            <div class="pair-assets">{{ execution.baseAsset }}/{{ execution.quoteAsset }}</div>
+            <div class="pair-assets">{{ execution.fromAsset }}/{{ execution.toAsset }}</div>
           </td>
           <td>
             <span [class]="'badge ' + getSideClass(execution.side)">
@@ -183,16 +183,16 @@
             </span>
           </td>
           <td class="amount-cell">
-            <div>{{ formatCurrency(execution.baseAmount, execution.baseAsset) }}</div>
-            <div class="small-text">Base</div>
+            <div>{{ formatCurrency(execution.fromAmount, execution.fromAsset) }}</div>
+            <div class="small-text">{{ execution.fromAsset }}</div>
           </td>
           <td class="rate-cell">
-            <div>{{ formatNumber(execution.rate, 4) }}</div>
-            <div class="small-text">{{ execution.quoteAsset }} per {{ execution.baseAsset }}</div>
+            <div>{{ formatNumber(execution.price, 4) }}</div>
+            <div class="small-text">{{ execution.toAsset }} per {{ execution.fromAsset }}</div>
           </td>
           <td class="amount-cell">
-            <div>{{ formatCurrency(execution.totalAmount, execution.quoteAsset) }}</div>
-            <div class="small-text">Total (incl. fee)</div>
+            <div>{{ formatCurrency(execution.netToAmount, execution.toAsset) }}</div>
+            <div class="small-text">Net (after fee)</div>
           </td>
           <td>
             <span [class]="'badge ' + getStatusClass(execution.status)">
@@ -256,191 +256,193 @@
     </div>
   </div>
   
-  <!-- View Details Modal -->
-  <div class="modal" *ngIf="showViewModal && selectedExecution" (click)="closeViewModal()">
-    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-exchange-alt"></i>
-          Execution Details: {{ selectedExecution.executionRef }}
-        </h2>
-        <button class="close-btn" (click)="closeViewModal()">&times;</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="details-grid">
-          <!-- Basic Info -->
-          <div class="detail-section">
-            <h3>Basic Information</h3>
-            <div class="detail-row">
-              <span class="label">Execution ID:</span>
-              <span class="value mono">{{ selectedExecution._id }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Execution Ref:</span>
-              <span class="value">{{ selectedExecution.executionRef }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Quote Ref:</span>
-              <span class="value">{{ selectedExecution.quoteRef }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Quote ID:</span>
-              <span class="value mono">{{ selectedExecution.quoteId }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Merchant ID:</span>
-              <span class="value mono">{{ selectedExecution.merchantId }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">End Customer ID:</span>
-              <span class="value">{{ selectedExecution.endCustomerId }}</span>
-            </div>
+<!-- View Details Modal -->
+<div class="modal" *ngIf="showViewModal && selectedExecution" (click)="closeViewModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        <i class="fas fa-exchange-alt"></i>
+        Execution Details: {{ selectedExecution.executionRef }}
+      </h2>
+      <button class="close-btn" (click)="closeViewModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="details-grid">
+        <!-- Basic Info -->
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Execution ID:</span>
+            <span class="value mono">{{ selectedExecution._id }}</span>
           </div>
-          
-          <!-- Trading Details -->
-          <div class="detail-section">
-            <h3>Trading Details</h3>
-            <div class="detail-row">
-              <span class="label">Pair:</span>
-              <span class="value">{{ selectedExecution.pairCode }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Assets:</span>
-              <span class="value">{{ selectedExecution.baseAsset }}/{{ selectedExecution.quoteAsset }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Side:</span>
-              <span [class]="'badge ' + getSideClass(selectedExecution.side)">
-                {{ selectedExecution.side }}
-              </span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Rate:</span>
-              <span class="value">{{ formatNumber(selectedExecution.rate, 4) }} {{ selectedExecution.quoteAsset }}/{{ selectedExecution.baseAsset }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Execution Ref:</span>
+            <span class="value">{{ selectedExecution.executionRef }}</span>
           </div>
-          
-          <!-- Amounts -->
-          <div class="detail-section">
-            <h3>Amounts</h3>
-            <div class="detail-row">
-              <span class="label">Base Amount:</span>
-              <span class="value">{{ formatCurrency(selectedExecution.baseAmount, selectedExecution.baseAsset) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Quote Amount:</span>
-              <span class="value">{{ formatCurrency(selectedExecution.quoteAmount, selectedExecution.quoteAsset) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Fee:</span>
-              <span class="value">{{ formatCurrency(selectedExecution.fee, selectedExecution.quoteAsset) }} ({{ selectedExecution.feeBps }} bps)</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Total Amount:</span>
-              <span class="value highlight">{{ formatCurrency(selectedExecution.totalAmount, selectedExecution.quoteAsset) }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Quote Ref:</span>
+            <span class="value">{{ selectedExecution.quoteRef }}</span>
           </div>
-          
-          <!-- Settlement Info -->
-          <div class="detail-section">
-            <h3>Settlement Information</h3>
-            <div class="detail-row" *ngIf="selectedExecution.settlementTxId">
-              <span class="label">Transaction ID:</span>
-              <span class="value mono">{{ formatAddress(selectedExecution.settlementTxId) }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.settlementAddress">
-              <span class="label">Settlement Address:</span>
-              <span class="value mono">{{ formatAddress(selectedExecution.settlementAddress) }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.settlementNetwork">
-              <span class="label">Network:</span>
-              <span class="value">{{ selectedExecution.settlementNetwork }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.settledAt">
-              <span class="label">Settled At:</span>
-              <span class="value">{{ formatDate(selectedExecution.settledAt) }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Quote ID:</span>
+            <span class="value mono">{{ selectedExecution.quoteId }}</span>
           </div>
-          
-          <!-- Status & Reconciliation -->
-          <div class="detail-section">
-            <h3>Status & Reconciliation</h3>
-            <div class="detail-row">
-              <span class="label">Status:</span>
-              <span [class]="'badge ' + getStatusClass(selectedExecution.status)">
-                <i class="fas" [class]="getStatusIcon(selectedExecution.status)"></i>
-                {{ selectedExecution.status }}
-              </span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.failureReason">
-              <span class="label">Failure Reason:</span>
-              <span class="value error-text">{{ selectedExecution.failureReason }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.reconciledAt">
-              <span class="label">Reconciled At:</span>
-              <span class="value">{{ formatDate(selectedExecution.reconciledAt) }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.reconciledBy">
-              <span class="label">Reconciled By:</span>
-              <span class="value">{{ selectedExecution.reconciledBy }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Merchant ID:</span>
+            <span class="value mono">{{ selectedExecution.merchantId }}</span>
           </div>
-          
-          <!-- Metadata -->
-          <div class="detail-section full-width" *ngIf="selectedExecution.metadata">
-            <h3>Additional Information</h3>
-            <div class="detail-row" *ngIf="selectedExecution.metadata.source">
-              <span class="label">Source:</span>
-              <span class="value">{{ selectedExecution.metadata.source }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.metadata.ipAddress">
-              <span class="label">IP Address:</span>
-              <span class="value">{{ selectedExecution.metadata.ipAddress }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.metadata.userAgent">
-              <span class="label">User Agent:</span>
-              <span class="value small">{{ selectedExecution.metadata.userAgent }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.metadata.notes">
-              <span class="label">Notes:</span>
-              <span class="value">{{ selectedExecution.metadata.notes }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedExecution.metadata.reconciliationNotes">
-              <span class="label">Reconciliation Notes:</span>
-              <span class="value">{{ selectedExecution.metadata.reconciliationNotes }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Customer ID:</span>
+            <span class="value">{{ selectedExecution.endCustomerId }}</span>
           </div>
-          
-          <!-- Timestamps -->
-          <div class="detail-section full-width">
-            <h3>System Timestamps</h3>
-            <div class="detail-row">
-              <span class="label">Created:</span>
-              <span class="value">{{ formatDate(selectedExecution.createdAt) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Updated:</span>
-              <span class="value">{{ formatDate(selectedExecution.updatedAt) }}</span>
-            </div>
+          <div class="detail-row">
+            <span class="label">Idempotency Key:</span>
+            <span class="value mono">{{ selectedExecution.idempotencyKey }}</span>
+          </div>
+        </div>
+        
+        <!-- Trading Details -->
+        <div class="detail-section">
+          <h3>Trading Details</h3>
+          <div class="detail-row">
+            <span class="label">Pair:</span>
+            <span class="value">{{ selectedExecution.pairCode }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Side:</span>
+            <span [class]="'badge ' + getSideClass(selectedExecution.side)">
+              {{ selectedExecution.side }}
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">From Asset:</span>
+            <span class="value">{{ selectedExecution.fromAsset }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">To Asset:</span>
+            <span class="value">{{ selectedExecution.toAsset }}</span>
+          </div>
+        </div>
+        
+        <!-- Amounts -->
+        <div class="detail-section">
+          <h3>Amounts</h3>
+          <div class="detail-row">
+            <span class="label">From Amount:</span>
+            <span class="value">{{ formatCurrency(selectedExecution.fromAmount, selectedExecution.fromAsset) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Price:</span>
+            <span class="value">{{ formatNumber(selectedExecution.price, 4) }} {{ selectedExecution.toAsset }}/{{ selectedExecution.fromAsset }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Gross Amount:</span>
+            <span class="value">{{ formatCurrency(selectedExecution.grossToAmount, selectedExecution.toAsset) }}</span>
+          </div>
+        </div>
+        
+        <!-- Fees & Total -->
+        <div class="detail-section">
+          <h3>Fees & Total</h3>
+          <div class="detail-row">
+            <span class="label">Fee Amount:</span>
+            <span class="value">{{ formatCurrency(selectedExecution.feeAmount, selectedExecution.toAsset) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Net Amount:</span>
+            <span class="value highlight">{{ formatCurrency(selectedExecution.netToAmount, selectedExecution.toAsset) }}</span>
+          </div>
+        </div>
+        
+        <!-- Ledger Entries -->
+        <div class="detail-section">
+          <h3>Ledger Entries</h3>
+          <div class="detail-row">
+            <span class="label">Debit Ledger Entry:</span>
+            <span class="value mono">{{ selectedExecution.debitLedgerEntryId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Credit Ledger Entry:</span>
+            <span class="value mono">{{ selectedExecution.creditLedgerEntryId }}</span>
+          </div>
+        </div>
+        
+        <!-- Status & Failure -->
+        <div class="detail-section">
+          <h3>Status & Failure</h3>
+          <div class="detail-row">
+            <span class="label">Status:</span>
+            <span [class]="'badge ' + getStatusClass(selectedExecution.status)">
+              <i class="fas" [class]="getStatusIcon(selectedExecution.status)"></i>
+              {{ selectedExecution.status }}
+            </span>
+          </div>
+          <div class="detail-row" *ngIf="selectedExecution.failureReason">
+            <span class="label">Failure Reason:</span>
+            <span class="value error-text">{{ selectedExecution.failureReason }}</span>
+          </div>
+        </div>
+        
+        <!-- Wallet Information -->
+        <div class="detail-section">
+          <h3>Wallet Information</h3>
+          <div class="detail-row">
+            <span class="label">Custody Wallet ID:</span>
+            <span class="value mono">{{ selectedExecution.custodyWalletId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">From Asset Wallet:</span>
+            <span class="value mono">{{ selectedExecution.fromAssetWalletId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">To Asset Wallet:</span>
+            <span class="value mono">{{ selectedExecution.toAssetWalletId }}</span>
+          </div>
+        </div>
+        
+        <!-- Metadata -->
+        <div class="detail-section full-width" *ngIf="selectedExecution.metadata">
+          <h3>Execution Status</h3>
+          <div class="detail-row">
+            <span class="label">Debit Applied:</span>
+            <span class="value">{{ selectedExecution.metadata.debitApplied ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Credit Applied:</span>
+            <span class="value">{{ selectedExecution.metadata.creditApplied ? 'Yes' : 'No' }}</span>
+          </div>
+        </div>
+        
+        <!-- Timestamps -->
+        <div class="detail-section full-width">
+          <h3>System Timestamps</h3>
+          <div class="detail-row">
+            <span class="label">Created:</span>
+            <span class="value">{{ formatDate(selectedExecution.createdAt) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated:</span>
+            <span class="value">{{ formatDate(selectedExecution.updatedAt) }}</span>
           </div>
         </div>
       </div>
-      
-      <div class="modal-footer">
-        <button class="reconcile-btn-modal" 
-                *ngIf="canReconcile(selectedExecution)"
-                (click)="confirmReconcile(selectedExecution._id); closeViewModal()">
-          <i class="fas fa-handshake"></i>
-          Reconcile Execution
-        </button>
-        <button class="cancel-btn" (click)="closeViewModal()">
-          <i class="fas fa-times"></i>
-          Close
-        </button>
-      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="reconcile-btn-modal" 
+              *ngIf="canReconcile(selectedExecution)"
+              (click)="confirmReconcile(selectedExecution._id); closeViewModal()">
+        <i class="fas fa-handshake"></i>
+        Reconcile Execution
+      </button>
+      <button class="cancel-btn" (click)="closeViewModal()">
+        <i class="fas fa-times"></i>
+        Close
+      </button>
     </div>
   </div>
+</div>
   
   <!-- Reconcile Confirmation Modal -->
   <div class="modal" *ngIf="showReconcileModal" (click)="cancelReconcile()">

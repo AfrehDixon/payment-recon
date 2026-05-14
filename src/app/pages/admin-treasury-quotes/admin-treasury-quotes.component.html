@@ -1,0 +1,815 @@
+<div class="treasury-quotes-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-landmark"></i>
+        Treasury Quotes
+      </h1>
+      
+      <div class="header-actions">
+        <button class="create-btn" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i>
+          Create Quote
+        </button>
+        <button class="external-btn" (click)="openExternalModal()">
+          <i class="fas fa-external-link-alt"></i>
+          External Quote
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="card">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-search"></i>
+          Lookup Treasury Quote
+        </h3>
+        <span class="card-subtitle">Search by quote reference</span>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm" class="search-form" (ngSubmit)="searchQuote()">
+          <div class="search-input-group">
+            <input 
+              type="text" 
+              formControlName="quoteRef" 
+              placeholder="Enter Quote Reference (e.g., TQ2890458560222663)" 
+              class="search-input"
+            />
+            <button type="submit" class="search-btn" [disabled]="searching">
+              <i class="fas" [class.fa-spinner]="searching" [class.fa-spin]="searching" [class.fa-search]="!searching"></i>
+              {{ searching ? 'Searching...' : 'Search' }}
+            </button>
+            <button type="button" class="clear-btn" (click)="clearSearch()" *ngIf="showSearchResult || searchError">
+              <i class="fas fa-times"></i>
+              Clear
+            </button>
+          </div>
+        </form>
+        
+        <!-- Search Result -->
+        <div class="search-result" *ngIf="showSearchResult && searchedQuote">
+          <div class="result-header">
+            <span class="result-title">Quote Found</span>
+            <span [class]="'status-badge ' + getStatusClass(searchedQuote.status)">
+              <i class="fas" [class]="getStatusIcon(searchedQuote.status)"></i>
+              {{ searchedQuote.status }}
+            </span>
+          </div>
+          <div class="result-details">
+            <div class="detail-row">
+              <span class="label">Quote Ref:</span>
+              <span class="value mono">{{ searchedQuote.quoteRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Source:</span>
+              <span class="value">{{ searchedQuote.sourceAmount }} {{ searchedQuote.sourceAsset }} ({{ searchedQuote.sourceRail }})</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Destination:</span>
+              <span class="value">{{ formatCurrency(searchedQuote.destinationAmount, searchedQuote.destinationCurrency) }} ({{ searchedQuote.destinationRail }})</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Rate:</span>
+              <span class="value">{{ formatNumber(searchedQuote.treasuryRate, 4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Expires:</span>
+              <span class="value">{{ formatDate(searchedQuote.expiresAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="searchedQuote.purpose">
+              <span class="label">Purpose:</span>
+              <span class="value">{{ searchedQuote.purpose }}</span>
+            </div>
+            <div class="detail-row" *ngIf="searchedQuote.source">
+              <span class="label">Source:</span>
+              <span class="value">{{ searchedQuote.source }}</span>
+            </div>
+            <div class="detail-row" *ngIf="searchedQuote.provider && searchedQuote.provider !== 'INTERNAL'">
+              <span class="label">Provider:</span>
+              <span class="value">{{ searchedQuote.provider }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Search Error -->
+        <div class="search-error" *ngIf="searchError">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ searchErrorMessage }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Section -->
+  <!-- <div class="filters-section">
+    <div class="card">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-filter"></i>
+          Filters
+        </h3>
+        <button class="reset-filters-btn" (click)="resetFilters()">
+          <i class="fas fa-undo"></i>
+          Reset Filters
+        </button>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="filterForm" class="filters-form">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>Status</label>
+              <select formControlName="status">
+                <option value="">All</option>
+                <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label>Quote Reference</label>
+              <input type="text" formControlName="quoteRef" placeholder="Quote ref" />
+            </div>
+            
+            <div class="filter-group">
+              <label>Merchant ID</label>
+              <input type="text" formControlName="merchantId" placeholder="Merchant ID" />
+            </div>
+          </div>
+          
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>From Currency</label>
+              <select formControlName="fromCurrency">
+                <option value="">All</option>
+                <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label>To Currency</label>
+              <select formControlName="toCurrency">
+                <option value="">All</option>
+                <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label>Provider</label>
+              <select formControlName="provider">
+                <option value="">All</option>
+                <option *ngFor="let provider of providerOptions" [value]="provider">{{ provider }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>From Date</label>
+              <input type="datetime-local" formControlName="fromDate" />
+            </div>
+            
+            <div class="filter-group">
+              <label>To Date</label>
+              <input type="datetime-local" formControlName="toDate" />
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div> -->
+  
+  <!-- Quotes Table Section -->
+  <div class="quotes-section">
+    <div class="card">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-list"></i>
+          Treasury Quotes
+        </h3>
+        <span class="total-count" *ngIf="!loadingQuotes">
+          Total: {{ pagination.total }} quotes
+        </span>
+      </div>
+      
+      <div class="card-body">
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="loadingQuotes">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading quotes...</p>
+        </div>
+        
+        <!-- Quotes Table -->
+        <div class="table-responsive" *ngIf="!loadingQuotes">
+          <table class="quotes-table">
+            <thead>
+              <tr>
+                <th (click)="onSort('quoteRef')">
+                  Quote Ref
+                  <i class="fas" [class]="getSortIcon('quoteRef')"></i>
+                </th>
+                <th (click)="onSort('sourceAsset')">
+                  Source
+                  <i class="fas" [class]="getSortIcon('sourceAsset')"></i>
+                </th>
+                <th (click)="onSort('destinationCurrency')">
+                  Destination
+                  <i class="fas" [class]="getSortIcon('destinationCurrency')"></i>
+                </th>
+                <th (click)="onSort('treasuryRate')">
+                  Rate
+                  <i class="fas" [class]="getSortIcon('treasuryRate')"></i>
+                </th>
+                <th>Source</th>
+                <th (click)="onSort('status')">
+                  Status
+                  <i class="fas" [class]="getSortIcon('status')"></i>
+                </th>
+                <th (click)="onSort('expiresAt')">
+                  Expires At
+                  <i class="fas" [class]="getSortIcon('expiresAt')"></i>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let quote of quotes">
+                <td class="mono">
+                  {{ quote.quoteRef }}
+                  <div class="quote-id" *ngIf="quote.providerQuoteRef">
+                    <small>Provider: {{ quote.providerQuoteRef }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="amount">{{ quote.sourceAmount }} {{ quote.sourceAsset }}</div>
+                  <div class="rail-badge">{{ quote.sourceRail }}</div>
+                </td>
+                <td>
+                  <div class="amount">{{ formatCurrency(quote.destinationAmount, quote.destinationCurrency) }}</div>
+                  <div class="rail-badge">{{ quote.destinationRail }}</div>
+                </td>
+                <td>
+                  <div class="rate">{{ formatNumber(quote.treasuryRate, 4) }}</div>
+                  <div class="customer-rate" *ngIf="quote.customerRate && quote.customerRate !== quote.treasuryRate">
+                    Customer: {{ formatNumber(quote.customerRate, 4) }}
+                  </div>
+                </td>
+                <td>
+                  <span [class]="'source-badge ' + getSourceClass(quote.source)">
+                    <i class="fas" [class]="getSourceIcon(quote.source)"></i>
+                    {{ quote.source || 'N/A' }}
+                  </span>
+                  <div class="provider-name" *ngIf="quote.provider && quote.provider !== 'INTERNAL'">
+                    <small>{{ quote.provider }}</small>
+                  </div>
+                </td>
+                <td>
+                  <span [class]="'status-badge ' + getStatusClass(quote.status)">
+                    <i class="fas" [class]="getStatusIcon(quote.status)"></i>
+                    {{ quote.status }}
+                  </span>
+                </td>
+                <td>
+                  <div>{{ formatDate(quote.expiresAt) }}</div>
+                  <div class="time-left" *ngIf="quote.status === 'ACTIVE'">
+                    <small>{{ getTimeLeft(quote.expiresAt) }}</small>
+                  </div>
+                </td>
+                <td>
+                  <button class="view-btn" (click)="openDetailsModal(quote)" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="copy-btn" (click)="copyToClipboard(quote.quoteRef)" title="Copy Quote Ref">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="quotes.length === 0">
+                <td colspan="8" class="no-data">
+                  <i class="fas fa-inbox"></i>
+                  <p>No quotes found</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="!loadingQuotes && pagination.total > 0">
+          <div class="pagination-info">
+            Showing {{ (pagination.page - 1) * pagination.limit + 1 }} to 
+            {{ Math.min(pagination.page * pagination.limit, pagination.total) }} of 
+            {{ pagination.total }} entries
+          </div>
+          
+          <div class="pagination-controls">
+            <button 
+              class="page-btn" 
+              (click)="previousPage()" 
+              [disabled]="pagination.page === 1"
+            >
+              <i class="fas fa-chevron-left"></i>
+              Previous
+            </button>
+            
+            <div class="page-numbers">
+              <ng-container *ngFor="let page of getPageNumbers()">
+                <button 
+                  *ngIf="page !== -1"
+                  class="page-num"
+                  [class.active]="pagination.page === page"
+                  (click)="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+                <span *ngIf="page === -1" class="ellipsis">...</span>
+              </ng-container>
+            </div>
+            
+            <button 
+              class="page-btn" 
+              (click)="nextPage()" 
+              [disabled]="pagination.page === pagination.pages"
+            >
+              Next
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Quote Modal -->
+  <div class="modal" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-plus-circle"></i>
+          Create Treasury Quote
+        </h2>
+        <button class="close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Success State -->
+        <div class="success-state" *ngIf="createdQuote">
+          <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3>Quote Created Successfully!</h3>
+          <div class="quote-details">
+            <div class="detail-item">
+              <span class="detail-label">Quote Reference:</span>
+              <span class="detail-value mono">{{ createdQuote.quoteRef }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ createdQuote.sourceAmount }} {{ createdQuote.sourceAsset }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Destination:</span>
+              <span class="detail-value">{{ formatCurrency(createdQuote.destinationAmount, createdQuote.destinationCurrency) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Rate:</span>
+              <span class="detail-value">{{ formatNumber(createdQuote.treasuryRate, 4) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Expires At:</span>
+              <span class="detail-value">{{ formatDate(createdQuote.expiresAt) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Status:</span>
+              <span [class]="'status-badge ' + getStatusClass(createdQuote.status)">{{ createdQuote.status }}</span>
+            </div>
+          </div>
+          <button class="new-quote-btn" (click)="resetCreateForm()">
+            <i class="fas fa-plus"></i>
+            Create Another Quote
+          </button>
+        </div>
+        
+        <!-- Form State -->
+        <form [formGroup]="createQuoteForm" class="quote-form" *ngIf="!createdQuote" (ngSubmit)="submitCreateQuote()">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Merchant ID</label>
+                <input type="text" formControlName="merchantId" placeholder="Optional" />
+              </div>
+              
+              <div class="form-group">
+                <label>App ID</label>
+                <input type="text" formControlName="appId" placeholder="Optional" />
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Purpose</label>
+                <select formControlName="purpose">
+                  <option value="">Select purpose (optional)</option>
+                  <option *ngFor="let purpose of purposeOptions" [value]="purpose">{{ purpose }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>TTL (Seconds)</label>
+                <input type="number" formControlName="ttlSeconds" />
+                <small>30 - 86400 seconds (default: 300)</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Source Details -->
+          <div class="form-section">
+            <h3>Source Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Source Rail *</label>
+                <select formControlName="sourceRail">
+                  <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Source Asset *</label>
+                <select formControlName="sourceAsset">
+                  <option *ngFor="let asset of assetOptions" [value]="asset">{{ asset }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Source Amount *</label>
+              <input type="number" step="any" formControlName="sourceAmount" placeholder="Enter amount" />
+              <div class="error" *ngIf="createQuoteForm.get('sourceAmount')?.invalid && createQuoteForm.get('sourceAmount')?.touched">
+                Valid source amount is required
+              </div>
+            </div>
+          </div>
+          
+          <!-- Destination Details -->
+          <div class="form-section">
+            <h3>Destination Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Destination Rail *</label>
+                <select formControlName="destinationRail">
+                  <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Destination Currency *</label>
+                <select formControlName="destinationCurrency">
+                  <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="calculated-amount">
+              <span class="label">Destination Amount:</span>
+              <span class="value">{{ formatCurrency(calculateDestinationAmount(), createQuoteForm.get('destinationCurrency')?.value) }}</span>
+            </div>
+          </div>
+          
+          <!-- Rate Configuration -->
+          <div class="form-section">
+            <h3>Rate Configuration</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Treasury Rate *</label>
+                <input type="number" step="any" formControlName="treasuryRate" placeholder="Enter treasury rate" (input)="updateSpread()" />
+              </div>
+              
+              <div class="form-group">
+                <label>Customer Rate</label>
+                <input type="number" step="any" formControlName="customerRate" placeholder="Optional" (input)="updateSpread()" />
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Spread (bps)</label>
+                <input type="number" step="any" formControlName="spread" placeholder="Auto-calculated" readonly />
+                <small>Basis points (1 bps = 0.01%)</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Additional Info -->
+          <div class="form-section">
+            <h3>Additional Information</h3>
+            
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer" *ngIf="!createdQuote">
+        <button class="cancel-btn" (click)="closeCreateModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="submitCreateQuote()" [disabled]="loading || createQuoteForm.invalid">
+          <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-save]="!loading"></i>
+          {{ loading ? 'Creating...' : 'Create Quote' }}
+        </button>
+      </div>
+      
+      <div class="modal-footer" *ngIf="createdQuote">
+        <button class="close-btn" (click)="closeCreateModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- External Quote Modal -->
+  <div class="modal" *ngIf="showExternalModal" (click)="closeExternalModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-external-link-alt"></i>
+          Request External Treasury Quote
+        </h2>
+        <button class="close-btn" (click)="closeExternalModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Success State -->
+        <div class="success-state" *ngIf="externalQuote">
+          <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3>External Quote Received!</h3>
+          <div class="quote-details">
+            <div class="detail-item">
+              <span class="detail-label">Quote Reference:</span>
+              <span class="detail-value mono">{{ externalQuote.quoteRef }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Provider:</span>
+              <span class="detail-value">{{ externalQuote.provider }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ externalQuote.sourceAmount }} {{ externalQuote.sourceAsset }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Destination:</span>
+              <span class="detail-value">{{ formatCurrency(externalQuote.destinationAmount, externalQuote.destinationCurrency) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Rate:</span>
+              <span class="detail-value">{{ formatNumber(externalQuote.rate, 4) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Expires At:</span>
+              <span class="detail-value">{{ formatDate(externalQuote.expiresAt) }}</span>
+            </div>
+          </div>
+          <button class="new-quote-btn" (click)="closeExternalModal()">
+            <i class="fas fa-times"></i>
+            Close
+          </button>
+        </div>
+        
+        <!-- Form State -->
+        <form [formGroup]="externalQuoteForm" class="quote-form" *ngIf="!externalQuote" (ngSubmit)="submitExternalQuote()">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Merchant ID</label>
+                <input type="text" formControlName="merchantId" placeholder="Optional" />
+              </div>
+              
+              <div class="form-group">
+                <label>App ID</label>
+                <input type="text" formControlName="appId" placeholder="Optional" />
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Provider</label>
+                <select formControlName="provider">
+                  <option *ngFor="let provider of providerOptions" [value]="provider">{{ provider }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Purpose</label>
+                <select formControlName="purpose">
+                  <option value="">Select purpose (optional)</option>
+                  <option *ngFor="let purpose of purposeOptions" [value]="purpose">{{ purpose }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>TTL (Seconds)</label>
+              <input type="number" formControlName="ttlSeconds" />
+              <small>30 - 86400 seconds (default: 300)</small>
+            </div>
+          </div>
+          
+          <!-- Source Details -->
+          <div class="form-section">
+            <h3>Source Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Source Rail *</label>
+                <select formControlName="sourceRail">
+                  <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Source Asset *</label>
+                <select formControlName="sourceAsset">
+                  <option *ngFor="let asset of assetOptions" [value]="asset">{{ asset }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Source Amount *</label>
+              <input type="number" step="any" formControlName="sourceAmount" placeholder="Enter amount" />
+              <div class="error" *ngIf="externalQuoteForm.get('sourceAmount')?.invalid && externalQuoteForm.get('sourceAmount')?.touched">
+                Valid source amount is required
+              </div>
+            </div>
+          </div>
+          
+          <!-- Destination Details -->
+          <div class="form-section">
+            <h3>Destination Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Destination Rail *</label>
+                <select formControlName="destinationRail">
+                  <option *ngFor="let rail of railOptions" [value]="rail">{{ rail }}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Destination Currency *</label>
+                <select formControlName="destinationCurrency">
+                  <option *ngFor="let currency of currencyOptions" [value]="currency">{{ currency }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Additional Info -->
+          <div class="form-section">
+            <h3>Additional Information</h3>
+            
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea formControlName="metadata.notes" rows="2" placeholder="Any additional notes..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer" *ngIf="!externalQuote">
+        <button class="cancel-btn" (click)="closeExternalModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button class="submit-btn" (click)="submitExternalQuote()" [disabled]="loadingExternal || externalQuoteForm.invalid">
+          <i class="fas" [class.fa-spinner]="loadingExternal" [class.fa-spin]="loadingExternal" [class.fa-external-link-alt]="!loadingExternal"></i>
+          {{ loadingExternal ? 'Requesting...' : 'Request Quote' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Quote Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal && selectedQuote" (click)="closeDetailsModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-info-circle"></i>
+          Quote Details
+        </h2>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="quote-details-full">
+          <div class="details-section">
+            <h3>Basic Information</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <span class="detail-label">Quote Reference:</span>
+                <span class="detail-value mono">{{ selectedQuote.quoteRef }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span [class]="'status-badge ' + getStatusClass(selectedQuote.status)">{{ selectedQuote.status }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Purpose:</span>
+                <span class="detail-value">{{ selectedQuote.purpose || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Source:</span>
+                <span class="detail-value">{{ selectedQuote.source || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Provider:</span>
+                <span class="detail-value">{{ selectedQuote.provider || 'N/A' }}</span>
+              </div>
+              <div class="detail-item" *ngIf="selectedQuote.providerQuoteRef">
+                <span class="detail-label">Provider Quote Ref:</span>
+                <span class="detail-value mono">{{ selectedQuote.providerQuoteRef }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="details-section">
+            <h3>Transaction Details</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <span class="detail-label">Source:</span>
+                <span class="detail-value">{{ selectedQuote.sourceAmount }} {{ selectedQuote.sourceAsset }} ({{ selectedQuote.sourceRail }})</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Destination:</span>
+                <span class="detail-value">{{ formatCurrency(selectedQuote.destinationAmount, selectedQuote.destinationCurrency) }} ({{ selectedQuote.destinationRail }})</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Treasury Rate:</span>
+                <span class="detail-value">{{ formatNumber(selectedQuote.treasuryRate, 4) }}</span>
+              </div>
+              <div class="detail-item" *ngIf="selectedQuote.customerRate">
+                <span class="detail-label">Customer Rate:</span>
+                <span class="detail-value">{{ formatNumber(selectedQuote.customerRate, 4) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Spread:</span>
+                <span class="detail-value">{{ formatNumber(selectedQuote.spread, 2) }} bps</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="details-section">
+            <h3>Timing</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <span class="detail-label">Created At:</span>
+                <span class="detail-value">{{ formatDate(selectedQuote.createdAt) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Expires At:</span>
+                <span class="detail-value">{{ formatDate(selectedQuote.expiresAt) }}</span>
+              </div>
+              <div class="detail-item" *ngIf="selectedQuote.usedAt">
+                <span class="detail-label">Used At:</span>
+                <span class="detail-value">{{ formatDate(selectedQuote.usedAt) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="details-section" *ngIf="selectedQuote.metadata">
+            <h3>Metadata</h3>
+            <div class="details-grid">
+              <div class="detail-item" *ngFor="let item of selectedQuote.metadata | keyvalue">
+                <span class="detail-label">{{ item.key }}:</span>
+                <span class="detail-value">{{ item.value | json }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-btn" (click)="closeDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+        <button class="copy-btn" (click)="copyToClipboard(selectedQuote.quoteRef)">
+          <i class="fas fa-copy"></i> Copy Quote Ref
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,483 @@
+<!-- admin-crypto-remittances.component.html -->
+<div class="crypto-remittances-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-exchange-alt"></i>
+        Crypto Remittances
+      </h1>
+      
+      <div class="header-actions">
+        <button class="filter-toggle-btn" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filters Panel -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-group">
+        <label>Merchant ID</label>
+        <input type="text" formControlName="merchantId" placeholder="Enter merchant ID" />
+      </div>
+      
+      <div class="filter-group">
+        <label>External Reference</label>
+        <input type="text" formControlName="externalReference" placeholder="External reference" />
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>From Date</label>
+        <input type="datetime-local" formControlName="fromDate" />
+      </div>
+      
+      <div class="filter-group">
+        <label>To Date</label>
+        <input type="datetime-local" formControlName="toDate" />
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i>
+          Clear Filters
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Stats Summary -->
+  <div class="stats-summary" *ngIf="!loadingSummary && summary">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Remittances</span>
+        <span class="stat-value">{{ totalRemittances }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon volume">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Source Volume</span>
+        <span class="stat-value">{{ formatNumber(totalSourceVolume, 4) }} USDT</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon destination">
+        <i class="fas fa-arrow-right"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Destination Volume</span>
+        <span class="stat-value">{{ formatCurrency(totalDestinationVolume, 'GHS') }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon failed">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Failed</span>
+        <span class="stat-value">{{ failedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon completed">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Completed</span>
+        <span class="stat-value">{{ completedCount }}</span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon pending">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ pendingCount }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Remittances Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="remittances-table">
+      <thead>
+        <tr>
+          <th>External Reference</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Amount</th>
+          <th>Exchange Rate</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let remittance of remittances" class="remittance-row" [class.failed-row]="remittance.status === 'FAILED'">
+          <td class="ref-cell">
+            <div class="external-ref">{{ remittance.externalReference }}</div>
+            <div class="remittance-id" title="{{ remittance._id }}">ID: {{ formatAddress(remittance._id) }}</div>
+          </td>
+          <td class="source-cell">
+            <div class="source-rail">
+              <span [class]="'rail-badge ' + getRailClass(remittance.source.rail)">
+                <i class="fas" [class]="getRailIcon(remittance.source.rail)"></i>
+                {{ remittance.source.rail }}
+              </span>
+            </div>
+            <div class="source-details">
+              {{ remittance.source.expectedAmount }} {{ remittance.source.asset }}
+              <div class="source-network">{{ remittance.source.network }}</div>
+            </div>
+          </td>
+          <td class="destination-cell">
+            <div class="destination-rail">
+              <span [class]="'rail-badge ' + getRailClass(remittance.destination.rail)">
+                <i class="fas" [class]="getRailIcon(remittance.destination.rail)"></i>
+                {{ remittance.destination.rail }}
+              </span>
+            </div>
+            <div class="destination-details">
+              {{ formatCurrency(remittance.destination.amount, remittance.destination.currency) }}
+              <div class="destination-account">{{ remittance.destination.accountName }}</div>
+              <div class="destination-provider">{{ remittance.destination.provider }} - {{ remittance.destination.type }}</div>
+            </div>
+          </td>
+          <td class="amount-cell">
+            <div class="source-amount">{{ formatNumber(remittance.source.expectedAmount, 4) }} {{ remittance.source.asset }}</div>
+            <div class="arrow-icon"><i class="fas fa-arrow-right"></i></div>
+            <div class="destination-amount">{{ formatCurrency(remittance.destination.amount, remittance.destination.currency) }}</div>
+          </td>
+          <td class="rate-cell">
+            <div class="rate">{{ formatNumber(remittance.rates.conversionRate, 4) }}</div>
+            <div class="rate-desc">{{ remittance.source.asset }} → {{ remittance.destination.currency }}</div>
+            <div class="spread">Spread: {{ remittance.rates.spread.toFixed(4) }}</div>
+          </td>
+          <td>
+            <span [class]="'badge ' + getStatusClass(remittance.status)">
+              <i class="fas" [class]="getStatusIcon(remittance.status)"></i>
+              {{ remittance.status }}
+            </span>
+            <div class="collection-status" *ngIf="remittance.collectionLeg">
+              Collection: {{ remittance.collectionLeg.status }}
+            </div>
+          </td>
+          <td class="date-cell">{{ formatDate(remittance.createdAt) }}</td>
+          <td class="actions-cell">
+            <button class="view-btn" (click)="viewRemittanceDetails(remittance)" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="remittances.length === 0" class="empty-state">
+      <i class="fas fa-exchange-alt"></i>
+      <p>No crypto remittances found</p>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalItems > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to 
+        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} remittances
+      </div>
+      
+      <div class="pagination-controls">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <button *ngFor="let page of getPageNumbers()" 
+                (click)="goToPage(page)"
+                [class.active]="page === currentPage">
+          {{ page }}
+        </button>
+        
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <select (change)="changePageSize($any($event.target).value)" class="page-size-select">
+          <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pageSize">
+            {{ size }} per page
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- View Details Modal -->
+  <div class="modal" *ngIf="showViewModal && selectedRemittance" (click)="closeViewModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exchange-alt"></i>
+          Remittance Details
+        </h2>
+        <button class="close-btn" (click)="closeViewModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="details-grid">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3>Basic Information</h3>
+            <div class="detail-row">
+              <span class="label">Remittance ID:</span>
+              <span class="value mono">{{ selectedRemittance._id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">External Reference:</span>
+              <span class="value">{{ selectedRemittance.externalReference }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Merchant ID:</span>
+              <span class="value mono">{{ selectedRemittance.merchantId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span [class]="'badge ' + getStatusClass(selectedRemittance.status)">
+                <i class="fas" [class]="getStatusIcon(selectedRemittance.status)"></i>
+                {{ selectedRemittance.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Remittance Type:</span>
+              <span class="value">{{ selectedRemittance.metadata.remittanceType }}</span>
+            </div>
+          </div>
+          
+          <!-- Source Details -->
+          <div class="detail-section">
+            <h3>Source Details</h3>
+            <div class="detail-row">
+              <span class="label">Rail:</span>
+              <span [class]="'rail-badge ' + getRailClass(selectedRemittance.source.rail)">
+                {{ selectedRemittance.source.rail }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Asset:</span>
+              <span class="value">{{ selectedRemittance.source.asset }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Network:</span>
+              <span class="value">{{ selectedRemittance.source.network }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Expected Amount:</span>
+              <span class="value highlight">{{ formatNumber(selectedRemittance.source.expectedAmount, 8) }} {{ selectedRemittance.source.asset }}</span>
+            </div>
+          </div>
+          
+          <!-- Destination Details -->
+          <div class="detail-section">
+            <h3>Destination Details</h3>
+            <div class="detail-row">
+              <span class="label">Rail:</span>
+              <span [class]="'rail-badge ' + getRailClass(selectedRemittance.destination.rail)">
+                {{ selectedRemittance.destination.rail }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Amount:</span>
+              <span class="value highlight">{{ formatCurrency(selectedRemittance.destination.amount, selectedRemittance.destination.currency) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Type:</span>
+              <span class="value">{{ selectedRemittance.destination.type }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Provider:</span>
+              <span class="value">{{ selectedRemittance.destination.provider }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Number:</span>
+              <span class="value">{{ selectedRemittance.destination.accountNumber }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Account Name:</span>
+              <span class="value">{{ selectedRemittance.destination.accountName }}</span>
+            </div>
+          </div>
+          
+          <!-- Rates & Fees -->
+          <div class="detail-section">
+            <h3>Rates & Fees</h3>
+            <div class="detail-row">
+              <span class="label">Conversion Rate:</span>
+              <span class="value">{{ formatNumber(selectedRemittance.rates.conversionRate, 4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Provider Rate:</span>
+              <span class="value">{{ formatNumber(selectedRemittance.rates.providerRate, 4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Spread:</span>
+              <span class="value">{{ selectedRemittance.rates.spread.toFixed(4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Fee:</span>
+              <span class="value">{{ formatCurrency(selectedRemittance.fees.totalFee, 'USD') }}</span>
+            </div>
+          </div>
+          
+          <!-- Treasury Details -->
+          <div class="detail-section">
+            <h3>Treasury Details</h3>
+            <div class="detail-row">
+              <span class="label">Quote Reference:</span>
+              <span class="value">{{ selectedRemittance.treasury.quoteRef }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Treasury Rate:</span>
+              <span class="value">{{ formatNumber(selectedRemittance.treasury.treasuryRate, 4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Customer Rate:</span>
+              <span class="value">{{ formatNumber(selectedRemittance.treasury.customerRate, 4) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Treasury Spread:</span>
+              <span class="value">{{ selectedRemittance.treasury.spread.toFixed(4) }}</span>
+            </div>
+          </div>
+          
+          <!-- Collection Leg -->
+          <div class="detail-section" *ngIf="selectedRemittance.collectionLeg">
+            <h3>Collection Leg</h3>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span class="value">{{ selectedRemittance.collectionLeg.status }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">External Transaction ID:</span>
+              <span class="value mono">{{ selectedRemittance.collectionLeg.externalTransactionId }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.collectionLeg.response">
+              <span class="label">Response Code:</span>
+              <span class="value">{{ selectedRemittance.collectionLeg.response.code }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.collectionLeg.response">
+              <span class="label">Response Message:</span>
+              <span class="value">{{ selectedRemittance.collectionLeg.response.message }}</span>
+            </div>
+          </div>
+          
+          <!-- Reconciliation -->
+          <div class="detail-section">
+            <h3>Reconciliation</h3>
+            <div class="detail-row">
+              <span class="label">Attempts:</span>
+              <span class="value">{{ selectedRemittance.reconciliation.attempts }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.reconciliation.lastCheckedAt">
+              <span class="label">Last Checked:</span>
+              <span class="value">{{ formatDate(selectedRemittance.reconciliation.lastCheckedAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.reconciliation.lastError">
+              <span class="label">Last Error:</span>
+              <span class="value error-text">{{ selectedRemittance.reconciliation.lastError }}</span>
+            </div>
+          </div>
+          
+          <!-- Webhook -->
+          <div class="detail-section">
+            <h3>Webhook</h3>
+            <div class="detail-row">
+              <span class="label">Attempts:</span>
+              <span class="value">{{ selectedRemittance.webhook.attempts }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.webhook.lastAttemptAt">
+              <span class="label">Last Attempt:</span>
+              <span class="value">{{ formatDate(selectedRemittance.webhook.lastAttemptAt) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedRemittance.webhook.lastError">
+              <span class="label">Last Error:</span>
+              <span class="value error-text">{{ selectedRemittance.webhook.lastError }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Callback URL:</span>
+              <span class="value mono">{{ selectedRemittance.callbackUrl }}</span>
+            </div>
+          </div>
+          
+          <!-- Quote Information -->
+          <div class="detail-section full-width">
+            <h3>Quote Information</h3>
+            <div class="detail-row">
+              <span class="label">Quote ID:</span>
+              <span class="value mono">{{ selectedRemittance.metadata.quoteId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Quote Executed At:</span>
+              <span class="value">{{ formatDate(selectedRemittance.metadata.quoteExecutedAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Executed From Quote:</span>
+              <span class="value">{{ selectedRemittance.metadata.executedFromQuote ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Channel:</span>
+              <span class="value">{{ selectedRemittance.metadata.channel }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Request ID:</span>
+              <span class="value mono">{{ selectedRemittance.metadata.requestId }}</span>
+            </div>
+          </div>
+          
+          <!-- Timestamps -->
+          <div class="detail-section">
+            <h3>Timestamps</h3>
+            <div class="detail-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDate(selectedRemittance.createdAt) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Updated:</span>
+              <span class="value">{{ formatDate(selectedRemittance.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="close-modal-btn" (click)="closeViewModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

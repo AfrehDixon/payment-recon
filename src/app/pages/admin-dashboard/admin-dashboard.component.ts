@@ -178,7 +178,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         change: 0,
         icon: 'fa-chart-line',
         color: 'primary',
-        prefix: '$'
+        prefix: 'GHS'
       },
       {
         label: 'Total Transactions',
@@ -194,7 +194,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         change: 0,
         icon: 'fa-arrow-down',
         color: 'info',
-        prefix: '$'
+        prefix: 'GHS'
       },
       {
         label: 'Debits Volume',
@@ -202,7 +202,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         change: 0,
         icon: 'fa-arrow-up',
         color: 'warning',
-        prefix: '$'
+        prefix: 'GHS'
       },
       {
         label: 'Total Profit',
@@ -210,7 +210,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         change: 0,
         icon: 'fa-chart-simple',
         color: 'success',
-        prefix: '$'
+        prefix: 'GHS'
       },
       {
         label: 'Success Rate',

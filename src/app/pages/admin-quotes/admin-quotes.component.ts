@@ -43,15 +43,15 @@ export class AdminQuotesComponent implements OnInit, OnDestroy {
   
   // Filters state
   sideOptions = ['BUY', 'SELL', 'SWAP'];
-  statusOptions = ['PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED'];
+  statusOptions = ['PENDING', 'EXECUTED', 'EXPIRED', 'CANCELLED', 'REJECTED'];
   
   // Destroy subject
   private destroy$ = new Subject<void>();
   
-  // Current admin user (should come from auth service)
+  // Current admin user
   currentAdmin = 'admin@doronpay.com';
   
-  // Valid ISO currency codes
+  // Valid currencies for formatting
   private validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'CHF', 'AUD', 'CNY', 'INR', 'BRL', 'GHS', 'NGN', 'ZAR', 'KES', 'UGX', 'TZS'];
   
   // Computed properties for stats
@@ -63,8 +63,8 @@ export class AdminQuotesComponent implements OnInit, OnDestroy {
     return this.quotes.filter(q => q.status === 'PENDING').length;
   }
   
-  get acceptedCount(): number {
-    return this.quotes.filter(q => q.status === 'ACCEPTED').length;
+  get executedCount(): number {
+    return this.quotes.filter(q => q.status === 'EXECUTED').length;
   }
   
   get expiredCount(): number {
@@ -248,10 +248,10 @@ export class AdminQuotesComponent implements OnInit, OnDestroy {
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
       'PENDING': 'status-pending',
-      'ACCEPTED': 'status-accepted',
-      'REJECTED': 'status-rejected',
+      'EXECUTED': 'status-executed',
       'EXPIRED': 'status-expired',
-      'CANCELLED': 'status-cancelled'
+      'CANCELLED': 'status-cancelled',
+      'REJECTED': 'status-rejected'
     };
     return classes[status] || 'status-unknown';
   }
@@ -268,10 +268,10 @@ export class AdminQuotesComponent implements OnInit, OnDestroy {
   getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
       'PENDING': 'fa-clock',
-      'ACCEPTED': 'fa-check-circle',
-      'REJECTED': 'fa-times-circle',
+      'EXECUTED': 'fa-check-circle',
       'EXPIRED': 'fa-hourglass-end',
-      'CANCELLED': 'fa-ban'
+      'CANCELLED': 'fa-ban',
+      'REJECTED': 'fa-times-circle'
     };
     return icons[status] || 'fa-question-circle';
   }
